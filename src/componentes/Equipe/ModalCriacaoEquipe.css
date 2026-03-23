@@ -1,0 +1,285 @@
+.form-equipe {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-bottom: 1rem;
+}
+
+.secao-form .secao-titulo {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #0ea5e9;
+  display: block;
+  margin-bottom: 1.25rem;
+  opacity: 0.8;
+}
+
+.campo label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--texto-corpo);
+}
+
+.campo input, 
+.campo select, 
+.campo textarea {
+  width: 100%;
+  padding: 0.75rem;
+  background-color: rgba(255, 255, 255, 0.03);
+  border: var(--borda-suave);
+  border-radius: var(--raio-p);
+  color: var(--texto-titulo);
+  font-family: inherit;
+  transition: var(--transicao-padrao);
+}
+
+.campo input:focus, 
+.campo select:focus, 
+.campo textarea:focus {
+  outline: none;
+  border-color: var(--primaria);
+  background-color: rgba(255, 255, 255, 0.06);
+}
+
+.campo select option {
+  background-color: #1e293b;
+  color: #f1f5f9;
+}
+
+.fila-campos {
+  display: flex;
+  gap: 1.5rem;
+  width: 100%;
+}
+
+.fila-campos .campo {
+  flex: 1;
+  margin-bottom: 0;
+}
+
+/* Novo: Alerta Erro */
+.alerta-erro {
+  background-color: rgba(244, 63, 94, 0.1);
+  border: 1px solid rgba(244, 63, 94, 0.3);
+  color: #f43f5e;
+  padding: 0.75rem 1rem;
+  border-radius: var(--raio-p);
+  font-size: 0.85rem;
+  font-weight: 500;
+  animation: fadeSlideUp 0.3s ease-out;
+}
+
+/* Novo: Upload de Escudo */
+.secao-upload-logo {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  background: rgba(15, 23, 42, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
+  padding: 2rem;
+  margin-bottom: 0.5rem;
+}
+
+.avatar-preview {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  flex-shrink: 0;
+}
+
+.avatar-img {
+  width: 140px;
+  height: 140px;
+  min-width: 140px;
+  min-height: 140px;
+  object-fit: cover;
+  aspect-ratio: 1 / 1;
+  border: 2px solid var(--primaria);
+  border-radius: 16px;
+  background-color: #0f172a;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  transition: transform 0.3s ease;
+}
+
+.avatar-img:hover {
+  transform: scale(1.02);
+}
+
+.avatar-placeholder {
+  width: 140px;
+  height: 140px;
+  min-width: 140px;
+  min-height: 140px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px dashed rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  background-color: rgba(15, 23, 42, 0.6);
+  color: #475569;
+}
+
+.btn-upload-logo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #f1f5f9;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-upload-logo:hover {
+  background: var(--primaria);
+}
+
+.btn-upload-logo input[type="file"] {
+  display: none;
+}
+
+.dica-upload {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.85rem;
+  color: #94a3b8;
+}
+
+.dica-upload strong {
+  color: #f1f5f9;
+}
+
+/* Container de Localizacao */
+.container-localizacao {
+  background: rgba(15, 23, 42, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  padding: 1.25rem;
+  border-radius: 12px;
+}
+
+.grade-cep input {
+  background-color: rgba(15, 23, 42, 0.6) !important;
+}
+
+.opcoes-visibilidade {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.75rem;
+}
+
+.opcoes-visib.fila-campos {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+  margin-bottom: 0.75rem;
+}
+
+.opcao {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background-color: rgba(255, 255, 255, 0.02);
+  border: var(--borda-suave);
+  border-radius: var(--raio-m);
+  cursor: pointer;
+  text-align: left;
+  transition: var(--transicao-padrao);
+  width: 100%;
+}
+
+.opcao:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.opcao.ativa {
+  border-color: var(--primaria);
+  background-color: var(--primaria-brilho);
+}
+
+.opcao div {
+  display: flex;
+  flex-direction: column;
+}
+
+.opcao strong {
+  font-size: 0.95rem;
+  color: var(--texto-titulo);
+}
+
+.opcao span {
+  font-size: 0.75rem;
+  color: var(--texto-mudo);
+}
+
+.footer-criacao {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  width: 100%;
+}
+
+@keyframes fadeSlideUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 640px) {
+  .fila-campos {
+    grid-template-columns: 1fr;
+  }
+  .secao-upload-logo {
+    flex-direction: column;
+    text-align: center;
+  }
+}
+
+/* Ajustes para Campos com Ícones */
+.campo-valida {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.icone-input {
+  position: absolute;
+  left: 1rem;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.campo-valida input,
+.campo-valida select,
+.campo-valida textarea {
+  padding-left: 3.5rem !important;
+}
+
+.secao-form {
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  padding: 1.5rem;
+  margin-top: 1rem;
+  background: rgba(255, 255, 255, 0.01);
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}

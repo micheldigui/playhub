@@ -1,0 +1,32 @@
+:root {
+  /* Cores Principais */
+  --primaria: #0ea5e9;
+  --primaria-brilho: rgba(14, 165, 233, 0.2);
+  --primaria-hover: #0284c7;
+  
+  /* Cores de Fundo */
+  --fundo-profundo: #020617;
+  --fundo-palco: #0f172a;
+  --fundo-cartao: #1e293b;
+  --fundo-sobreposição: rgba(2, 6, 23, 0.85);
+  
+  /* Cores de Texto */
+  --texto-titulo: #f8fafc;
+  --texto-corpo: #cbd5e1;
+  --texto-mudo: #64748b;
+  
+  /* Estados */
+  --sucesso: #10b981;
+  --erro: #f43f5e;
+  --aviso: #f59e0b;
+  
+  /* Medidas e Bordas */
+  --raio-p: 8px;
+  --raio-m: 12px;
+  --raio-g: 20px;
+  --borda-suave: 1px solid rgba(255, 255, 255, 0.08);
+  
+  /* Efeitos */
+  --sombra-premium: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --transicao-padrao: all 0.2s ease-in-out;
+}

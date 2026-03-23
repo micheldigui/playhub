@@ -1,0 +1,36 @@
+@import './variaveis.css';
+
+:root {
+  --fonte-principal: 'Inter', sans-serif;
+  --fonte-titulo: 'Outfit', sans-serif;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--fonte-principal);
+  background-color: var(--fundo-profundo);
+  color: var(--texto-corpo);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4 {
+  font-family: var(--fonte-titulo);
+  color: var(--texto-titulo);
+}
+
+p {
+  color: var(--texto-corpo);
+  font-size: 1rem;
+}
+
+/* Scrollbar custom */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }

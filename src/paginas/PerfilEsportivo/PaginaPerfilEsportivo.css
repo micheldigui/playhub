@@ -1,0 +1,346 @@
+/* ============================================
+   PLAYHUB - CSS do Perfil Esportivo
+   ============================================ */
+
+.perfil-esportivo-container {
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 0 1rem 2rem;
+}
+
+.animacao-entrada {
+  animation: fadeSlideUp 0.3s ease-out;
+}
+
+.perfil-cabecalho-acoes {
+  margin-bottom: 1.5rem;
+}
+
+.btn-voltar-perfil {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #94a3b8;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-voltar-perfil:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #f1f5f9;
+}
+
+.perfil-cabecalho {
+  margin-bottom: 2rem;
+}
+
+.perfil-cabecalho h2 {
+  font-size: 1.8rem;
+  margin-bottom: 0.25rem;
+}
+
+.perfil-cabecalho p {
+  color: #94a3b8;
+  font-size: 0.95rem;
+}
+
+/* Base do Cartao */
+.perfil-cartao {
+  background: rgba(30, 41, 59, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
+  padding: 2rem;
+  margin-bottom: 1.5rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.cartao-titulo {
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #0ea5e9;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  padding-bottom: 0.75rem;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Mensagens de Alerta */
+.mensagem-alerta {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem;
+  border-radius: 12px;
+  margin-bottom: 1.5rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  animation: fadeSlideUp 0.3s ease-out;
+}
+
+.mensagem-alerta.sucesso {
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  color: #10b981;
+}
+
+.mensagem-alerta.erro {
+  background: rgba(244, 63, 94, 0.1);
+  border: 1px solid rgba(244, 63, 94, 0.3);
+  color: #f43f5e;
+}
+
+/* Perfil Esportivo */
+.cartao-descricao {
+  font-size: 0.9rem;
+  color: #94a3b8;
+  margin-bottom: 1.5rem;
+  line-height: 1.5;
+}
+
+.modalidades-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 2rem;
+}
+
+.loading-texto, .estado-vazio {
+  text-align: center;
+  color: #64748b;
+  font-size: 0.9rem;
+  padding: 1.5rem 0;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 12px;
+  border: 1px dashed rgba(255, 255, 255, 0.1);
+}
+
+.modalidade-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  background: rgba(15, 23, 42, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  transition: all 0.2s;
+}
+
+.modalidade-item:hover {
+  background: rgba(15, 23, 42, 0.6);
+  border-color: rgba(14, 165, 233, 0.3);
+}
+
+.modalidade-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.modalidade-info strong {
+  font-size: 1rem;
+  color: #f1f5f9;
+}
+
+.modalidade-info span {
+  color: #94a3b8;
+  font-size: 0.9rem;
+}
+
+.badge-nivel {
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.75rem !important;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.badge-nivel.lazer { background: rgba(148, 163, 184, 0.15); color: #94a3b8; border: 1px solid rgba(148,163,184,0.3); }
+.badge-nivel.iniciante { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16,185,129,0.3); }
+.badge-nivel.intermediario { background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56,189,248,0.3); }
+.badge-nivel.avancado { background: rgba(139, 92, 246, 0.15); color: #a78bfa; border: 1px solid rgba(139,92,246,0.3); }
+.badge-nivel.profissional { background: rgba(244, 63, 94, 0.15); color: #fb7185; border: 1px solid rgba(244,63,94,0.3); }
+
+/* Interesses Rapidos */
+.grade-interesses {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.interesse-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: rgba(15, 23, 42, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #94a3b8;
+  transition: all 0.2s;
+  user-select: none;
+}
+
+.interesse-badge input {
+  display: none;
+}
+
+.interesse-badge:hover {
+  background: rgba(15, 23, 42, 0.6);
+  border-color: rgba(14, 165, 233, 0.3);
+}
+
+.interesse-badge.ativo {
+  background: rgba(14, 165, 233, 0.15);
+  border-color: #0ea5e9;
+  color: #0ea5e9;
+}
+
+.btn-remover-icone {
+  background: none;
+  border: none;
+  color: #64748b;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 8px;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-remover-icone:hover {
+  background: rgba(244, 63, 94, 0.1);
+  color: #f43f5e;
+}
+
+.form-add-modalidade {
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 12px;
+  padding: 1.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.form-add-modalidade h4 {
+  font-size: 0.9rem;
+  color: #cbd5e1;
+  margin-bottom: 1rem;
+  font-weight: 600;
+}
+
+.grade-add-modalidade {
+  display: grid;
+  grid-template-columns: 2fr 1.5fr 1.5fr auto;
+  gap: 1rem;
+  align-items: flex-end;
+}
+
+.grupo-btn-add {
+  display: flex;
+}
+
+.btn-add-modalidade {
+  height: 44px;
+  padding: 0 1.25rem;
+  background: #0ea5e9;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.btn-add-modalidade:hover:not(:disabled) {
+  background: #0284c7;
+  transform: translateY(-1px);
+}
+
+.btn-add-modalidade:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Campos de Input Herdado */
+.grupo-input {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.grupo-input label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #cbd5e1;
+  padding-left: 2px;
+}
+
+.campo-input {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.campo-input input,
+.campo-input select {
+  width: 100%;
+  padding: 12px 14px;
+  background: rgba(15, 23, 42, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  color: #f1f5f9;
+  font-family: inherit;
+  font-size: 0.95rem;
+  transition: all 0.2s;
+  outline: none;
+}
+
+.campo-input input:focus,
+.campo-input select:focus {
+  border-color: #0ea5e9;
+  background: rgba(14, 165, 233, 0.05);
+  box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
+}
+
+.campo-input select option {
+  background-color: #1e293b;
+  color: #f1f5f9;
+}
+
+.campo-input.desabilitado select {
+  background: rgba(255, 255, 255, 0.02);
+  color: #64748b;
+  cursor: not-allowed;
+  border-color: transparent;
+}
+
+@keyframes fadeSlideUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 768px) {
+  .grade-add-modalidade {
+    grid-template-columns: 1fr;
+  }
+}

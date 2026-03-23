@@ -1,0 +1,228 @@
+.barra-lateral {
+  width: 260px;
+  min-height: 100vh;
+  background: #0f172a;
+  border-right: 1px solid rgba(255,255,255,0.06);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 200;
+  position: fixed;
+  inset: 0 auto 0 0;
+  transform: translateX(-100%);
+  box-shadow: 8px 0 32px rgba(0,0,0,0.5);
+}
+
+.barra-lateral.barra-aberta { transform: translateX(0); }
+
+/* ── Topo ── */
+.barra-topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.4rem 1.25rem 1rem;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.logotipo {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.logo-icone {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #0ea5e9, #6366f1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: white;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3);
+}
+
+.logo-texto {
+  font-family: 'Outfit', sans-serif;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #f8fafc;
+  letter-spacing: -0.01em;
+}
+
+/* Botão fechar — agora visível sempre */
+.barra-fechar {
+  display: flex;
+  background: none;
+  border: none;
+  color: #64748b;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+.barra-fechar:hover { background: rgba(255,255,255,0.05); color: #f1f5f9; }
+
+/* ── Navegação ── */
+.navegacao {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 1rem 0.75rem;
+}
+
+.item-nav {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  padding: 0.7rem 0.875rem;
+  border-radius: 10px;
+  border: none;
+  background: none;
+  color: #64748b;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+  transition: all 0.18s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Ripple effect */
+.item-nav::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.04);
+  opacity: 0;
+  transition: opacity 0.2s;
+  border-radius: inherit;
+}
+
+.item-nav:hover::before { opacity: 1; }
+
+.item-nav:hover {
+  color: #e2e8f0;
+  transform: translateX(2px);
+}
+
+.item-nav.ativo {
+  background: rgba(14, 165, 233, 0.12);
+  color: #38bdf8;
+  border: 1px solid rgba(14, 165, 233, 0.2);
+}
+
+.item-nav.ativo .item-nav-icone {
+  color: #38bdf8;
+}
+
+.item-nav-icone {
+  display: flex;
+  align-items: center;
+  transition: transform 0.2s;
+  flex-shrink: 0;
+}
+
+.item-nav:hover .item-nav-icone { transform: scale(1.1); }
+
+.item-nav-label {
+  flex: 1;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: font-weight 0.1s;
+}
+
+.item-nav.ativo .item-nav-label { font-weight: 600; }
+
+.item-nav-seta {
+  opacity: 0;
+  transform: translateX(-4px);
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.item-nav:hover .item-nav-seta {
+  opacity: 0.4;
+  transform: translateX(0);
+}
+
+.item-nav.ativo .item-nav-seta {
+  opacity: 0.7;
+  transform: translateX(0);
+}
+
+/* ── Rodapé ── */
+.barra-rodape {
+  padding: 0.75rem;
+  border-top: 1px solid rgba(255,255,255,0.05);
+}
+
+.botao-sair {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  padding: 0.7rem 0.875rem;
+  background: none;
+  border: none;
+  color: #475569;
+  cursor: pointer;
+  border-radius: 10px;
+  transition: all 0.18s ease;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.botao-sair:hover {
+  background: rgba(244, 63, 94, 0.08);
+  color: #f87171;
+  transform: translateX(2px);
+}
+
+/* ── Hamburguer ── */
+.hamburguer {
+  display: flex;
+  position: fixed;
+  top: 1rem;
+  left: 1.5rem;
+  z-index: 150;
+  background: #1e293b;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 10px;
+  color: #cbd5e1;
+  padding: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+.hamburguer:hover { background: #334155; color: #f8fafc; transform: scale(1.05); }
+
+/* ── Overlay global ── */
+.barra-overlay {
+  display: block;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  backdrop-filter: blur(3px);
+  z-index: 199;
+  animation: fadeIn 0.25s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; backdrop-filter: blur(0px); }
+  to   { opacity: 1; backdrop-filter: blur(3px); }
+}
+
+@media (max-width: 768px) {
+  .hamburguer {
+    left: 1rem;
+  }
+}

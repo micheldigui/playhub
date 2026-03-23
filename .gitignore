@@ -1,0 +1,17 @@
+# Dependências
+node_modules/
+
+# Build
+dist/
+
+# Variáveis de ambiente (NUNCA commitar no git!)
+.env
+.env.local
+.env.production
+
+# Logs
+*.log
+
+# Editor
+.vscode/
+.idea/

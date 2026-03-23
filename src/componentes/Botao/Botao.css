@@ -1,0 +1,44 @@
+.botao {
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--raio-p);
+  font-family: var(--fonte-principal);
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  border: none;
+  transition: var(--transicao-padrao);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.botao:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.botao-primario {
+  background-color: var(--primaria);
+  color: white;
+}
+
+.botao-primario:hover:not(:disabled) {
+  background-color: var(--primaria-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px var(--primaria-brilho);
+}
+
+.botao-secundario {
+  background-color: rgba(255, 255, 255, 0.05);
+  color: var(--texto-titulo);
+  border: var(--borda-suave);
+}
+
+.botao-secundario:hover:not(:disabled) {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.botao-cheio {
+  width: 100%;
+}

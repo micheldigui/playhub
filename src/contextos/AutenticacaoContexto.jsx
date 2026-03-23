@@ -1,0 +1,71 @@
+import { createContext, useContext, useState, useEffect } from 'react';
+import { supabase } from '../servicos/supabase';
+
+const AutenticacaoContexto = createContext({});
+
+export const usarAutenticacao = () => {
+    const contexto = useContext(AutenticacaoContexto);
+    if (!contexto) {
+        throw new Error('usarAutenticacao deve ser usado dentro de um AutenticacaoProvedor');
+    }
+    return contexto;
+};
+
+export const AutenticacaoProvedor = ({ children }) => {
+    const [usuario, setUsuario] = useState(null);
+    const [dadosUsuario, setDadosUsuario] = useState(null);
+    const [carregando, setCarregando] = useState(true);
+
+    useEffect(() => {
+        // Verificar sessão atual
+        supabase.auth.getSession().then(({ data: { session } }) => {
+            setUsuario(session?.user ?? null);
+            if (session?.user) carregarDadosUsuario(session.user.id);
+            else setCarregando(false);
+        });
+
+        // Escutar mudanças na autenticação
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+            setUsuario(session?.user ?? null);
+            if (session?.user) carregarDadosUsuario(session.user.id);
+            else {
+                setDadosUsuario(null);
+                setCarregando(false);
+            }
+        });
+
+        return () => subscription.unsubscribe();
+    }, []);
+
+    const carregarDadosUsuario = async (userId) => {
+        try {
+            const { data, error } = await supabase
+                .from('usuarios')
+                .select('*')
+                .eq('id', userId)
+                .single();
+
+            if (error && error.code !== 'PGRST116') throw error;
+            setDadosUsuario(data);
+        } catch (error) {
+            console.error('Erro ao carregar dados do usuário:', error.message);
+        } finally {
+            setCarregando(false);
+        }
+    };
+
+    const valor = {
+        usuario,
+        dadosUsuario,
+        carregando,
+        ehSuperAdmin: dadosUsuario?.eh_super_admin === true,
+        estaLogado: !!usuario,
+        recarregarUsuario: () => usuario && carregarDadosUsuario(usuario.id)
+    };
+
+    return (
+        <AutenticacaoContexto.Provider value={valor}>
+            {!carregando && children}
+        </AutenticacaoContexto.Provider>
+    );
+};

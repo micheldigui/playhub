@@ -1,0 +1,49 @@
+.tooltip-raiz {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  margin-left: 5px;
+}
+
+.tooltip-botao {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  color: #475569;
+  cursor: pointer;
+  padding: 2px;
+  border-radius: 50%;
+  transition: color 0.2s, background 0.2s;
+  line-height: 0;
+}
+
+.tooltip-botao:hover {
+  color: #0ea5e9;
+  background: rgba(14, 165, 233, 0.1);
+}
+
+.tooltip-balao {
+  position: absolute;
+  z-index: 100;
+  background: #1e293b;
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 0.775rem;
+  color: #cbd5e1;
+  width: 220px;
+  line-height: 1.5;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+  animation: fadeInTooltip 0.15s ease;
+}
+
+.tooltip-top    { bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%); }
+.tooltip-bottom { top: calc(100% + 8px);    left: 50%; transform: translateX(-50%); }
+.tooltip-right  { left: calc(100% + 8px);   top: 50%;  transform: translateY(-50%); }
+
+@keyframes fadeInTooltip {
+  from { opacity: 0; transform: translateX(-50%) translateY(4px); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
