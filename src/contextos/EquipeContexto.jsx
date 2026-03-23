@@ -649,7 +649,76 @@ export const EquipeProvedor = ({ children }) => {
         }
     };
 
+    const sairDaEquipe = async (equipeId) => {
+        try {
+            const { data: membro } = await supabase
+                .from('membros_equipe')
+                .select('id, papel')
+                .eq('equipe_id', equipeId)
+                .eq('usuario_id', usuario.id)
+                .single();
+            
+            if (!membro) return { sucesso: false, erro: 'Você não é membro desta equipe.' };
+            if (membro.papel === 'admin') return { sucesso: false, erro: 'O administrador geral não pode sair. Transfira a titularidade antes.' };
+
+            const { error } = await supabase
+                .from('membros_equipe')
+                .delete()
+                .eq('id', membro.id);
+
+            if (error) throw error;
+
+            // Remove equipe da lista local e reseta a ativa
+            setEquipes(prev => {
+                const nova = prev.filter(e => e.id !== equipeId);
+                setEquipeAtiva(nova[0] || null);
+                if (nova[0]) localStorage.setItem('playhub_equipe_ativa', nova[0].id);
+                else localStorage.removeItem('playhub_equipe_ativa');
+                return nova;
+            });
+
+            return { sucesso: true };
+        } catch (error) {
+            console.error('Erro ao sair da equipe:', error);
+            return { sucesso: false, erro: error.message };
+        }
+    };
+
+    const transferirTitularidade = async (equipeId, novoAdminMembroId) => {
+        try {
+            // Promover o novo admin
+            const { error: errPromover } = await supabase
+                .from('membros_equipe')
+                .update({ papel: 'admin', permissoes: [] })
+                .eq('id', novoAdminMembroId);
+            if (errPromover) throw errPromover;
+
+            // Rebaixar o admin atual para sub_admin
+            const { data: membroAtual } = await supabase
+                .from('membros_equipe')
+                .select('id')
+                .eq('equipe_id', equipeId)
+                .eq('usuario_id', usuario.id)
+                .single();
+
+            if (membroAtual) {
+                await supabase
+                    .from('membros_equipe')
+                    .update({ papel: 'sub_admin', permissoes: [] })
+                    .eq('id', membroAtual.id);
+            }
+
+            // Recarrega as equipes para refletir o novo papel
+            await carregarEquipes();
+            return { sucesso: true };
+        } catch (error) {
+            console.error('Erro ao transferir titularidade:', error);
+            return { sucesso: false, erro: error.message };
+        }
+    };
+
     const responderConvite = async (conviteId, aceito, mensagemResposta = '') => {
+
         try {
             const { data: convite, error: errBusca } = await supabase
                 .from('convites_equipe')
@@ -749,6 +818,8 @@ export const EquipeProvedor = ({ children }) => {
         responderConvite,
         carregarConvitesEnviados,
         convitesPendentesGlobais,
+        sairDaEquipe,
+        transferirTitularidade,
     };
 
 

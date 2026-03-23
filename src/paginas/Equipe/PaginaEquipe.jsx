@@ -4,7 +4,7 @@ import { usarAutenticacao } from '../../contextos/AutenticacaoContexto';
 import { 
   Share2, MapPin, Trophy, Users, Globe, Lock, ArrowLeft, Search,
   MessageCircle, Clipboard, CheckCircle2, Edit2, Trash2, ExternalLink,
-  Mail, Check, X, Crown, Link, Building2, Shield, Calendar, DollarSign
+  Mail, Check, X, Crown, Link, Building2, Shield, Calendar, DollarSign, LogOut
 } from 'lucide-react';
 import ModalCriacaoEquipe from '../../componentes/Equipe/ModalCriacaoEquipe';
 import Botao from '../../componentes/Botao/Botao';
@@ -18,7 +18,7 @@ const PaginaEquipe = ({ aoVoltar, abrirGestao }) => {
     equipes, equipeAtiva, selecionarEquipe, excluirEquipe,
     solicitarIngresso, carregarSolicitacoes, responderSolicitacao, buscarJogadores,
     enviarConvite, cancelarConvite, carregarConvitesRecebidos, responderConvite, carregarConvitesEnviados,
-    convitesPendentesGlobais
+    convitesPendentesGlobais, sairDaEquipe
   } = usarEquipe();
   
   // ── Todos os estados (ordem importa para o JS) ─────────────────
@@ -360,6 +360,21 @@ const PaginaEquipe = ({ aoVoltar, abrirGestao }) => {
                     {(ehSuperAdmin || equipeAtiva.papel === 'admin' || equipeAtiva.papel === 'sub_admin') && (
                       <Botao onClick={abrirGestao} style={{ gap: '0.5rem', background: 'linear-gradient(135deg, #0ea5e9, #2563eb)', border: 'none' }} title="Painel de Gestão da Equipe">
                         <Shield size={18} /> Gestão
+                      </Botao>
+                    )}
+                    {/* Sair da Equipe — visível para todos exceto o admin geral */}
+                    {equipeAtiva.papel !== 'admin' && (
+                      <Botao
+                        variant="secundario"
+                        onClick={async () => {
+                          if (!window.confirm(`Tem certeza que deseja sair de "${equipeAtiva.nome}"?`)) return;
+                          const res = await sairDaEquipe(equipeAtiva.id);
+                          if (!res.sucesso) alert('Erro: ' + res.erro);
+                        }}
+                        style={{ gap: '0.5rem', borderColor: 'rgba(244,63,94,0.4)', color: '#f43f5e' }}
+                        title="Sair da Equipe"
+                      >
+                        <LogOut size={18} /> Sair
                       </Botao>
                     )}
                     {equipeAtiva.papel === 'admin' && (

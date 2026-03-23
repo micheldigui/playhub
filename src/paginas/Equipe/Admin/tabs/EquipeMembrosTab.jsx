@@ -1,13 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { Search, UserMinus, ShieldCheck, Crown, Users, Star } from 'lucide-react';
+import { Search, UserMinus, Crown, Users, Star, LogOut, ArrowRightLeft, X, ShieldCheck } from 'lucide-react';
 import { usarEquipe } from '../../../../contextos/EquipeContexto';
-import Botao from '../../../../componentes/Botao/Botao';
 
 const EquipeMembrosTab = () => {
-    const { equipeAtiva, carregarMembrosEquipe, removerMembro, atualizarMembro } = usarEquipe();
+    const { equipeAtiva, carregarMembrosEquipe, removerMembro, atualizarMembro, transferirTitularidade } = usarEquipe();
     const [membros, setMembros] = useState([]);
     const [carregando, setCarregando] = useState(true);
     const [termoBusca, setTermoBusca] = useState('');
+    const [modalTransferencia, setModalTransferencia] = useState(false);
+    const [membroParaTransferir, setMembroParaTransferir] = useState(null);
+    const [salvando, setSalvando] = useState(false);
+
+    // O admin geral (dono) é o usuário com papel 'admin' na equipeAtiva
+    const euSouAdminGeral = equipeAtiva?.papel === 'admin';
 
     useEffect(() => {
         if (equipeAtiva?.id) {
@@ -19,8 +24,7 @@ const EquipeMembrosTab = () => {
         setCarregando(true);
         const data = await carregarMembrosEquipe(equipeAtiva.id);
         
-        // Ordena para que Administradores apareçam primeiro
-        const ordenados = data.sort((a, b) => {
+        const ordenados = (data || []).sort((a, b) => {
             if (a.papel === 'admin' && b.papel !== 'admin') return -1;
             if (a.papel !== 'admin' && b.papel === 'admin') return 1;
             if (a.papel === 'sub_admin' && b.papel !== 'sub_admin') return -1;
@@ -34,7 +38,6 @@ const EquipeMembrosTab = () => {
 
     const handleRemoverMembro = async (membroId, nome) => {
         if (!window.confirm(`Tem certeza que deseja remover ${nome} da equipe?`)) return;
-
         const result = await removerMembro(membroId);
         if (result.sucesso) {
             setMembros(prev => prev.filter(m => m.id !== membroId));
@@ -61,6 +64,22 @@ const EquipeMembrosTab = () => {
         }
     };
 
+    const handleTransferirTitularidade = async () => {
+        if (!membroParaTransferir) return;
+        const nome = membroParaTransferir.usuarios?.nome_completo;
+        if (!window.confirm(`⚠️ Tem certeza? ${nome} se tornará o novo Administrador Geral da equipe. Você passará a ser Co-Admin.`)) return;
+        setSalvando(true);
+        const res = await transferirTitularidade(equipeAtiva.id, membroParaTransferir.id);
+        setSalvando(false);
+        if (res.sucesso) {
+            setModalTransferencia(false);
+            setMembroParaTransferir(null);
+            await buscarMembros();
+        } else {
+            alert('Erro ao transferir: ' + res.erro);
+        }
+    };
+
     const membrosFiltrados = membros.filter(m => {
         if (!termoBusca) return true;
         const termo = termoBusca.toLowerCase();
@@ -71,6 +90,9 @@ const EquipeMembrosTab = () => {
         );
     });
 
+    // Candidatos para transferência: qualquer membro que não seja o admin atual
+    const candidatosTransferencia = membros.filter(m => m.papel !== 'admin');
+
     if (carregando) {
         return <div className="p-8 text-center text-muted">Carregando membros da equipe...</div>;
     }
@@ -78,11 +100,23 @@ const EquipeMembrosTab = () => {
     return (
         <div className="animate-fade-in">
             <div style={{ background: 'rgba(15, 23, 42, 0.6)', borderRadius: '16px', border: '1px solid rgba(255, 255, 255, 0.05)', padding: '24px' }}>
-                <div style={{ marginBottom: '24px' }}>
-                    <h3 style={{ fontSize: '1.25rem', fontWeight: '700', marginBottom: '8px', color: '#f8fafc' }}>Atletas da Equipe</h3>
-                    <p style={{ color: '#94a3b8', fontSize: '0.9rem' }}>
-                        Gerencie os jogadores que fazem parte do seu elenco atualmente.
-                    </p>
+                <div style={{ marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px' }}>
+                    <div>
+                        <h3 style={{ fontSize: '1.25rem', fontWeight: '700', marginBottom: '8px', color: '#f8fafc' }}>Atletas da Equipe</h3>
+                        <p style={{ color: '#94a3b8', fontSize: '0.9rem' }}>
+                            Gerencie os jogadores que fazem parte do seu elenco atualmente.
+                        </p>
+                    </div>
+                    {/* Botão de Transferência de Titularidade — apenas admin geral */}
+                    {euSouAdminGeral && (
+                        <button
+                            onClick={() => setModalTransferencia(true)}
+                            style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(244,63,94,0.08)', border: '1px solid rgba(244,63,94,0.25)', color: '#f43f5e', padding: '8px 14px', borderRadius: '10px', fontSize: '0.82rem', fontWeight: '600', cursor: 'pointer' }}
+                            title="Transferir titularidade da equipe"
+                        >
+                            <ArrowRightLeft size={15} /> Transferir Titularidade
+                        </button>
+                    )}
                 </div>
 
                 <div className="barra-busca-equipe" style={{ marginBottom: '24px' }}>
@@ -109,7 +143,7 @@ const EquipeMembrosTab = () => {
                                 style={{
                                     padding: '16px',
                                     background: 'rgba(255, 255, 255, 0.03)',
-                                    border: '1px solid rgba(255, 255, 255, 0.05)',
+                                    border: isAdmin ? '1px solid rgba(251,191,36,0.15)' : '1px solid rgba(255, 255, 255, 0.05)',
                                     borderRadius: '12px',
                                     display: 'flex',
                                     alignItems: 'center',
@@ -139,45 +173,50 @@ const EquipeMembrosTab = () => {
                                     </div>
                                 </div>
                                 <div style={{ flexShrink: 0, display: 'flex', gap: '8px' }}>
-                                    <button
-                                        className="btn-acao-icone"
-                                        onClick={() => handleAlterarVinculo(membro.id, membro.vinculo === 'mensalista' ? 'avulso' : 'mensalista')}
-                                        title={membro.vinculo === 'mensalista' ? "Alterar para Avulso" : "Tornar Mensalista"}
-                                        style={{ 
-                                            background: membro.vinculo === 'mensalista' ? 'rgba(251, 191, 36, 0.1)' : 'rgba(255, 255, 255, 0.05)', 
-                                            color: membro.vinculo === 'mensalista' ? '#fbbf24' : '#94a3b8', 
-                                            border: 'none',
-                                            width: '36px', height: '36px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.2s'
-                                        }}
-                                    >
-                                        {membro.vinculo === 'mensalista' ? <Star size={18} fill="currentColor" /> : <Star size={18} />}
-                                    </button>
-
+                                    {/* Alterar vínculo mensalista — qualquer gestor */}
                                     {!isAdmin && (
-                                        <>
-                                            <button
-                                                className="btn-acao-icone"
-                                                onClick={() => handleAlterarPapel(membro.id, isSubAdmin ? 'jogador' : 'sub_admin')}
-                                                title={isSubAdmin ? "Remover cargo de Co-Admin" : "Promover a Co-Admin"}
-                                                style={{ 
-                                                    background: isSubAdmin ? 'rgba(56, 189, 248, 0.1)' : 'rgba(255, 255, 255, 0.05)', 
-                                                    color: isSubAdmin ? '#38bdf8' : '#94a3b8', 
-                                                    border: 'none',
-                                                    width: '36px', height: '36px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.2s'
-                                                }}
-                                            >
-                                                <ShieldCheck size={18} />
-                                            </button>
+                                        <button
+                                            className="btn-acao-icone"
+                                            onClick={() => handleAlterarVinculo(membro.id, membro.vinculo === 'mensalista' ? 'avulso' : 'mensalista')}
+                                            title={membro.vinculo === 'mensalista' ? "Alterar para Avulso" : "Tornar Mensalista"}
+                                            style={{ 
+                                                background: membro.vinculo === 'mensalista' ? 'rgba(251, 191, 36, 0.1)' : 'rgba(255, 255, 255, 0.05)', 
+                                                color: membro.vinculo === 'mensalista' ? '#fbbf24' : '#94a3b8', 
+                                                border: 'none',
+                                                width: '36px', height: '36px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.2s'
+                                            }}
+                                        >
+                                            {membro.vinculo === 'mensalista' ? <Star size={18} fill="currentColor" /> : <Star size={18} />}
+                                        </button>
+                                    )}
 
-                                            <button 
-                                                className="btn-acao-icone btn-perigo" 
-                                                onClick={() => handleRemoverMembro(membro.id, user?.apelido || user?.nome_completo)}
-                                                title="Remover Atleta"
-                                                style={{ width: '36px', height: '36px' }}
-                                            >
-                                                <UserMinus size={18} />
-                                            </button>
-                                        </>
+                                    {/* Promover/rebaixar co-admin — APENAS o admin geral pode fazer isso */}
+                                    {!isAdmin && euSouAdminGeral && (
+                                        <button
+                                            className="btn-acao-icone"
+                                            onClick={() => handleAlterarPapel(membro.id, isSubAdmin ? 'jogador' : 'sub_admin')}
+                                            title={isSubAdmin ? "Remover cargo de Co-Admin" : "Promover a Co-Admin"}
+                                            style={{ 
+                                                background: isSubAdmin ? 'rgba(148, 163, 184, 0.1)' : 'rgba(255, 255, 255, 0.05)', 
+                                                color: isSubAdmin ? '#94a3b8' : '#64748b', 
+                                                border: 'none',
+                                                width: '36px', height: '36px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.2s'
+                                            }}
+                                        >
+                                            <Crown size={18} color={isSubAdmin ? '#94a3b8' : '#475569'} />
+                                        </button>
+                                    )}
+
+                                    {/* Remover membro — não pode remover admin */}
+                                    {!isAdmin && (
+                                        <button 
+                                            className="btn-acao-icone btn-perigo" 
+                                            onClick={() => handleRemoverMembro(membro.id, user?.apelido || user?.nome_completo)}
+                                            title="Remover Atleta"
+                                            style={{ width: '36px', height: '36px' }}
+                                        >
+                                            <UserMinus size={18} />
+                                        </button>
                                     )}
                                 </div>
                             </div>
@@ -189,6 +228,76 @@ const EquipeMembrosTab = () => {
                     )}
                 </div>
             </div>
+
+            {/* Modal de Transferência de Titularidade */}
+            {modalTransferencia && (
+                <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: '20px' }}>
+                    <div style={{ background: '#0f172a', border: '1px solid rgba(244,63,94,0.3)', borderRadius: '20px', padding: '28px', maxWidth: '480px', width: '100%' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                <ArrowRightLeft size={22} color="#f43f5e" />
+                                <h3 style={{ color: '#f8fafc', fontWeight: '700', fontSize: '1.1rem' }}>Transferir Titularidade</h3>
+                            </div>
+                            <button onClick={() => { setModalTransferencia(false); setMembroParaTransferir(null); }} style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer' }}>
+                                <X size={20} />
+                            </button>
+                        </div>
+
+                        <p style={{ color: '#94a3b8', fontSize: '0.875rem', marginBottom: '20px', lineHeight: '1.5' }}>
+                            ⚠️ Esta ação é <strong style={{ color: '#f43f5e' }}>irreversível sem a cooperação do novo admin</strong>. Selecione o membro que assumirá a titularidade:
+                        </p>
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '240px', overflowY: 'auto', marginBottom: '20px' }}>
+                            {candidatosTransferencia.map(m => {
+                                const selecionado = membroParaTransferir?.id === m.id;
+                                return (
+                                    <button
+                                        key={m.id}
+                                        onClick={() => setMembroParaTransferir(m)}
+                                        style={{
+                                            display: 'flex', alignItems: 'center', gap: '12px',
+                                            padding: '12px 14px', borderRadius: '12px', cursor: 'pointer', textAlign: 'left',
+                                            background: selecionado ? 'rgba(244,63,94,0.1)' : 'rgba(255,255,255,0.03)',
+                                            border: selecionado ? '1px solid rgba(244,63,94,0.5)' : '1px solid rgba(255,255,255,0.06)',
+                                            transition: 'all 0.2s'
+                                        }}
+                                    >
+                                        <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'rgba(255,255,255,0.07)', overflow: 'hidden', flexShrink: 0 }}>
+                                            {m.usuarios?.foto_url
+                                                ? <img src={m.usuarios.foto_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748b' }}><Users size={16} /></div>
+                                            }
+                                        </div>
+                                        <div>
+                                            <div style={{ color: '#f8fafc', fontWeight: '600', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                {m.usuarios?.nome_completo}
+                                                {m.papel === 'sub_admin' && <Crown size={12} color="#94a3b8" />}
+                                            </div>
+                                            <div style={{ color: '#64748b', fontSize: '0.78rem' }}>
+                                                {m.usuarios?.apelido ? `@${m.usuarios.apelido}` : m.usuarios?.email}
+                                            </div>
+                                        </div>
+                                    </button>
+                                );
+                            })}
+                        </div>
+
+                        <button
+                            onClick={handleTransferirTitularidade}
+                            disabled={!membroParaTransferir || salvando}
+                            style={{
+                                width: '100%', padding: '12px',
+                                background: membroParaTransferir ? 'rgba(244,63,94,0.15)' : 'rgba(255,255,255,0.04)',
+                                border: '1px solid rgba(244,63,94,0.4)',
+                                color: membroParaTransferir ? '#f43f5e' : '#475569',
+                                borderRadius: '12px', fontWeight: '600', fontSize: '0.9rem', cursor: membroParaTransferir ? 'pointer' : 'not-allowed'
+                            }}
+                        >
+                            {salvando ? 'Transferindo...' : membroParaTransferir ? `Transferir para ${membroParaTransferir.usuarios?.nome_completo}` : 'Selecione um membro acima'}
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
