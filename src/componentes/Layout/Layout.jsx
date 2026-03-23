@@ -6,6 +6,7 @@ const TITULOS_CABECALHO = {
   equipe: 'Equipe',
   perfil: 'Meu Perfil',
   explorar: 'Explorar',
+  sistema: 'Equipes do Sistema',
   configuracoes: 'Configurações'
 };
 

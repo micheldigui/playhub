@@ -4,14 +4,15 @@ import { usarAutenticacao } from '../../contextos/AutenticacaoContexto';
 import { 
   Share2, MapPin, Trophy, Users, Globe, Lock, ArrowLeft, Search,
   MessageCircle, Clipboard, CheckCircle2, Edit2, Trash2, ExternalLink,
-  Mail, Check, X, Crown, Link, Building2
+  Mail, Check, X, Crown, Link, Building2, Shield, Calendar
 } from 'lucide-react';
 import ModalCriacaoEquipe from '../../componentes/Equipe/ModalCriacaoEquipe';
 import Botao from '../../componentes/Botao/Botao';
+import AgendaTab from './tabs/AgendaTab';
 import './PaginaEquipe.css';
 
-const PaginaEquipe = ({ aoVoltar }) => {
-  const { usuario, dadosUsuario } = usarAutenticacao();
+const PaginaEquipe = ({ aoVoltar, abrirGestao }) => {
+  const { usuario, dadosUsuario, ehSuperAdmin } = usarAutenticacao();
   const { 
     equipes, equipeAtiva, selecionarEquipe, excluirEquipe,
     solicitarIngresso, carregarSolicitacoes, responderSolicitacao, buscarJogadores,
@@ -231,6 +232,30 @@ const PaginaEquipe = ({ aoVoltar }) => {
         )}
       </header>
 
+      {/* Banner de Manutenção Global */}
+      {equipeAtiva?.gestao_global && (
+        <div style={{ 
+          background: 'rgba(56, 189, 248, 0.1)', 
+          border: '1px solid rgba(56, 189, 248, 0.2)', 
+          borderRadius: '12px', 
+          padding: '1rem', 
+          marginBottom: '1.5rem',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '1rem',
+          color: '#38bdf8'
+        }}>
+          <Shield size={20} />
+          <div style={{ flex: 1 }}>
+            <strong style={{ display: 'block' }}>Modo de Manutenção (Super Admin)</strong>
+            <span style={{ fontSize: '0.85rem' }}>Você está visualizando a equipe <strong>{equipeAtiva.nome}</strong> com acesso administrativo total para suporte técnico.</span>
+          </div>
+          <Botao variant="secundario" onClick={() => { localStorage.removeItem('playhub_equipe_ativa'); window.location.reload(); }} style={{ fontSize: '0.8rem', padding: '0.4rem 0.8rem' }}>
+            Encerrar Manutenção
+          </Botao>
+        </div>
+      )}
+
       <nav className="equipe-abas">
         <button 
           className={`aba ${abaAtiva === 'minha-equipe' ? 'ativa' : ''}`}
@@ -240,10 +265,18 @@ const PaginaEquipe = ({ aoVoltar }) => {
         </button>
         {equipeAtiva && (
           <button 
+            className={`aba ${abaAtiva === 'agenda' ? 'ativa' : ''}`}
+            onClick={() => setAbaAtiva('agenda')}
+          >
+            <Calendar size={18} /> Agenda
+          </button>
+        )}
+        {(ehSuperAdmin || equipeAtiva?.papel === 'admin' || equipeAtiva?.papel === 'sub_admin') && (
+          <button 
             className={`aba ${abaAtiva === 'descobrir' ? 'ativa' : ''}`}
             onClick={() => setAbaAtiva('descobrir')}
           >
-            <Globe size={18} /> Descobrir
+            <Globe size={18} /> Descobrir Atletas
           </button>
         )}
         {equipeAtiva?.papel === 'admin' && (
@@ -303,6 +336,11 @@ const PaginaEquipe = ({ aoVoltar }) => {
                       {copiado ? <CheckCircle2 size={18} color="#10b981" /> : <Clipboard size={18} />}
                       {copiado ? 'Copiado!' : 'Copiar Link'}
                     </Botao>
+                    {(ehSuperAdmin || equipeAtiva.papel === 'admin' || equipeAtiva.papel === 'sub_admin') && (
+                      <Botao onClick={abrirGestao} style={{ gap: '0.5rem', background: 'linear-gradient(135deg, #0ea5e9, #2563eb)', border: 'none' }} title="Painel de Gestão da Equipe">
+                        <Shield size={18} /> Gestão
+                      </Botao>
+                    )}
                     {equipeAtiva.papel === 'admin' && (
                       <div className="acoes-admin">
                         <button className="btn-acao-icone" onClick={() => setModalEditarAberto(true)} title="Editar Equipe">
@@ -394,7 +432,13 @@ const PaginaEquipe = ({ aoVoltar }) => {
         </>
       )}
 
-      {abaAtiva === 'descobrir' && (
+      {abaAtiva === 'agenda' && equipeAtiva && (
+        <div style={{ marginTop: '2rem' }}>
+          <AgendaTab />
+        </div>
+      )}
+
+      {abaAtiva === 'descobrir' && (ehSuperAdmin || equipeAtiva?.papel === 'admin' || equipeAtiva?.papel === 'sub_admin') && (
         <div className="secao-descobrir">
           <header className="busca-header">
             <h2><Users size={28} /> Descobrir Jogadores</h2>

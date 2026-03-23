@@ -8,6 +8,8 @@ import PaginaPerfilEsportivo from './paginas/PerfilEsportivo/PaginaPerfilEsporti
 import PaginaEquipe from './paginas/Equipe/PaginaEquipe'
 import PaginaExplorar from './paginas/Explorar/PaginaExplorar'
 import PaginaConvite from './paginas/Equipe/PaginaConvite'
+import PaginaAdminSistema from './paginas/Admin/PaginaAdminSistema'
+import EquipeAdminDashboard from './paginas/Equipe/Admin/EquipeAdminDashboard'
 import { usarAutenticacao } from './contextos/AutenticacaoContexto'
 import { useEffect } from 'react'
 
@@ -57,7 +59,11 @@ function App() {
       case 'perfil_esportivo':
         return <PaginaPerfilEsportivo aoVoltar={() => setTelaAtiva('inicio')} />
       case 'equipe':
-        return <PaginaEquipe aoVoltar={() => setTelaAtiva('inicio')} />
+        return <PaginaEquipe aoVoltar={() => setTelaAtiva('inicio')} abrirGestao={() => setTelaAtiva('equipe_admin')} />
+      case 'equipe_admin':
+        return <EquipeAdminDashboard aoVoltar={() => setTelaAtiva('equipe')} />
+      case 'sistema':
+        return <PaginaAdminSistema aoSelecionarEquipe={() => setTelaAtiva('equipe')} />
       case 'explorar':
         return <PaginaExplorar aoVoltar={() => setTelaAtiva('inicio')} />
       case 'convite':

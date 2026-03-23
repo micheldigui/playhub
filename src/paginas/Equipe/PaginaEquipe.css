@@ -511,11 +511,12 @@
 }
 
 .modal-content {
-  background: var(--fundo-card);
+  background: var(--fundo-cartao);
   border: 1px solid rgba(255, 255, 255, 0.1);
   padding: 1.5rem;
   border-radius: 16px;
   width: 90%;
+  max-width: 500px;
   animation: slideUp 0.3s ease;
 }
 

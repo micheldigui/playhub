@@ -42,3 +42,13 @@
 .botao-cheio {
   width: 100%;
 }
+
+.botao-perigo {
+  background-color: rgba(244, 63, 94, 0.1);
+  color: #f43f5e;
+  border: 1px solid rgba(244, 63, 94, 0.2);
+}
+
+.botao-perigo:hover:not(:disabled) {
+  background-color: rgba(244, 63, 94, 0.2);
+}

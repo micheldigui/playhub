@@ -1,24 +1,27 @@
 import { useState } from 'react';
 import { 
   LayoutDashboard, Users, Settings, LogOut, Menu, X, 
-  ChevronRight, UserCircle, Trophy, Globe 
+  ChevronRight, UserCircle, Trophy, Globe, Building2 
 } from 'lucide-react';
 import './BarraLateral.css';
 import { supabase } from '../../servicos/supabase';
 import { usarEquipe } from '../../contextos/EquipeContexto';
-
-const ITENS_NAV = [
-  { id: 'inicio',           icone: LayoutDashboard, label: 'Início' },
-  { id: 'equipe',           icone: Users,            label: 'Equipe' },
-  { id: 'perfil',           icone: UserCircle,       label: 'Meu Perfil' },
-  { id: 'perfil_esportivo', icone: Trophy,           label: 'Perfil Esportivo' },
-  { id: 'explorar',         icone: Globe,            label: 'Explorar' },
-  { id: 'configuracoes',    icone: Settings,          label: 'Configurações' },
-];
+import { usarAutenticacao } from '../../contextos/AutenticacaoContexto';
 
 const BarraLateral = ({ ativo, setAtivo }) => {
   const [aberta, setAberta] = useState(false);
   const { convitesPendentesGlobais } = usarEquipe();
+  const { ehSuperAdmin } = usarAutenticacao();
+
+  const ITENS_NAV = [
+    { id: 'inicio',           icone: LayoutDashboard, label: 'Início' },
+    { id: 'equipe',           icone: Users,            label: 'Equipe' },
+    { id: 'perfil',           icone: UserCircle,       label: 'Meu Perfil' },
+    { id: 'perfil_esportivo', icone: Trophy,           label: 'Perfil Esportivo' },
+    { id: 'explorar',         icone: Globe,            label: 'Explorar' },
+    ...(ehSuperAdmin ? [{ id: 'sistema', icone: Building2, label: 'Equipes do Sistema' }] : []),
+    { id: 'configuracoes',    icone: Settings,          label: 'Configurações' },
+  ];
 
   const fazerLogout = async () => {
     await supabase.auth.signOut();

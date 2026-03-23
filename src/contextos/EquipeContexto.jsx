@@ -39,6 +39,9 @@ export const EquipeProvedor = ({ children }) => {
                 .select(`
                     equipe_id,
                     papel,
+                    permissoes,
+                    vinculo,
+                    status,
                     equipes (
                         id,
                         nome,
@@ -60,7 +63,8 @@ export const EquipeProvedor = ({ children }) => {
                         local_numero,
                         local_complemento,
                         local_mapa_link,
-                        link_grupo
+                        link_grupo,
+                        regras
                     )
                 `)
                 .eq('usuario_id', usuario.id);
@@ -69,7 +73,9 @@ export const EquipeProvedor = ({ children }) => {
             
             const listaEquipes = data.map(m => ({
                 ...m.equipes,
-                papel: m.papel
+                papel: m.papel,
+                permissoes: m.permissoes || [],
+                membroStatus: m.status
             }));
 
             setEquipes(listaEquipes);
@@ -95,6 +101,17 @@ export const EquipeProvedor = ({ children }) => {
             setEquipeAtiva(encontrada);
             localStorage.setItem('playhub_equipe_ativa', equipeId);
         }
+    };
+
+    const selecionarEquipeGlobal = (equipe) => {
+        // Para Super Admin, permitimos selecionar qualquer equipe e damos papel de admin "virtual"
+        const equipeComPapel = {
+            ...equipe,
+            papel: 'admin',
+            gestao_global: true
+        };
+        setEquipeAtiva(equipeComPapel);
+        localStorage.setItem('playhub_equipe_ativa', equipe.id);
     };
 
     const criarEquipe = async (dadosDaEquipe, arquivoLogo) => {
@@ -252,6 +269,25 @@ export const EquipeProvedor = ({ children }) => {
         }
     };
 
+    const atualizarRegrasEquipe = async (equipeId, novasRegras) => {
+        try {
+            const { error } = await supabase
+                .from('equipes')
+                .update({ regras: novasRegras })
+                .eq('id', equipeId);
+
+            if (error) throw error;
+
+            setEquipes(prev => prev.map(e => e.id === equipeId ? { ...e, regras: novasRegras } : e));
+            setEquipeAtiva(prev => prev.id === equipeId ? { ...prev, regras: novasRegras } : prev);
+
+            return { sucesso: true };
+        } catch (error) {
+            console.error('Erro ao atualizar regras:', error);
+            return { sucesso: false, erro: error.message };
+        }
+    };
+
     const excluirEquipe = async (equipeId) => {
         try {
             // 1. Verificar se a equipe tem membros (além do admin)
@@ -294,26 +330,27 @@ export const EquipeProvedor = ({ children }) => {
         }
     };
 
-    const buscarEquipesPublicas = async (filtros = {}) => {
+    const buscarEquipes = async (filtros = {}, apenasPublicas = true) => {
         setCarregando(true);
         try {
             let query = supabase
                 .from('equipes')
-                .select('*')
-                .eq('visibilidade', 'publica')
-                .eq('status', 'ativo'); // Corrigido para 'ativo' para bater com o padrão
+                .select('*, membros_equipe(count)')
+                .eq('status', 'ativo');
+
+            if (apenasPublicas) {
+                query = query.eq('visibilidade', 'publica');
+            }
 
             if (filtros.modalidade) {
                 query = query.eq('modalidade', filtros.modalidade);
             }
 
             if (filtros.cidade) {
-                // Busca inteligente: ilike permite busca parcial (ex: "ita" -> "Itaquaquecetuba")
                 query = query.ilike('local_cidade', `%${filtros.cidade}%`);
             }
 
             if (filtros.termo) {
-                // Busca por nome ou código (slug_convite)
                 query = query.or(`nome.ilike.%${filtros.termo}%,slug_convite.eq.${filtros.termo}`);
             }
 
@@ -442,6 +479,67 @@ export const EquipeProvedor = ({ children }) => {
             return { sucesso: true };
         } catch (error) {
             console.error('Erro ao responder solicitação:', error);
+            return { sucesso: false, erro: error.message };
+        }
+    };
+
+    const carregarMembrosEquipe = async (equipeId) => {
+        try {
+            const { data, error } = await supabase
+                .from('membros_equipe')
+                .select(`
+                    id,
+                    papel,
+                    permissoes,
+                    vinculo,
+                    status,
+                    entrou_em,
+                    usuarios (
+                        id,
+                        nome_completo,
+                        apelido,
+                        foto_url,
+                        email,
+                        telefone,
+                        cidade,
+                        estado
+                    )
+                `)
+                .eq('equipe_id', equipeId)
+                .in('status', ['ativo']);
+
+            if (error) throw error;
+            return data;
+        } catch (error) {
+            console.error('Erro ao carregar membros ativos:', error);
+            return [];
+        }
+    };
+
+    const removerMembro = async (membroId) => {
+        try {
+            const { error } = await supabase
+                .from('membros_equipe')
+                .delete()
+                .eq('id', membroId);
+            if (error) throw error;
+            return { sucesso: true };
+        } catch (error) {
+            console.error('Erro ao remover membro:', error);
+            return { sucesso: false, erro: error.message };
+        }
+    };
+
+    const atualizarMembro = async (membroId, atualizacoes) => {
+        try {
+            const { error } = await supabase
+                .from('membros_equipe')
+                .update(atualizacoes)
+                .eq('id', membroId);
+            if (error) throw error;
+            return { sucesso: true };
+        } catch (error) {
+            console.error('Erro ao atualizar membro:', error);
             return { sucesso: false, erro: error.message };
         }
     };
@@ -597,11 +695,16 @@ export const EquipeProvedor = ({ children }) => {
         criarEquipe,
         editarEquipe,
         excluirEquipe,
-        buscarEquipesPublicas,
+        atualizarRegrasEquipe,
+        buscarEquipes,
+        selecionarEquipeGlobal,
         solicitarIngresso,
         carregarSolicitacoes,
         responderSolicitacao,
         buscarJogadores,
+        carregarMembrosEquipe,
+        atualizarMembro,
+        removerMembro,
         enviarConvite,
         cancelarConvite,
         carregarConvitesRecebidos,

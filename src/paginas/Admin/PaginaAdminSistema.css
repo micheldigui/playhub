@@ -1,0 +1,208 @@
+.pagina-admin-sistema {
+  padding: 2rem;
+  max-width: 1400px;
+  margin: 0 auto;
+  animation: fadeIn 0.4s ease-out;
+}
+
+.admin-header {
+  margin-bottom: 2.5rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.admin-header h2 {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 2rem;
+  font-weight: 800;
+  color: #f8fafc;
+  margin-bottom: 0.5rem;
+}
+
+.admin-header p {
+  color: #94a3b8;
+  font-size: 1.1rem;
+}
+
+.barra-busca-admin {
+  display: flex;
+  gap: 16px;
+  background: rgba(15, 23, 42, 0.6);
+  padding: 20px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  margin-bottom: 32px;
+  flex-wrap: wrap;
+}
+
+.grupo-input-admin {
+  flex: 1;
+  min-width: 200px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: all 0.2s ease;
+}
+
+.grupo-input-admin:focus-within {
+  border-color: var(--primaria);
+  box-shadow: 0 0 0 2px rgba(var(--primaria-rgb), 0.2);
+}
+
+.grupo-input-admin input, 
+.grupo-input-admin select {
+  background: transparent;
+  border: none;
+  color: white;
+  width: 100%;
+  outline: none;
+  font-size: 0.95rem;
+}
+
+.grupo-input-admin select option {
+  background: #0f172a;
+}
+
+.grade-admin {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 24px;
+}
+
+.card-admin {
+  background: rgba(15, 23, 42, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card-admin:hover {
+  transform: translateY(-4px);
+  background: rgba(15, 23, 42, 0.6);
+  border-color: rgba(var(--primaria-rgb), 0.3);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+}
+
+.card-admin-topo {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 1.5rem;
+}
+
+.logo-admin, .logo-admin-placeholder {
+  width: 56px;
+  height: 56px;
+  border-radius: 12px;
+  object-fit: cover;
+  background: rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #94a3b8;
+}
+
+.card-admin-info h4 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #f1f5f9;
+  margin-bottom: 2px;
+}
+
+.card-admin-info span {
+  font-size: 0.85rem;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.card-admin-meta {
+  font-size: 0.9rem;
+  color: #94a3b8;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+}
+
+.card-admin-meta span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tag-visibilidade {
+  font-size: 0.75rem;
+  padding: 4px 10px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  text-transform: uppercase;
+  border: 1px solid transparent;
+}
+
+.tag-visibilidade.publica {
+  background: rgba(16, 185, 129, 0.1);
+  color: #10b981;
+  border-color: rgba(16, 185, 129, 0.1);
+}
+
+.tag-visibilidade.privada {
+  background: rgba(244, 63, 94, 0.1);
+  color: #f43f5e;
+  border-color: rgba(244, 63, 94, 0.1);
+}
+
+.tag-vinculo {
+  font-size: 0.7rem;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.tag-vinculo.dono {
+  background: rgba(251, 191, 36, 0.1);
+  color: #fbbf24;
+  border: 1px solid rgba(251, 191, 36, 0.2);
+}
+
+.tag-vinculo.membro {
+  background: rgba(56, 189, 248, 0.1);
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.2);
+}
+
+.admin-vazio {
+  padding: 4rem;
+  text-align: center;
+  color: #64748b;
+  background: rgba(15, 23, 42, 0.2);
+  border-radius: 20px;
+  border: 2px dashed rgba(255, 255, 255, 0.05);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 768px) {
+  .barra-busca-admin {
+    flex-direction: column;
+  }
+  .grupo-input-admin {
+    width: 100%;
+  }
+}
