@@ -131,7 +131,7 @@ const EquipeMembrosTab = () => {
                                             {user?.nome_completo}
                                         </div>
                                         {isAdmin && <span title="Administrador Geral" style={{ display: 'flex' }}><Crown size={14} color="#fbbf24" /></span>}
-                                        {isSubAdmin && <span title="Co-Admin" style={{ display: 'flex' }}><ShieldCheck size={14} color="#38bdf8" /></span>}
+                                        {isSubAdmin && <span title="Co-Administrador" style={{ display: 'flex' }}><Crown size={14} color="#94a3b8" /></span>}
                                         {membro.vinculo === 'mensalista' && <span title="Mensalista" style={{ display: 'flex' }}><Star size={14} fill="#fbbf24" color="#fbbf24" /></span>}
                                     </div>
                                     <div style={{ fontSize: '13px', color: '#64748b' }}>

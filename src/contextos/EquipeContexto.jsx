@@ -708,6 +708,21 @@ export const EquipeProvedor = ({ children }) => {
         }
     };
 
+    const atualizarPermissoesMembro = async (membroId, novasPermissoes) => {
+        try {
+            const { error } = await supabase
+                .from('membros_equipe')
+                .update({ permissoes: novasPermissoes })
+                .eq('id', membroId);
+
+            if (error) throw error;
+            return { sucesso: true };
+        } catch (error) {
+            console.error('Erro ao atualizar permissões:', error);
+            return { sucesso: false, erro: error.message };
+        }
+    };
+
     const valor = {
         equipes,
         equipeAtiva,
@@ -726,6 +741,7 @@ export const EquipeProvedor = ({ children }) => {
         buscarJogadores,
         carregarMembrosEquipe,
         atualizarMembro,
+        atualizarPermissoesMembro,
         removerMembro,
         enviarConvite,
         cancelarConvite,
@@ -734,6 +750,7 @@ export const EquipeProvedor = ({ children }) => {
         carregarConvitesEnviados,
         convitesPendentesGlobais,
     };
+
 
     return (
         <EquipeContexto.Provider value={valor}>

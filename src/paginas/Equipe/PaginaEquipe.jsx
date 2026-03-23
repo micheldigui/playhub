@@ -226,7 +226,7 @@ const PaginaEquipe = ({ aoVoltar, abrirGestao }) => {
             >
               <option value="" disabled>Selecione uma equipe...</option>
               {equipes.map(eq => (
-                <option key={eq.id} value={eq.id}>{eq.nome} {eq.papel === 'admin' ? '(👑)' : ''}</option>
+                <option key={eq.id} value={eq.id}>{eq.nome} {eq.papel === 'admin' ? '(👑)' : eq.papel === 'sub_admin' ? '(🥈)' : ''}</option>
               ))}
             </select>
           </div>

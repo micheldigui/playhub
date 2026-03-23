@@ -5,6 +5,7 @@ import { ArrowLeft, Users, Calendar, DollarSign, FileText, Settings, Shield } fr
 import Botao from '../../../componentes/Botao/Botao';
 import EquipeMembrosTab from './tabs/EquipeMembrosTab';
 import EquipeConfiguracoesTab from './tabs/EquipeConfiguracoesTab';
+import EquipePermissoesTab from './tabs/EquipePermissoesTab';
 import EquipePartidasTab from './tabs/EquipePartidasTab';
 import FinanceiroTab from '../tabs/FinanceiroTab';
 import '../PaginaEquipe.css';
@@ -108,7 +109,7 @@ const EquipeAdminDashboard = ({ aoVoltar }) => {
                 {abaAdminAtiva === 'partidas' && <EquipePartidasTab />}
                 {abaAdminAtiva === 'financeiro' && <div style={{ marginTop: '1rem' }}><FinanceiroTab /></div>}
                 {abaAdminAtiva === 'relatorios' && <div className="card-detalhe"><h3>Em breve (Migração ReportsTab)</h3></div>}
-                {abaAdminAtiva === 'permissoes' && <div className="card-detalhe"><h3>Em breve (Migração PermissionsTab)</h3></div>}
+                {abaAdminAtiva === 'permissoes' && <EquipePermissoesTab />}
                 {abaAdminAtiva === 'configuracoes' && <EquipeConfiguracoesTab />}
             </div>
         </div>
