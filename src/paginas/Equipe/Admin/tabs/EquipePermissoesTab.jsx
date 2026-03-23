@@ -60,16 +60,20 @@ const EquipePermissoesTab = () => {
         const membros = await carregarMembrosEquipe(equipeAtiva.id);
         const subs = (membros || []).filter(m => m.papel === 'sub_admin');
         setCoAdmins(subs);
-        // Inicializa o estado local com as permissões atuais
+        // Inicializa o estado local com as permissões atuais (garante sempre array)
         const estado = {};
-        subs.forEach(m => { estado[m.id] = m.permissoes || []; });
+        subs.forEach(m => { 
+            const perms = m.permissoes;
+            estado[m.id] = Array.isArray(perms) ? perms : [];
+        });
         setPermissoesLocais(estado);
         setCarregando(false);
     };
 
     const togglePermissao = (membroId, permId) => {
         setPermissoesLocais(prev => {
-            const atual = prev[membroId] || [];
+            const rawAtual = prev[membroId];
+            const atual = Array.isArray(rawAtual) ? rawAtual : [];
             const novas = atual.includes(permId)
                 ? atual.filter(p => p !== permId)
                 : [...atual, permId];
@@ -128,7 +132,8 @@ const EquipePermissoesTab = () => {
 
             {coAdmins.map(membro => {
                 const user = membro.usuarios;
-                const permMembro = permissoesLocais[membro.id] || [];
+                const rawPerms = permissoesLocais[membro.id];
+                const permMembro = Array.isArray(rawPerms) ? rawPerms : [];
                 const estasSalvando = salvando === membro.id;
                 const foiSalvo = savedId === membro.id;
 

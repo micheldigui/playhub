@@ -19,14 +19,16 @@ import {
     Clock,
     Wallet,
     CreditCard,
-    Coins
+    Coins,
+    Eye
 } from 'lucide-react';
 import { usarFinanceiro } from '../../../contextos/FinanceiroContexto';
 import { usarEquipe } from '../../../contextos/EquipeContexto';
 import Botao from '../../../componentes/Botao/Botao';
 import FinanceiroDashboard from './FinanceiroDashboard';
 
-const FinanceiroTab = () => {
+const FinanceiroTab = ({ modoLeitura = false }) => {
+
     const { 
         configuracao, 
         carregarConfiguracao, 
@@ -360,9 +362,17 @@ const FinanceiroTab = () => {
                         <button onClick={() => navegarPeriodo(1)} className="btn-icon" title="Próximo Mês"><ChevronRight size={20} color="#94a3b8" /></button>
                     </div>
 
-                    <div style={{ display: 'flex', gap: '10px' }}>
-                        <Botao variant="secundario" onClick={() => setExibirConfig(!exibirConfig)} active={exibirConfig} title="Regras Financeiras"><Settings size={18} /></Botao>
-                        <Botao variant="secundario" onClick={compartilharWhatsApp} title="Enviar Relatório"><Share2 size={18} /></Botao>
+                    <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                        {modoLeitura ? (
+                            <span style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(148,163,184,0.1)', border: '1px solid rgba(148,163,184,0.2)', color: '#94a3b8', padding: '6px 12px', borderRadius: '10px', fontSize: '0.8rem' }}>
+                                <Eye size={14} /> Somente Visualização
+                            </span>
+                        ) : (
+                            <>
+                                <Botao variant="secundario" onClick={() => setExibirConfig(!exibirConfig)} active={exibirConfig} title="Regras Financeiras"><Settings size={18} /></Botao>
+                                <Botao variant="secundario" onClick={compartilharWhatsApp} title="Enviar Relatório"><Share2 size={18} /></Botao>
+                            </>
+                        )}
                     </div>
                 </div>
 
@@ -391,39 +401,41 @@ const FinanceiroTab = () => {
                             <h4 style={{ fontWeight: '600', color: '#f8fafc' }}>{mensalidades.length > 0 ? `Atletas no Ciclo (${mensalidades.length})` : 'Status do Ciclo'}</h4>
                             {hoverBotao && <span className="legenda-ativa animacao-entrada">{hoverBotao}</span>}
                         </div>
-                        {mensalidades.length > 0 ? (
-                            <div style={{ display: 'flex', gap: '8px' }}>
-                                <button 
-                                    onClick={() => setModalImportarAberto(true)} 
-                                    onMouseEnter={() => setHoverBotao('Adicionar Atleta')}
-                                    onMouseLeave={() => setHoverBotao(null)}
-                                    style={{ background: 'rgba(56,189,248,0.1)', border: '1px solid rgba(56,189,248,0.3)', color: '#38bdf8', padding: '6px 14px', borderRadius: '10px', fontSize: '0.8rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
-                                ><Plus size={16} /> Adicionar</button>
+                        {!modoLeitura && (
+                            mensalidades.length > 0 ? (
+                                <div style={{ display: 'flex', gap: '8px' }}>
+                                    <button 
+                                        onClick={() => setModalImportarAberto(true)} 
+                                        onMouseEnter={() => setHoverBotao('Adicionar Atleta')}
+                                        onMouseLeave={() => setHoverBotao(null)}
+                                        style={{ background: 'rgba(56,189,248,0.1)', border: '1px solid rgba(56,189,248,0.3)', color: '#38bdf8', padding: '6px 14px', borderRadius: '10px', fontSize: '0.8rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
+                                    ><Plus size={16} /> Adicionar</button>
+                                    <button 
+                                        onClick={handleRemoverCiclo} 
+                                        onMouseEnter={() => setHoverBotao(confirmandoExclusao === 'ciclo_completo' ? 'Clique para Confirmar' : 'Excluir Todo o Mês')}
+                                        onMouseLeave={() => setHoverBotao(null)}
+                                        style={{ 
+                                            background: confirmandoExclusao === 'ciclo_completo' ? 'rgba(244,63,94,0.2)' : 'transparent', 
+                                            border: confirmandoExclusao === 'ciclo_completo' ? '1px solid #f43f5e' : '1px solid rgba(244,63,94,0.3)', 
+                                            color: '#f43f5e', padding: '6px 14px', borderRadius: '10px', fontSize: '0.8rem', 
+                                            opacity: (mensalidades.length > 0 && confirmandoExclusao !== 'ciclo_completo') ? 0.3 : 1, 
+                                            cursor: (mensalidades.length > 0 && confirmandoExclusao !== 'ciclo_completo') ? 'not-allowed' : 'pointer' 
+                                        }} 
+                                        disabled={mensalidades.length > 0 && confirmandoExclusao !== 'ciclo_completo'}
+                                    >{confirmandoExclusao === 'ciclo_completo' ? 'Confirmar?' : <Trash2 size={16} />}</button>
+                                </div>
+                            ) : (
                                 <button 
                                     onClick={handleRemoverCiclo} 
-                                    onMouseEnter={() => setHoverBotao(confirmandoExclusao === 'ciclo_completo' ? 'Clique para Confirmar' : 'Excluir Todo o Mês')}
+                                    onMouseEnter={() => setHoverBotao(confirmandoExclusao === 'ciclo_completo' ? 'Clique para Confirmar' : 'Remover Ciclo Vazio')}
                                     onMouseLeave={() => setHoverBotao(null)}
                                     style={{ 
                                         background: confirmandoExclusao === 'ciclo_completo' ? 'rgba(244,63,94,0.2)' : 'transparent', 
                                         border: confirmandoExclusao === 'ciclo_completo' ? '1px solid #f43f5e' : '1px solid rgba(244,63,94,0.3)', 
-                                        color: '#f43f5e', padding: '6px 14px', borderRadius: '10px', fontSize: '0.8rem', 
-                                        opacity: (mensalidades.length > 0 && confirmandoExclusao !== 'ciclo_completo') ? 0.3 : 1, 
-                                        cursor: (mensalidades.length > 0 && confirmandoExclusao !== 'ciclo_completo') ? 'not-allowed' : 'pointer' 
-                                    }} 
-                                    disabled={mensalidades.length > 0 && confirmandoExclusao !== 'ciclo_completo'}
+                                        color: '#f43f5e', padding: '6px 14px', borderRadius: '10px', fontSize: '0.8rem', cursor: 'pointer' 
+                                    }}
                                 >{confirmandoExclusao === 'ciclo_completo' ? 'Confirmar?' : <Trash2 size={16} />}</button>
-                            </div>
-                        ) : (
-                            <button 
-                                onClick={handleRemoverCiclo} 
-                                onMouseEnter={() => setHoverBotao(confirmandoExclusao === 'ciclo_completo' ? 'Clique para Confirmar' : 'Remover Ciclo Vazio')}
-                                onMouseLeave={() => setHoverBotao(null)}
-                                style={{ 
-                                    background: confirmandoExclusao === 'ciclo_completo' ? 'rgba(244,63,94,0.2)' : 'transparent', 
-                                    border: confirmandoExclusao === 'ciclo_completo' ? '1px solid #f43f5e' : '1px solid rgba(244,63,94,0.3)', 
-                                    color: '#f43f5e', padding: '6px 14px', borderRadius: '10px', fontSize: '0.8rem', cursor: 'pointer' 
-                                }}
-                            >{confirmandoExclusao === 'ciclo_completo' ? 'Confirmar?' : <Trash2 size={16} />}</button>
+                            )
                         )}
                     </div>
 
@@ -448,25 +460,27 @@ const FinanceiroTab = () => {
                                                 <p style={{ color: pag.status === 'pago' ? '#10b981' : '#f59e0b', fontWeight: '600', fontSize: '0.9rem' }}>{pag.status === 'pago' ? 'Pago' : 'Pendente'}</p>
                                                 <p style={{ color: '#64748b', fontSize: '0.75rem' }}>{formatarMoeda(pag.valor_configurado)}</p>
                                             </div>
-                                            <div style={{ display: 'flex', gap: '10px' }}>
-                                                <button 
-                                                    onClick={() => handleAlternarPagamento(pag)} 
-                                                    onMouseEnter={() => setHoverBotao(pag.status === 'pago' ? 'Marcar Pendente' : 'Marcar Pago')}
-                                                    onMouseLeave={() => setHoverBotao(null)}
-                                                    className="btn-toggle" 
-                                                    disabled={!!processando}
-                                                >{pag.status === 'pago' ? <CheckCircle2 color="#10b981" size={28} /> : <XCircle color="#f59e0b" size={28} />}</button>
-                                                <button 
-                                                    onClick={() => handleRemoverDoCiclo(pag)} 
-                                                    onMouseEnter={() => setHoverBotao(confirmandoExclusao === pag.id ? 'Clique p/ Confirmar' : 'Remover do Ciclo')}
-                                                    onMouseLeave={() => setHoverBotao(null)}
-                                                    className={`btn-excluir ${confirmandoExclusao === pag.id ? 'confirmacao-ativa' : ''}`}
-                                                    disabled={!!processando || (pag.status === 'pago' && confirmandoExclusao !== pag.id)} 
-                                                    style={{ opacity: (!!processando || (pag.status === 'pago' && confirmandoExclusao !== pag.id)) ? 0.3 : 1 }}
-                                                >
-                                                    {processando === 'remover_' + pag.id ? <Loader2 className="animate-spin" size={20} /> : confirmandoExclusao === pag.id ? <AlertCircle color="#f43f5e" size={22} /> : <Trash2 size={20} />}
-                                                </button>
-                                            </div>
+                                            {!modoLeitura && (
+                                                <div style={{ display: 'flex', gap: '10px' }}>
+                                                    <button 
+                                                        onClick={() => handleAlternarPagamento(pag)} 
+                                                        onMouseEnter={() => setHoverBotao(pag.status === 'pago' ? 'Marcar Pendente' : 'Marcar Pago')}
+                                                        onMouseLeave={() => setHoverBotao(null)}
+                                                        className="btn-toggle" 
+                                                        disabled={!!processando}
+                                                    >{pag.status === 'pago' ? <CheckCircle2 color="#10b981" size={28} /> : <XCircle color="#f59e0b" size={28} />}</button>
+                                                    <button 
+                                                        onClick={() => handleRemoverDoCiclo(pag)} 
+                                                        onMouseEnter={() => setHoverBotao(confirmandoExclusao === pag.id ? 'Clique p/ Confirmar' : 'Remover do Ciclo')}
+                                                        onMouseLeave={() => setHoverBotao(null)}
+                                                        className={`btn-excluir ${confirmandoExclusao === pag.id ? 'confirmacao-ativa' : ''}`}
+                                                        disabled={!!processando || (pag.status === 'pago' && confirmandoExclusao !== pag.id)} 
+                                                        style={{ opacity: (!!processando || (pag.status === 'pago' && confirmandoExclusao !== pag.id)) ? 0.3 : 1 }}
+                                                    >
+                                                        {processando === 'remover_' + pag.id ? <Loader2 className="animate-spin" size={20} /> : confirmandoExclusao === pag.id ? <AlertCircle color="#f43f5e" size={22} /> : <Trash2 size={20} />}
+                                                    </button>
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                 ))}

@@ -258,37 +258,55 @@ const PaginaEquipe = ({ aoVoltar, abrirGestao }) => {
       )}
 
       <nav className="equipe-abas">
+        {/* Aba 1: Minha Equipe — todos */}
         <button 
           className={`aba ${abaAtiva === 'minha-equipe' ? 'ativa' : ''}`}
           onClick={() => setAbaAtiva('minha-equipe')}
         >
           <Trophy size={18} /> Minha Equipe
         </button>
+
+        {/* Aba 2: Partidas (ex-Agenda) — todos os membros */}
         {equipeAtiva && (
           <button 
             className={`aba ${abaAtiva === 'agenda' ? 'ativa' : ''}`}
             onClick={() => setAbaAtiva('agenda')}
           >
-            <Calendar size={18} /> Agenda
+            <Calendar size={18} /> Partidas
           </button>
         )}
-        {(ehSuperAdmin || equipeAtiva?.papel === 'admin' || equipeAtiva?.papel === 'sub_admin') && (
-          <>
-            <button 
-              className={`aba ${abaAtiva === 'descobrir' ? 'ativa' : ''}`}
-              onClick={() => setAbaAtiva('descobrir')}
-            >
-              <Globe size={18} /> Descobrir Atletas
-            </button>
-            <button 
-              className={`aba ${abaAtiva === 'financeiro' ? 'ativa' : ''}`}
-              onClick={() => setAbaAtiva('financeiro')}
-            >
-              <DollarSign size={18} /> Financeiro
-            </button>
-          </>
+
+        {/* Aba 3: Financeiro — todos, mas somente leitura para membros comuns */}
+        {equipeAtiva && (
+          <button 
+            className={`aba ${abaAtiva === 'financeiro' ? 'ativa' : ''}`}
+            onClick={() => setAbaAtiva('financeiro')}
+          >
+            <DollarSign size={18} /> Financeiro
+          </button>
         )}
-        {equipeAtiva?.papel === 'admin' && (
+
+        {/* Aba 4: Descobrir Atletas — apenas admin e co-admin */}
+        {(ehSuperAdmin || equipeAtiva?.papel === 'admin' || equipeAtiva?.papel === 'sub_admin') && (
+          <button 
+            className={`aba ${abaAtiva === 'descobrir' ? 'ativa' : ''}`}
+            onClick={() => setAbaAtiva('descobrir')}
+          >
+            <Globe size={18} /> Descobrir Atletas
+          </button>
+        )}
+
+        {/* Aba 5: Convites — todos */}
+        <button 
+          className={`aba ${abaAtiva === 'convites' ? 'ativa' : ''}`}
+          onClick={() => setAbaAtiva('convites')}
+        >
+          <Mail size={18} /> Convites
+          {convitesPendentesGlobais > 0 && <span className="notificacao-badge">{convitesPendentesGlobais}</span>}
+        </button>
+
+        {/* Aba 6: Solicitações — apenas admin e co-admin */}
+        {(ehSuperAdmin || equipeAtiva?.papel === 'admin' || equipeAtiva?.papel === 'sub_admin') && (
           <button 
             className={`aba ${abaAtiva === 'solicitacoes' ? 'ativa' : ''}`}
             onClick={() => setAbaAtiva('solicitacoes')}
@@ -297,14 +315,8 @@ const PaginaEquipe = ({ aoVoltar, abrirGestao }) => {
             {(solicitacoes.length > 0) && <span className="notificacao-badge">{solicitacoes.length}</span>}
           </button>
         )}
-        <button 
-          className={`aba ${abaAtiva === 'convites' ? 'ativa' : ''}`}
-          onClick={() => setAbaAtiva('convites')}
-        >
-          <Mail size={18} /> Convites
-          {convitesPendentesGlobais > 0 && <span className="notificacao-badge">{convitesPendentesGlobais}</span>}
-        </button>
       </nav>
+
 
       {abaAtiva === 'minha-equipe' && (
         <>
@@ -449,9 +461,10 @@ const PaginaEquipe = ({ aoVoltar, abrirGestao }) => {
       
       {abaAtiva === 'financeiro' && equipeAtiva && (
         <div style={{ marginTop: '2rem' }}>
-          <FinanceiroTab />
+          <FinanceiroTab modoLeitura={equipeAtiva.papel !== 'admin' && equipeAtiva.papel !== 'sub_admin' && !ehSuperAdmin} />
         </div>
       )}
+
 
       {abaAtiva === 'descobrir' && (ehSuperAdmin || equipeAtiva?.papel === 'admin' || equipeAtiva?.papel === 'sub_admin') && (
         <div className="secao-descobrir">
