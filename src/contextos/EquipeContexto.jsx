@@ -23,13 +23,36 @@ export const EquipeProvedor = ({ children }) => {
         if (usuario) {
             carregarEquipes();
             carregarConvitesRecebidos();
+
+            // Listener realtime: detecta quando o próprio usuário é removido de uma equipe
+            const canal = supabase
+                .channel(`membros_equipe_user_${usuario.id}`)
+                .on(
+                    'postgres_changes',
+                    {
+                        event: '*', // INSERT, UPDATE, DELETE
+                        schema: 'public',
+                        table: 'membros_equipe',
+                        filter: `usuario_id=eq.${usuario.id}`
+                    },
+                    (payload) => {
+                        // Recarrega a lista de equipes para refletir a mudança (remoção, atualização de papel etc.)
+                        console.log('[Realtime] membros_equipe mudou:', payload.eventType);
+                        carregarEquipes();
+                    }
+                )
+                .subscribe();
+
+            return () => {
+                supabase.removeChannel(canal);
+            };
         } else {
             setEquipes([]);
             setEquipeAtiva(null);
             setCarregando(false);
             setConvitesPendentesGlobais(0);
         }
-    }, [usuario]);
+    }, [usuario?.id]);
 
     const carregarEquipes = async () => {
         setCarregando(true);
@@ -686,7 +709,14 @@ export const EquipeProvedor = ({ children }) => {
 
     const transferirTitularidade = async (equipeId, novoAdminMembroId) => {
         try {
-            // Promover o novo admin
+            // Buscar usuario_id do novo admin para atualizar admin_id na tabela equipes
+            const { data: novoMembroDados } = await supabase
+                .from('membros_equipe')
+                .select('usuario_id')
+                .eq('id', novoAdminMembroId)
+                .single();
+
+            // Promover o novo admin na tabela membros_equipe
             const { error: errPromover } = await supabase
                 .from('membros_equipe')
                 .update({ papel: 'admin', permissoes: [] })
@@ -706,6 +736,14 @@ export const EquipeProvedor = ({ children }) => {
                     .from('membros_equipe')
                     .update({ papel: 'sub_admin', permissoes: [] })
                     .eq('id', membroAtual.id);
+            }
+
+            // Atualizar admin_id na tabela equipes (para refletir na busca pública)
+            if (novoMembroDados?.usuario_id) {
+                await supabase
+                    .from('equipes')
+                    .update({ admin_id: novoMembroDados.usuario_id })
+                    .eq('id', equipeId);
             }
 
             // Recarrega as equipes para refletir o novo papel
