@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, UserMinus, Crown, Users, Star, LogOut, ArrowRightLeft, X, ShieldCheck } from 'lucide-react';
+import { Search, UserMinus, Crown, Users, Star, LogOut, ArrowRightLeft, X, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { usarEquipe } from '../../../../contextos/EquipeContexto';
 
 const EquipeMembrosTab = () => {
@@ -9,7 +9,9 @@ const EquipeMembrosTab = () => {
     const [termoBusca, setTermoBusca] = useState('');
     const [modalTransferencia, setModalTransferencia] = useState(false);
     const [membroParaTransferir, setMembroParaTransferir] = useState(null);
+    const [etapaConfirmacao, setEtapaConfirmacao] = useState(false); // segundo passo no modal
     const [salvando, setSalvando] = useState(false);
+    const [confirmandoRemocao, setConfirmandoRemocao] = useState(null); // ID do membro a remover
 
     // O admin geral (dono) é o usuário com papel 'admin' na equipeAtiva
     const euSouAdminGeral = equipeAtiva?.papel === 'admin';
@@ -36,8 +38,13 @@ const EquipeMembrosTab = () => {
         setCarregando(false);
     };
 
-    const handleRemoverMembro = async (membroId, nome) => {
-        if (!window.confirm(`Tem certeza que deseja remover ${nome} da equipe?`)) return;
+    const handleRemoverMembro = async (membroId) => {
+        if (confirmandoRemocao !== membroId) {
+            setConfirmandoRemocao(membroId);
+            setTimeout(() => setConfirmandoRemocao(null), 3000);
+            return;
+        }
+        setConfirmandoRemocao(null);
         const result = await removerMembro(membroId);
         if (result.sucesso) {
             setMembros(prev => prev.filter(m => m.id !== membroId));
@@ -66,17 +73,21 @@ const EquipeMembrosTab = () => {
 
     const handleTransferirTitularidade = async () => {
         if (!membroParaTransferir) return;
-        const nome = membroParaTransferir.usuarios?.nome_completo;
-        if (!window.confirm(`⚠️ Tem certeza? ${nome} se tornará o novo Administrador Geral da equipe. Você passará a ser Co-Admin.`)) return;
+        if (!etapaConfirmacao) {
+            setEtapaConfirmacao(true);
+            return;
+        }
         setSalvando(true);
         const res = await transferirTitularidade(equipeAtiva.id, membroParaTransferir.id);
         setSalvando(false);
         if (res.sucesso) {
             setModalTransferencia(false);
             setMembroParaTransferir(null);
+            setEtapaConfirmacao(false);
             await buscarMembros();
         } else {
             alert('Erro ao transferir: ' + res.erro);
+            setEtapaConfirmacao(false);
         }
     };
 
@@ -210,12 +221,17 @@ const EquipeMembrosTab = () => {
                                     {/* Remover membro — não pode remover admin */}
                                     {!isAdmin && (
                                         <button 
-                                            className="btn-acao-icone btn-perigo" 
-                                            onClick={() => handleRemoverMembro(membro.id, user?.apelido || user?.nome_completo)}
-                                            title="Remover Atleta"
-                                            style={{ width: '36px', height: '36px' }}
+                                            className={`btn-acao-icone ${confirmandoRemocao === membro.id ? 'btn-perigo' : ''}`}
+                                            onClick={() => handleRemoverMembro(membro.id)}
+                                            title={confirmandoRemocao === membro.id ? 'Clique para confirmar remoção' : 'Remover Atleta'}
+                                            style={{ 
+                                                width: '36px', height: '36px',
+                                                background: confirmandoRemocao === membro.id ? 'rgba(244,63,94,0.2)' : undefined,
+                                                border: confirmandoRemocao === membro.id ? '1px solid rgba(244,63,94,0.5)' : undefined,
+                                                transition: 'all 0.2s'
+                                            }}
                                         >
-                                            <UserMinus size={18} />
+                                            {confirmandoRemocao === membro.id ? <AlertTriangle size={18} color="#f43f5e" /> : <UserMinus size={18} />}
                                         </button>
                                     )}
                                 </div>
@@ -282,19 +298,44 @@ const EquipeMembrosTab = () => {
                             })}
                         </div>
 
-                        <button
-                            onClick={handleTransferirTitularidade}
-                            disabled={!membroParaTransferir || salvando}
-                            style={{
-                                width: '100%', padding: '12px',
-                                background: membroParaTransferir ? 'rgba(244,63,94,0.15)' : 'rgba(255,255,255,0.04)',
-                                border: '1px solid rgba(244,63,94,0.4)',
-                                color: membroParaTransferir ? '#f43f5e' : '#475569',
-                                borderRadius: '12px', fontWeight: '600', fontSize: '0.9rem', cursor: membroParaTransferir ? 'pointer' : 'not-allowed'
-                            }}
-                        >
-                            {salvando ? 'Transferindo...' : membroParaTransferir ? `Transferir para ${membroParaTransferir.usuarios?.nome_completo}` : 'Selecione um membro acima'}
-                        </button>
+                        {etapaConfirmacao ? (
+                            <div style={{ marginTop: '4px' }}>
+                                <div style={{ background: 'rgba(244,63,94,0.1)', border: '1px solid rgba(244,63,94,0.3)', borderRadius: '12px', padding: '14px', marginBottom: '12px', display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
+                                    <AlertTriangle size={18} color="#f43f5e" style={{ flexShrink: 0, marginTop: '1px' }} />
+                                    <p style={{ color: '#f43f5e', fontSize: '0.85rem', lineHeight: '1.5', margin: 0 }}>
+                                        <strong>{membroParaTransferir?.usuarios?.nome_completo}</strong> se tornará o novo Administrador Geral. Você passará a ser Co-Admin.
+                                        <br /><span style={{ color: '#94a3b8', fontSize: '0.8rem' }}>Esta ação não pode ser desfeita sozinho.</span>
+                                    </p>
+                                </div>
+                                <div style={{ display: 'flex', gap: '8px' }}>
+                                    <button
+                                        onClick={() => setEtapaConfirmacao(false)}
+                                        style={{ flex: 1, padding: '11px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#94a3b8', borderRadius: '10px', fontWeight: '600', fontSize: '0.88rem', cursor: 'pointer' }}
+                                    >Cancelar</button>
+                                    <button
+                                        onClick={handleTransferirTitularidade}
+                                        disabled={salvando}
+                                        style={{ flex: 2, padding: '11px', background: 'rgba(244,63,94,0.2)', border: '1px solid rgba(244,63,94,0.5)', color: '#f43f5e', borderRadius: '10px', fontWeight: '700', fontSize: '0.88rem', cursor: 'pointer' }}
+                                    >
+                                        {salvando ? 'Transferindo...' : 'Confirmar Transferência'}
+                                    </button>
+                                </div>
+                            </div>
+                        ) : (
+                            <button
+                                onClick={handleTransferirTitularidade}
+                                disabled={!membroParaTransferir || salvando}
+                                style={{
+                                    width: '100%', padding: '12px',
+                                    background: membroParaTransferir ? 'rgba(244,63,94,0.15)' : 'rgba(255,255,255,0.04)',
+                                    border: '1px solid rgba(244,63,94,0.4)',
+                                    color: membroParaTransferir ? '#f43f5e' : '#475569',
+                                    borderRadius: '12px', fontWeight: '600', fontSize: '0.9rem', cursor: membroParaTransferir ? 'pointer' : 'not-allowed'
+                                }}
+                            >
+                                {membroParaTransferir ? `Transferir para ${membroParaTransferir.usuarios?.nome_completo}` : 'Selecione um membro acima'}
+                            </button>
+                        )}
                     </div>
                 </div>
             )}

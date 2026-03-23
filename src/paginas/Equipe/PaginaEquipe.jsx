@@ -367,16 +367,16 @@ const PaginaEquipe = ({ aoVoltar, abrirGestao }) => {
                       <Botao
                         variant="secundario"
                         onClick={async () => {
-                          if (!window.confirm(`Tem certeza que deseja sair de "${equipeAtiva.nome}"?`)) return;
                           const res = await sairDaEquipe(equipeAtiva.id);
                           if (!res.sucesso) alert('Erro: ' + res.erro);
                         }}
                         style={{ gap: '0.5rem', borderColor: 'rgba(244,63,94,0.4)', color: '#f43f5e' }}
                         title="Sair da Equipe"
                       >
-                        <LogOut size={18} /> Sair
+                        <LogOut size={18} /> Sair da Equipe
                       </Botao>
                     )}
+
                     {equipeAtiva.papel === 'admin' && (
                       <div className="acoes-admin">
                         <button className="btn-acao-icone" onClick={() => setModalEditarAberto(true)} title="Editar Equipe">
