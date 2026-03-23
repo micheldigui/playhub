@@ -3,6 +3,7 @@ import { X, Calendar, MapPin, Clock, Users, Star, DollarSign } from 'lucide-reac
 import { usarPartidas } from '../../../../contextos/PartidasContexto';
 import { usarEquipe } from '../../../../contextos/EquipeContexto';
 import { usarAutenticacao } from '../../../../contextos/AutenticacaoContexto';
+import { usarFinanceiro } from '../../../../contextos/FinanceiroContexto';
 import Botao from '../../../../componentes/Botao/Botao';
 import '../../../../componentes/Modal/Modal.css';
 
@@ -10,9 +11,11 @@ const ModalDetalhesPartida = ({ isOpen, onClose, partida }) => {
     const { usuario } = usarAutenticacao();
     const { buscarPresencas, confirmarPresenca, cancelarPresenca } = usarPartidas();
     const { equipeAtiva, carregarMembrosEquipe } = usarEquipe();
+    const { buscarPagamentosAvulsosPartida, registrarPagamentoAvulso, removerPagamentoAvulso } = usarFinanceiro();
 
     const [presencas, setPresencas] = useState([]);
     const [membros, setMembros] = useState([]);
+    const [pagamentos, setPagamentos] = useState([]);
     const [carregando, setCarregando] = useState(true);
     const [processandoAcao, setProcessandoAcao] = useState(false);
 
@@ -26,9 +29,10 @@ const ModalDetalhesPartida = ({ isOpen, onClose, partida }) => {
         setCarregando(true);
         try {
             // Busca presencas do banco e os membros da equipe para pegar os vínculos
-            const [respPresencas, respMembros] = await Promise.all([
+            const [respPresencas, respMembros, respPagamentos] = await Promise.all([
                 buscarPresencas(partida.id),
-                carregarMembrosEquipe(equipeAtiva.id)
+                carregarMembrosEquipe(equipeAtiva.id),
+                buscarPagamentosAvulsosPartida(partida.id)
             ]);
 
             if (respPresencas.sucesso) {
@@ -36,6 +40,9 @@ const ModalDetalhesPartida = ({ isOpen, onClose, partida }) => {
             }
             if (respMembros) {
                 setMembros(respMembros);
+            }
+            if (respPagamentos) {
+                setPagamentos(respPagamentos);
             }
         } catch (error) {
             console.error('Erro ao carregar detalhes da partida:', error);
@@ -134,6 +141,25 @@ const ModalDetalhesPartida = ({ isOpen, onClose, partida }) => {
             }
         }
         setProcessandoAcao(false);
+    };
+
+    const handleTogglePagamentoAvulso = async (usuarioId, jaPago) => {
+        if (!isAdmin) return;
+        
+        try {
+            if (jaPago) {
+                await removerPagamentoAvulso(partida.id, usuarioId);
+            } else {
+                await registrarPagamentoAvulso({
+                    partida_id: partida.id,
+                    usuario_id: usuarioId,
+                    valor_pago: partida.valor_avulso || 0
+                });
+            }
+            await carregarDados();
+        } catch (error) {
+            console.error('Erro ao alternar pagamento avulso:', error);
+        }
     };
 
     const formatarData = (dataDb) => {
@@ -239,9 +265,36 @@ const ModalDetalhesPartida = ({ isOpen, onClose, partida }) => {
                                                     <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'rgba(255,255,255,0.1)', overflow: 'hidden' }}>
                                                         {u?.foto_url ? <img src={u.foto_url} alt="avatar" style={{width:'100%', height:'100%', objectFit:'cover'}}/> : <Users size={16} style={{margin:'8px'}}/>}
                                                     </div>
-                                                    <div style={{ flex: 1, color: '#f8fafc', fontWeight: '500', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                        {u?.nome_completo || 'Desconhecido'}
-                                                        {vinculo === 'mensalista' && <Star size={14} fill="#fbbf24" color="#fbbf24" title="Mensalista" />}
+                                                    <div style={{ flex: 1, color: '#f8fafc', fontWeight: '500', display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'space-between' }}>
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                            {u?.nome_completo || 'Desconhecido'}
+                                                            {vinculo === 'mensalista' ? (
+                                                                <Star size={14} fill="#fbbf24" color="#fbbf24" title="Mensalista" />
+                                                            ) : (
+                                                                <span style={{ fontSize: '0.7rem', background: 'rgba(255,255,255,0.05)', padding: '2px 6px', borderRadius: '4px', color: '#94a3b8' }}>Avulso</span>
+                                                            )}
+                                                        </div>
+
+                                                        {vinculo === 'avulso' && isAdmin && (
+                                                            <button 
+                                                                onClick={() => handleTogglePagamentoAvulso(u.id, pagamentos.some(pg => pg.usuario_id === u.id))}
+                                                                style={{ 
+                                                                    background: 'transparent', 
+                                                                    border: 'none', 
+                                                                    cursor: 'pointer',
+                                                                    padding: '4px',
+                                                                    display: 'flex',
+                                                                    alignItems: 'center',
+                                                                    justifyContent: 'center'
+                                                                }}
+                                                            >
+                                                                <DollarSign 
+                                                                    size={18} 
+                                                                    color={pagamentos.some(pg => pg.usuario_id === u.id) ? '#10b981' : '#64748b'} 
+                                                                    style={{ opacity: pagamentos.some(pg => pg.usuario_id === u.id) ? 1 : 0.5 }}
+                                                                />
+                                                            </button>
+                                                        )}
                                                     </div>
                                                 </div>
                                             );

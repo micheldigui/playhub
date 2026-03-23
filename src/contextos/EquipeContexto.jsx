@@ -271,12 +271,32 @@ export const EquipeProvedor = ({ children }) => {
 
     const atualizarRegrasEquipe = async (equipeId, novasRegras) => {
         try {
-            const { error } = await supabase
+            // 1. Atualizar regras no JSONB da equipe
+            const { error: errEquipe } = await supabase
                 .from('equipes')
                 .update({ regras: novasRegras })
                 .eq('id', equipeId);
 
-            if (error) throw error;
+            if (errEquipe) throw errEquipe;
+
+            // 2. Sincronizar com financeiro_config (para consistência entre contextos)
+            // Extraímos apenas os campos financeiros das regras
+            const configFinanceira = {
+                equipe_id: equipeId,
+                valor_mensalidade: Number(novasRegras.mensalidade) || 50,
+                dia_vencimento: Number(novasRegras.vencimento_dia) || 10,
+                custo_quadra: Number(novasRegras.custo_quadra) || 0,
+                limite_vencimento_horas: Number(novasRegras.horas_limite_pagamento) || 24,
+                chave_pix: novasRegras.chave_pix || ''
+            };
+
+            const { error: errFinanceiro } = await supabase
+                .from('financeiro_config')
+                .upsert(configFinanceira);
+            
+            // Nota: Se a tabela não tiver as novas colunas ainda, o upsert ignorará ou dará erro silencioso 
+            // dependendo da configuração do PostgREST. Aqui tratamos como aviso se falhar.
+            if (errFinanceiro) console.warn('Aviso: Erro ao sincronizar financeiro_config:', errFinanceiro.message);
 
             setEquipes(prev => prev.map(e => e.id === equipeId ? { ...e, regras: novasRegras } : e));
             setEquipeAtiva(prev => prev.id === equipeId ? { ...prev, regras: novasRegras } : prev);
@@ -489,6 +509,7 @@ export const EquipeProvedor = ({ children }) => {
                 .from('membros_equipe')
                 .select(`
                     id,
+                    usuario_id,
                     papel,
                     permissoes,
                     vinculo,
@@ -506,9 +527,10 @@ export const EquipeProvedor = ({ children }) => {
                     )
                 `)
                 .eq('equipe_id', equipeId)
-                .in('status', ['ativo']);
+                .in('status', ['ativo', 'pendente']);
 
             if (error) throw error;
+            console.log('carregarMembrosEquipe retornou:', data?.length, 'membros', data?.[0]);
             return data;
         } catch (error) {
             console.error('Erro ao carregar membros ativos:', error);

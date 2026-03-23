@@ -4,11 +4,12 @@ import { usarAutenticacao } from '../../contextos/AutenticacaoContexto';
 import { 
   Share2, MapPin, Trophy, Users, Globe, Lock, ArrowLeft, Search,
   MessageCircle, Clipboard, CheckCircle2, Edit2, Trash2, ExternalLink,
-  Mail, Check, X, Crown, Link, Building2, Shield, Calendar
+  Mail, Check, X, Crown, Link, Building2, Shield, Calendar, DollarSign
 } from 'lucide-react';
 import ModalCriacaoEquipe from '../../componentes/Equipe/ModalCriacaoEquipe';
 import Botao from '../../componentes/Botao/Botao';
 import AgendaTab from './tabs/AgendaTab';
+import FinanceiroTab from './tabs/FinanceiroTab';
 import './PaginaEquipe.css';
 
 const PaginaEquipe = ({ aoVoltar, abrirGestao }) => {
@@ -272,12 +273,20 @@ const PaginaEquipe = ({ aoVoltar, abrirGestao }) => {
           </button>
         )}
         {(ehSuperAdmin || equipeAtiva?.papel === 'admin' || equipeAtiva?.papel === 'sub_admin') && (
-          <button 
-            className={`aba ${abaAtiva === 'descobrir' ? 'ativa' : ''}`}
-            onClick={() => setAbaAtiva('descobrir')}
-          >
-            <Globe size={18} /> Descobrir Atletas
-          </button>
+          <>
+            <button 
+              className={`aba ${abaAtiva === 'descobrir' ? 'ativa' : ''}`}
+              onClick={() => setAbaAtiva('descobrir')}
+            >
+              <Globe size={18} /> Descobrir Atletas
+            </button>
+            <button 
+              className={`aba ${abaAtiva === 'financeiro' ? 'ativa' : ''}`}
+              onClick={() => setAbaAtiva('financeiro')}
+            >
+              <DollarSign size={18} /> Financeiro
+            </button>
+          </>
         )}
         {equipeAtiva?.papel === 'admin' && (
           <button 
@@ -435,6 +444,12 @@ const PaginaEquipe = ({ aoVoltar, abrirGestao }) => {
       {abaAtiva === 'agenda' && equipeAtiva && (
         <div style={{ marginTop: '2rem' }}>
           <AgendaTab />
+        </div>
+      )}
+      
+      {abaAtiva === 'financeiro' && equipeAtiva && (
+        <div style={{ marginTop: '2rem' }}>
+          <FinanceiroTab />
         </div>
       )}
 

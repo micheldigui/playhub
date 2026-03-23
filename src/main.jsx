@@ -4,6 +4,7 @@ import App from './App'
 import { AutenticacaoProvedor } from './contextos/AutenticacaoContexto'
 import { EquipeProvedor } from './contextos/EquipeContexto'
 import { PartidasProvider } from './contextos/PartidasContexto'
+import { FinanceiroProvider } from './contextos/FinanceiroContexto'
 import './estilos/global.css'
 
 ReactDOM.createRoot(document.getElementById('root')).render(
@@ -11,7 +12,9 @@ ReactDOM.createRoot(document.getElementById('root')).render(
     <AutenticacaoProvedor>
       <EquipeProvedor>
         <PartidasProvider>
-          <App />
+          <FinanceiroProvider>
+            <App />
+          </FinanceiroProvider>
         </PartidasProvider>
       </EquipeProvedor>
     </AutenticacaoProvedor>
