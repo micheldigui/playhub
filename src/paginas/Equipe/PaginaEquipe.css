@@ -176,6 +176,14 @@
   margin-bottom: 2rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
   padding-bottom: 0.5rem;
+  overflow-x: auto;
+  white-space: nowrap;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none; /* Firefox */
+}
+
+.equipe-abas::-webkit-scrollbar {
+  display: none; /* Chrome, Safari */
 }
 
 .aba {
@@ -192,6 +200,7 @@
   transition: all 0.2s;
   border-radius: 8px;
   position: relative;
+  flex-shrink: 0;
 }
 
 .aba:hover {
@@ -555,8 +564,12 @@
 
 @media (max-width: 768px) {
   .equipe-abas {
-    overflow-x: auto;
     padding-bottom: 1rem;
+    gap: 0.75rem;
+  }
+  .aba {
+    padding: 0.6rem 1rem;
+    font-size: 0.85rem;
   }
   .barra-busca-equipe {
     flex-direction: column;

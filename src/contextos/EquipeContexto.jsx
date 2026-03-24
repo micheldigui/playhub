@@ -18,6 +18,39 @@ export const EquipeProvedor = ({ children }) => {
     const [equipeAtiva, setEquipeAtiva] = useState(null);
     const [carregando, setCarregando] = useState(true);
     const [convitesPendentesGlobais, setConvitesPendentesGlobais] = useState(0);
+    const [solicitacoesPendentesGlobais, setSolicitacoesPendentesGlobais] = useState(0);
+
+    // Efeito para manter a contagem de aprovações pendentes em dia (SOMA P/ GESTORES)
+    useEffect(() => {
+        if (!equipes || equipes.length === 0) {
+            setSolicitacoesPendentesGlobais(0);
+            return;
+        }
+
+        const equipesGeridas = equipes.filter(e => e.papel === 'admin' || e.papel === 'sub_admin').map(e => e.id);
+        if (equipesGeridas.length === 0) {
+            setSolicitacoesPendentesGlobais(0);
+            return;
+        }
+
+        const carregarContagemSolicitacoes = async () => {
+            try {
+                const { count, error } = await supabase
+                    .from('membros_equipe')
+                    .select('*', { count: 'exact', head: true })
+                    .in('equipe_id', equipesGeridas)
+                    .eq('status', 'pendente');
+                
+                if (!error) {
+                    setSolicitacoesPendentesGlobais(count || 0);
+                }
+            } catch (err) {
+                console.error('Erro contagem solicitacoes:', err);
+            }
+        };
+
+        carregarContagemSolicitacoes();
+    }, [equipes]);
 
     useEffect(() => {
         if (usuario) {
@@ -51,6 +84,7 @@ export const EquipeProvedor = ({ children }) => {
             setEquipeAtiva(null);
             setCarregando(false);
             setConvitesPendentesGlobais(0);
+            setSolicitacoesPendentesGlobais(0);
         }
     }, [usuario?.id]);
 
@@ -68,6 +102,7 @@ export const EquipeProvedor = ({ children }) => {
                     equipes (
                         id,
                         nome,
+                        admin_id,
                         modalidade,
                         icone,
                         logo_url,
@@ -87,10 +122,13 @@ export const EquipeProvedor = ({ children }) => {
                         local_complemento,
                         local_mapa_link,
                         link_grupo,
-                        regras
+                        regras,
+                        admin_id_pendente,
+                        data_solicitacao_posse
                     )
                 `)
-                .eq('usuario_id', usuario.id);
+                .eq('usuario_id', usuario.id)
+                .eq('status', 'ativo');
 
             if (error) throw error;
             
@@ -99,7 +137,7 @@ export const EquipeProvedor = ({ children }) => {
                 papel: m.papel,
                 permissoes: m.permissoes || [],
                 membroStatus: m.status
-            }));
+            })).filter(e => e.id);
 
             setEquipes(listaEquipes);
             
@@ -457,6 +495,20 @@ export const EquipeProvedor = ({ children }) => {
             if (existente) {
                 if (existente.status === 'ativo') return { sucesso: false, erro: 'Você já é membro deste time.' };
                 if (existente.status === 'pendente') return { sucesso: false, erro: 'Sua solicitação já está pendente.' };
+                
+                // Se o status era 'saiu', 'removido' ou 'recusado', permite solicitar novamente (reativação)
+                const { error: errUpdate } = await supabase
+                    .from('membros_equipe')
+                    .update({ 
+                        status: 'pendente',
+                        papel: 'jogador',
+                        entrou_em: new Date().toISOString()
+                    })
+                    .eq('equipe_id', equipeId)
+                    .eq('usuario_id', usuario.id);
+                
+                if (errUpdate) throw errUpdate;
+                return { sucesso: true };
             }
 
             const { error } = await supabase
@@ -563,14 +615,15 @@ export const EquipeProvedor = ({ children }) => {
 
     const removerMembro = async (membroId) => {
         try {
+            // Soft-delete para preservar históricos de pagamentos/partidas
             const { error } = await supabase
                 .from('membros_equipe')
-                .delete()
+                .update({ status: 'removido' })
                 .eq('id', membroId);
             if (error) throw error;
             return { sucesso: true };
         } catch (error) {
-            console.error('Erro ao remover membro:', error);
+            console.error('Erro ao remover membro (soft-delete):', error);
             return { sucesso: false, erro: error.message };
         }
     };
@@ -636,15 +689,17 @@ export const EquipeProvedor = ({ children }) => {
 
     const cancelarConvite = async (conviteId) => {
         try {
-            const { error } = await supabase
-                .from('convites_equipe')
-                .delete()
-                .eq('id', conviteId);
+            const { data: sucesso, error } = await supabase.rpc('excluir_convite_seguro', {
+                p_convite_id: conviteId,
+                p_usuario_id: usuario.id
+            });
             
             if (error) throw error;
+            if (!sucesso) throw new Error('Permissão negada ou convite já excluído.');
+            
             return { sucesso: true };
         } catch (error) {
-            console.error('Erro ao cancelar convite:', error);
+            console.error('Erro ao cancelar/excluir convite:', error);
             return { sucesso: false, erro: error.message };
         }
     };
@@ -674,22 +729,24 @@ export const EquipeProvedor = ({ children }) => {
 
     const sairDaEquipe = async (equipeId) => {
         try {
-            const { data: membro } = await supabase
-                .from('membros_equipe')
-                .select('id, papel')
-                .eq('equipe_id', equipeId)
-                .eq('usuario_id', usuario.id)
-                .single();
+            console.log(`[Sair] Soft-delete (status: saiu): Equipe ${equipeId} / Usuario ${usuario?.id}`);
             
-            if (!membro) return { sucesso: false, erro: 'Você não é membro desta equipe.' };
-            if (membro.papel === 'admin') return { sucesso: false, erro: 'O administrador geral não pode sair. Transfira a titularidade antes.' };
+            // Em vez de deletar/atualizar com Supabase puro (que sofre de "Sucesso Fantasma" do RLS), 
+            // usamos RPC Atomic para forçar a baixa do encargo
+            const { data: sucesso, error: errUpdate } = await supabase.rpc('sair_da_equipe_seguro', {
+                p_equipe_id: equipeId,
+                p_usuario_id: usuario.id
+            });
 
-            const { error } = await supabase
-                .from('membros_equipe')
-                .delete()
-                .eq('id', membro.id);
+            if (errUpdate) {
+                console.error('[Sair] Erro RLS ao atualizar status:', errUpdate);
+                throw errUpdate;
+            }
+            if (!sucesso) {
+                throw new Error('Não foi possível sair (Você pode já ter saído ou o time não foi localizado).');
+            }
 
-            if (error) throw error;
+            console.log('[Sair] Status atualizado com sucesso para: saiu');
 
             // Remove equipe da lista local e reseta a ativa
             setEquipes(prev => {
@@ -702,91 +759,97 @@ export const EquipeProvedor = ({ children }) => {
 
             return { sucesso: true };
         } catch (error) {
-            console.error('Erro ao sair da equipe:', error);
+            console.error('Erro ao processar saída (soft-delete):', error);
             return { sucesso: false, erro: error.message };
         }
     };
 
     const transferirTitularidade = async (equipeId, novoAdminMembroId) => {
         try {
-            // Buscar usuario_id do novo admin para atualizar admin_id na tabela equipes
-            const { data: novoMembroDados } = await supabase
+            // 1. Buscar usuario_id do novo admin
+            const { data: novoMembroDados, error: errBusca } = await supabase
                 .from('membros_equipe')
                 .select('usuario_id')
                 .eq('id', novoAdminMembroId)
                 .single();
-
-            // Promover o novo admin na tabela membros_equipe
-            const { error: errPromover } = await supabase
-                .from('membros_equipe')
-                .update({ papel: 'admin', permissoes: [] })
-                .eq('id', novoAdminMembroId);
-            if (errPromover) throw errPromover;
-
-            // Rebaixar o admin atual para sub_admin
-            const { data: membroAtual } = await supabase
-                .from('membros_equipe')
-                .select('id')
-                .eq('equipe_id', equipeId)
-                .eq('usuario_id', usuario.id)
-                .single();
-
-            if (membroAtual) {
-                await supabase
-                    .from('membros_equipe')
-                    .update({ papel: 'sub_admin', permissoes: [] })
-                    .eq('id', membroAtual.id);
+            
+            if (errBusca || !novoMembroDados?.usuario_id) {
+                throw new Error('Não foi possível localizar o usuário para transferência.');
             }
 
-            // Atualizar admin_id na tabela equipes (para refletir na busca pública)
-            if (novoMembroDados?.usuario_id) {
-                await supabase
-                    .from('equipes')
-                    .update({ admin_id: novoMembroDados.usuario_id })
-                    .eq('id', equipeId);
+            console.log(`[Transfer] Solicitando transferência via RPC de ${equipeId} para ${novoMembroDados.usuario_id}`);
+            
+            // Usar RPC para ignorar falsos bloqueios de RLS
+            const { error: errEquipe } = await supabase.rpc('solicitar_transferencia_posse', {
+                p_equipe_id: equipeId,
+                p_novo_admin_id: novoMembroDados.usuario_id,
+                p_usuario_id: usuario.id
+            });
+            
+            if (errEquipe) {
+                console.error("Erro RPC:", errEquipe);
+                throw new Error(errEquipe.message || 'Falha ao processar solicitação no servidor.');
             }
 
-            // Recarrega as equipes para refletir o novo papel
             await carregarEquipes();
             return { sucesso: true };
         } catch (error) {
-            console.error('Erro ao transferir titularidade:', error);
+            console.error('Erro ao solicitar transferência:', error);
+            return { sucesso: false, erro: error.message };
+        }
+    };
+
+    const aceitarTransferenciaPosse = async (equipeId) => {
+        try {
+            if (!usuario) throw new Error('Usuário não autenticado');
+
+            // Efetivar a troca inteira (equipe + membros) em uma transação segura via RPC
+            const { error: errEquipe } = await supabase.rpc('aceitar_transferencia_posse', {
+                p_equipe_id: equipeId,
+                p_usuario_id: usuario.id
+            });
+            
+            if (errEquipe) throw new Error(errEquipe.message);
+
+            await carregarEquipes();
+            return { sucesso: true };
+        } catch (error) {
+            console.error('Erro ao aceitar transferência:', error);
+            return { sucesso: false, erro: error.message };
+        }
+    };
+
+    const recusarTransferenciaPosse = async (equipeId) => {
+        try {
+            const { error } = await supabase.rpc('cancelar_transferencia_posse', {
+                p_equipe_id: equipeId,
+                p_usuario_id: usuario.id
+            });
+            
+            if (error) throw new Error(error.message);
+            await carregarEquipes();
+            return { sucesso: true };
+        } catch (error) {
+            console.error('Erro ao recusar transferência:', error);
             return { sucesso: false, erro: error.message };
         }
     };
 
     const responderConvite = async (conviteId, aceito, mensagemResposta = '') => {
-
         try {
-            const { data: convite, error: errBusca } = await supabase
-                .from('convites_equipe')
-                .select('equipe_id')
-                .eq('id', conviteId)
-                .single();
-            if (errBusca) throw errBusca;
-
-            const { error: errUpdate } = await supabase
-                .from('convites_equipe')
-                .update({
-                    status: aceito ? 'aceito' : 'recusado',
-                    mensagem_resposta: mensagemResposta || null,
-                    respondido_em: new Date().toISOString()
-                })
-                .eq('id', conviteId);
-            if (errUpdate) throw errUpdate;
-
-            // Se aceito, adicionar como membro ativo
+            // Usa a nova RPC atômica que garante a inclusão do membro no mesmo fôlego do aceite
+            const { error: errRpc } = await supabase.rpc('responder_convite_seguro', {
+                p_convite_id: conviteId,
+                p_aceito: aceito,
+                p_usuario_id: usuario.id,
+                p_mensagem: mensagemResposta || null
+            });
+            
+            if (errRpc) throw errRpc;
+            
+            // Se aceito, atualiza a árvore global de memória para a tela principal
             if (aceito) {
-                const { error: errMembro } = await supabase
-                    .from('membros_equipe')
-                    .upsert({
-                        equipe_id: convite.equipe_id,
-                        usuario_id: usuario.id,
-                        papel: 'jogador',
-                        status: 'ativo'
-                    }, { onConflict: 'equipe_id,usuario_id' });
-                if (errMembro) throw errMembro;
-                await carregarEquipes(); // Recarregar lista de equipes
+                await carregarEquipes();
             }
             return { sucesso: true };
         } catch (error) {
@@ -830,6 +893,25 @@ export const EquipeProvedor = ({ children }) => {
         }
     };
 
+    const carregarStatusMembro = async (equipeId, usuarioId) => {
+        try {
+            const { data, error } = await supabase
+                .from('membros_equipe')
+                .select('status, papel, permissoes')
+                .eq('equipe_id', equipeId)
+                .eq('usuario_id', usuarioId)
+                .single();
+            if (error && error.code !== 'PGRST116') throw error; // PGRST116 = No rows found
+            return data;
+        } catch (error) {
+            console.error('Erro ao carregar status do membro:', error);
+            return null;
+        }
+    };
+
+    // Conta quantas solicitações de posse pendentes o usuário atual recebeu (para exibir o badge no menu)
+    const transferenciasPendentesGlobais = equipes.filter(e => e.admin_id_pendente === usuario?.id).length;
+
     const valor = {
         equipes,
         equipeAtiva,
@@ -856,8 +938,13 @@ export const EquipeProvedor = ({ children }) => {
         responderConvite,
         carregarConvitesEnviados,
         convitesPendentesGlobais,
-        sairDaEquipe,
+        solicitacoesPendentesGlobais,
+        transferenciasPendentesGlobais,
+        carregarStatusMembro,
         transferirTitularidade,
+        aceitarTransferenciaPosse,
+        recusarTransferenciaPosse,
+        sairDaEquipe,
     };
 
 

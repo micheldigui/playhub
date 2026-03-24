@@ -10,8 +10,10 @@ import { usarAutenticacao } from '../../contextos/AutenticacaoContexto';
 
 const BarraLateral = ({ ativo, setAtivo }) => {
   const [aberta, setAberta] = useState(false);
-  const { convitesPendentesGlobais } = usarEquipe();
-  const { ehSuperAdmin } = usarAutenticacao();
+  const { convitesPendentesGlobais, transferenciasPendentesGlobais, solicitacoesPendentesGlobais } = usarEquipe();
+  const { ehSuperAdmin, dadosUsuario } = usarAutenticacao();
+  
+  const totalNotificacoes = (convitesPendentesGlobais || 0) + (transferenciasPendentesGlobais || 0) + (solicitacoesPendentesGlobais || 0);
 
   const ITENS_NAV = [
     { id: 'inicio',           icone: LayoutDashboard, label: 'Início' },
@@ -38,7 +40,9 @@ const BarraLateral = ({ ativo, setAtivo }) => {
       <aside className={`barra-lateral ${aberta ? 'barra-aberta' : ''}`}>
         <div className="barra-topo">
           <div className="logotipo">
-            <div className="logo-icone">PH</div>
+            <div className="logo-icone" style={{ background: 'transparent', boxShadow: 'none' }}>
+              <img src="/icon.svg" alt="PlayHub" style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: '10px' }} />
+            </div>
             <span className="logo-texto">PlayHub</span>
           </div>
           <button className="barra-fechar" onClick={() => setAberta(false)} aria-label="Fechar menu">
@@ -56,7 +60,7 @@ const BarraLateral = ({ ativo, setAtivo }) => {
               <span className="item-nav-icone"><Icone size={19} /></span>
               <span className="item-nav-label">
                 {label}
-                {id === 'equipe' && convitesPendentesGlobais > 0 && (
+                {id === 'equipe' && totalNotificacoes > 0 && (
                   <span style={{
                     background: '#f43f5e',
                     color: 'white',
@@ -66,7 +70,7 @@ const BarraLateral = ({ ativo, setAtivo }) => {
                     borderRadius: '10px',
                     marginLeft: '8px'
                   }}>
-                    {convitesPendentesGlobais}
+                    {totalNotificacoes}
                   </span>
                 )}
               </span>
@@ -76,6 +80,21 @@ const BarraLateral = ({ ativo, setAtivo }) => {
         </nav>
 
         <div className="barra-rodape">
+          {dadosUsuario && (
+            <div className="usuario-logado">
+              <div className="usuario-foto-container">
+                {dadosUsuario.foto_url ? (
+                  <img src={dadosUsuario.foto_url} alt="Perfil" className="usuario-foto-img" />
+                ) : (
+                  <span>{dadosUsuario.nome_completo?.charAt(0).toUpperCase()}</span>
+                )}
+              </div>
+              <div className="usuario-info">
+                <span className="usuario-nome">{dadosUsuario.apelido || dadosUsuario.nome_completo?.split(' ')[0]}</span>
+                <span className="usuario-email">{dadosUsuario.email}</span>
+              </div>
+            </div>
+          )}
           <button className="botao-sair" onClick={fazerLogout}>
             <LogOut size={18} />
             <span>Sair</span>

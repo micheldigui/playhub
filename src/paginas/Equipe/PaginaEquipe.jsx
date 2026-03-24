@@ -4,12 +4,14 @@ import { usarAutenticacao } from '../../contextos/AutenticacaoContexto';
 import { 
   Share2, MapPin, Trophy, Users, Globe, Lock, ArrowLeft, Search,
   MessageCircle, Clipboard, CheckCircle2, Edit2, Trash2, ExternalLink,
-  Mail, Check, X, Crown, Link, Building2, Shield, Calendar, DollarSign, LogOut
+  Mail, Check, X, Crown, Link, Building2, Shield, Calendar, DollarSign, LogOut,
+  ChevronDown, ChevronUp, Bell
 } from 'lucide-react';
 import ModalCriacaoEquipe from '../../componentes/Equipe/ModalCriacaoEquipe';
 import Botao from '../../componentes/Botao/Botao';
 import AgendaTab from './tabs/AgendaTab';
 import FinanceiroTab from './tabs/FinanceiroTab';
+import AbaPunicoes from './tabs/AbaPunicoes';
 import './PaginaEquipe.css';
 
 const PaginaEquipe = ({ aoVoltar, abrirGestao }) => {
@@ -18,18 +20,20 @@ const PaginaEquipe = ({ aoVoltar, abrirGestao }) => {
     equipes, equipeAtiva, selecionarEquipe, excluirEquipe,
     solicitarIngresso, carregarSolicitacoes, responderSolicitacao, buscarJogadores,
     enviarConvite, cancelarConvite, carregarConvitesRecebidos, responderConvite, carregarConvitesEnviados,
-    convitesPendentesGlobais, sairDaEquipe
+    convitesPendentesGlobais, sairDaEquipe, aceitarTransferenciaPosse, recusarTransferenciaPosse
   } = usarEquipe();
   
   // ── Todos os estados (ordem importa para o JS) ─────────────────
   const [abaAtiva, setAbaAtiva] = useState('minha-equipe');
+  const [subAbaNotificacoes, setSubAbaNotificacoes] = useState('convites');
 
   const [redirecionouConvite, setRedirecionouConvite] = useState(false);
 
   // Auto-redirecionar para convites se o usuário não tiver equipe mas tiver convites pendentes (rodar só 1 vez)
   useEffect(() => {
     if (!equipeAtiva && convitesPendentesGlobais > 0 && abaAtiva === 'minha-equipe' && !redirecionouConvite) {
-      setAbaAtiva('convites');
+      setAbaAtiva('notificacoes');
+      setSubAbaNotificacoes('convites');
       setRedirecionouConvite(true);
     }
   }, [equipeAtiva, convitesPendentesGlobais, abaAtiva, redirecionouConvite]);
@@ -48,12 +52,21 @@ const PaginaEquipe = ({ aoVoltar, abrirGestao }) => {
 
   // convites
   const [convitesRecebidos, setConvitesRecebidos] = useState([]);
+  const [confirmandoSair, setConfirmandoSair] = useState(false);
   const [convitesEnviados, setConvitesEnviados] = useState([]);
   const [convitesEnviadosMap, setConvitesEnviadosMap] = useState({});
   const [modalConvite, setModalConvite] = useState(null); // { jogadorId, nome }
   const [msgConvite, setMsgConvite] = useState('');
   const [enviandoConvite, setEnviandoConvite] = useState(false);
   const [msgRespostaConvite, setMsgRespostaConvite] = useState({});
+
+  const [expandidosRecebidos, setExpandidosRecebidos] = useState({});
+  const [expandidosEnviados, setExpandidosEnviados] = useState({});
+
+  const toggleExpandido = (tipo, id) => {
+    if (tipo === 'recebidos') setExpandidosRecebidos(prev => ({...prev, [id]: !prev[id]}));
+    else setExpandidosEnviados(prev => ({...prev, [id]: !prev[id]}));
+  };
 
   // Busca dinâmica de jogadores com debounce
   useEffect(() => {
@@ -120,13 +133,19 @@ const PaginaEquipe = ({ aoVoltar, abrirGestao }) => {
     }
   };
 
-  const handleCancelarConvite = async (conviteId) => {
-    if (!window.confirm('Tem certeza que deseja cancelar este convite?')) return;
+  const handleCancelarConvite = async (conviteId, tipo = 'enviados') => {
+    console.log(`[Lixeira] Iniciando deleção do convite ${conviteId} da aba ${tipo}...`);
+    
+    // Antigo window.confirm foi removido para evitar bloqueios invisíveis do navegador
     const result = await cancelarConvite(conviteId);
+    
     if (result.sucesso) {
-      obterConvitesEnviados();
+      console.log(`[Lixeira] Deleção de ${tipo} confirmada no servidor. Recarregando dados.`);
+      if (tipo === 'enviados') obterConvitesEnviados();
+      else if (tipo === 'recebidos') obterConvitesRecebidos();
     } else {
-      alert(result.erro);
+      console.error('[Lixeira] Falha RLS/Supabase:', result.erro);
+      alert('Não foi possível excluir: ' + result.erro);
     }
   };
 
@@ -257,6 +276,70 @@ const PaginaEquipe = ({ aoVoltar, abrirGestao }) => {
         </div>
       )}
 
+      {/* Banner de Transferência de Titularidade PENDENTE (Para quem RECEBE) */}
+      {equipeAtiva?.admin_id_pendente === usuario?.id && (
+        <div style={{ 
+          background: 'rgba(16, 185, 129, 0.1)', 
+          border: '1px solid rgba(16, 185, 129, 0.2)', 
+          borderRadius: '12px', 
+          padding: '1.25rem', 
+          marginBottom: '1.5rem',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '1.5rem',
+          color: '#10b981',
+          flexWrap: 'wrap'
+        }}>
+          <Crown size={24} />
+          <div style={{ flex: 1, minWidth: '200px' }}>
+            <strong style={{ display: 'block', fontSize: '1.1rem', color: '#f1f5f9' }}>Solicitação de Titularidade</strong>
+            <span style={{ fontSize: '0.9rem', color: '#94a3b8' }}>Você foi convidado para assumir como o novo <strong>Capitão (Administrador Geral)</strong> desta equipe. Deseja aceitar esta responsabilidade?</span>
+          </div>
+          <div style={{ display: 'flex', gap: '0.75rem' }}>
+            <Botao variant="secundario" onClick={() => recusarTransferenciaPosse(equipeAtiva.id)} style={{ borderColor: 'rgba(244, 63, 94, 0.4)', color: '#f43f5e' }}>
+              Recusar
+            </Botao>
+            <Botao onClick={() => aceitarTransferenciaPosse(equipeAtiva.id)} style={{ background: '#10b981', borderColor: '#10b981' }}>
+              Aceitar Titularidade
+            </Botao>
+          </div>
+        </div>
+      )}
+
+      {/* Aviso de Aguardando Aceite (Para gestão e dono atual) */}
+      {equipeAtiva?.admin_id_pendente && equipeAtiva?.admin_id_pendente !== usuario?.id && (equipeAtiva?.papel === 'admin' || equipeAtiva?.gestao_global) && (
+        <div style={{ 
+          background: 'rgba(251, 191, 36, 0.1)', 
+          border: '1px solid rgba(251, 191, 36, 0.2)', 
+          borderRadius: '12px', 
+          padding: '1rem', 
+          marginBottom: '1.5rem',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '1rem',
+          color: '#fbbf24'
+        }}>
+          <Mail size={20} />
+          <div style={{ flex: 1 }}>
+            <span style={{ fontSize: '0.9rem' }}>Aguardando o novo capitão aceitar a titularidade. Você pode cancelar esta solicitação a qualquer momento clicando abaixo.</span>
+          </div>
+          <button 
+            onClick={() => recusarTransferenciaPosse(equipeAtiva.id)}
+            style={{ 
+              background: 'none', 
+              border: 'none', 
+              color: '#f43f5e', 
+              fontSize: '0.85rem', 
+              cursor: 'pointer', 
+              textDecoration: 'underline',
+              padding: '0.5rem'
+            }}
+          >
+            Cancelar Solicitação
+          </button>
+        </div>
+      )}
+
       <nav className="equipe-abas">
         {/* Aba 1: Minha Equipe — todos */}
         <button 
@@ -286,8 +369,8 @@ const PaginaEquipe = ({ aoVoltar, abrirGestao }) => {
           </button>
         )}
 
-        {/* Aba 4: Descobrir Atletas — apenas admin e co-admin */}
-        {(ehSuperAdmin || equipeAtiva?.papel === 'admin' || equipeAtiva?.papel === 'sub_admin') && (
+        {/* Aba 4: Descobrir Atletas — apenas admin e co-admin da equipe selecionada (ou super admin em modo manutenção) */}
+        {equipeAtiva && (equipeAtiva.papel === 'admin' || equipeAtiva.papel === 'sub_admin' || (ehSuperAdmin && equipeAtiva.gestao_global)) && (
           <button 
             className={`aba ${abaAtiva === 'descobrir' ? 'ativa' : ''}`}
             onClick={() => setAbaAtiva('descobrir')}
@@ -296,25 +379,27 @@ const PaginaEquipe = ({ aoVoltar, abrirGestao }) => {
           </button>
         )}
 
-        {/* Aba 5: Convites — todos */}
-        <button 
-          className={`aba ${abaAtiva === 'convites' ? 'ativa' : ''}`}
-          onClick={() => setAbaAtiva('convites')}
-        >
-          <Mail size={18} /> Convites
-          {convitesPendentesGlobais > 0 && <span className="notificacao-badge">{convitesPendentesGlobais}</span>}
-        </button>
-
-        {/* Aba 6: Solicitações — apenas admin e co-admin */}
-        {(ehSuperAdmin || equipeAtiva?.papel === 'admin' || equipeAtiva?.papel === 'sub_admin') && (
+        {/* Aba de Disciplina (Punições e Ocorrências) */}
+        {equipeAtiva && (
           <button 
-            className={`aba ${abaAtiva === 'solicitacoes' ? 'ativa' : ''}`}
-            onClick={() => setAbaAtiva('solicitacoes')}
+            className={`aba ${abaAtiva === 'disciplina' ? 'ativa' : ''}`}
+            onClick={() => setAbaAtiva('disciplina')}
+            title="Advertências, Faltas e Punições"
           >
-            <Users size={18} /> Solicitações
-            {(solicitacoes.length > 0) && <span className="notificacao-badge">{solicitacoes.length}</span>}
+            <Shield size={18} /> Disciplina
           </button>
         )}
+
+        {/* Aba Única de Notificações (Convites e Solicitações) */}
+        <button 
+          className={`aba ${abaAtiva === 'notificacoes' ? 'ativa' : ''}`}
+          onClick={() => setAbaAtiva('notificacoes')}
+        >
+          <Bell size={18} /> Notificações
+          {(convitesPendentesGlobais > 0 || solicitacoes.length > 0) && (
+            <span className="notificacao-badge">{convitesPendentesGlobais + solicitacoes.length}</span>
+          )}
+        </button>
       </nav>
 
 
@@ -357,23 +442,34 @@ const PaginaEquipe = ({ aoVoltar, abrirGestao }) => {
                       {copiado ? <CheckCircle2 size={18} color="#10b981" /> : <Clipboard size={18} />}
                       {copiado ? 'Copiado!' : 'Copiar Link'}
                     </Botao>
-                    {(ehSuperAdmin || equipeAtiva.papel === 'admin' || equipeAtiva.papel === 'sub_admin') && (
+                    {equipeAtiva && (equipeAtiva.papel === 'admin' || equipeAtiva.papel === 'sub_admin' || (ehSuperAdmin && equipeAtiva.gestao_global)) && (
                       <Botao onClick={abrirGestao} style={{ gap: '0.5rem', background: 'linear-gradient(135deg, #0ea5e9, #2563eb)', border: 'none' }} title="Painel de Gestão da Equipe">
                         <Shield size={18} /> Gestão
                       </Botao>
                     )}
-                    {/* Sair da Equipe — visível para todos exceto o admin geral */}
-                    {equipeAtiva.papel !== 'admin' && (
+                    {/* Sair da Equipe — visível apenas para membros que não são o dono geral */}
+                    {equipeAtiva.papel && equipeAtiva.papel !== 'admin' && (
                       <Botao
-                        variant="secundario"
+                        variant={confirmandoSair ? 'perigo' : 'secundario'}
                         onClick={async () => {
+                          if (!confirmandoSair) {
+                            setConfirmandoSair(true);
+                            setTimeout(() => setConfirmandoSair(false), 3000); // Reseta após 3s
+                            return;
+                          }
                           const res = await sairDaEquipe(equipeAtiva.id);
-                          if (!res.sucesso) alert('Erro: ' + res.erro);
+                          if (!res.sucesso) alert('Erro ao sair: ' + res.erro);
+                          setConfirmandoSair(false);
                         }}
-                        style={{ gap: '0.5rem', borderColor: 'rgba(244,63,94,0.4)', color: '#f43f5e' }}
-                        title="Sair da Equipe"
+                        style={{ 
+                          gap: '0.5rem', 
+                          borderColor: confirmandoSair ? '#f43f5e' : 'rgba(244,63,94,0.4)', 
+                          color: '#f43f5e',
+                          fontWeight: confirmandoSair ? 'bold' : 'normal'
+                        }}
+                        title={confirmandoSair ? "Clique novamente para confirmar" : "Sair da Equipe"}
                       >
-                        <LogOut size={18} /> Sair da Equipe
+                        <LogOut size={18} /> {confirmandoSair ? 'Confirmar Saída?' : 'Sair da Equipe'}
                       </Botao>
                     )}
 
@@ -593,74 +689,154 @@ const PaginaEquipe = ({ aoVoltar, abrirGestao }) => {
         </div>
       )}
 
-      {abaAtiva === 'solicitacoes' && (
-        <div className="secao-solicitacoes">
-          <h2>Solicitações Pendentes</h2>
-          <p>Atletas que desejam entrar na sua equipe.</p>
-          
-          <div className="lista-solicitacoes">
-            {solicitacoes.length > 0 ? (
-              solicitacoes.map(sol => (
-                <div key={sol.id} className="item-solicitacao">
-                  <div className="solicitacao-user">
-                    <div className="user-avatar-mini">
-                      {sol.usuarios.foto_url ? <img src={sol.usuarios.foto_url} alt={sol.usuarios.apelido} /> : <Users size={20} />}
-                    </div>
-                    <div className="user-info-mini">
-                      <strong>{sol.usuarios.nome_completo} ({sol.usuarios.apelido})</strong>
-                      <span>{sol.usuarios.cidade}, {sol.usuarios.estado}</span>
-                    </div>
-                  </div>
-                  <div className="solicitacao-acoes">
-                    <button className="btn-negar" onClick={() => handlesRespostaMembro(sol.id, false)}>Recusar</button>
-                    <button className="btn-aceitar" onClick={() => handlesRespostaMembro(sol.id, true)}>Aceitar</button>
-                  </div>
-                </div>
-              ))
-            ) : (
-              <p className="msg-vazia">Nenhuma solicitação pendente no momento.</p>
-            )}
+      {abaAtiva === 'notificacoes' && (
+        <div style={{ padding: '0 1rem' }}>
+          <header style={{ marginBottom: '20px' }}>
+            <h2 style={{ fontSize: '1.6rem', color: '#f8fafc', marginBottom: '8px' }}>Central de Notificações</h2>
+            <p style={{ color: '#94a3b8', fontSize: '0.9rem' }}>Gerencie seus convites pendentes e solicitações da equipe em um só lugar.</p>
+          </header>
+
+          <div style={{ display: 'flex', gap: '4px', background: 'rgba(15,23,42,0.6)', padding: '4px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)', width: 'fit-content', marginBottom: '20px', flexWrap: 'wrap' }}>
+              <button 
+                onClick={() => setSubAbaNotificacoes('convites')} 
+                style={{ background: subAbaNotificacoes === 'convites' ? 'rgba(56,189,248,0.15)' : 'transparent', border: subAbaNotificacoes === 'convites' ? '1px solid rgba(56,189,248,0.3)' : '1px solid transparent', color: subAbaNotificacoes === 'convites' ? '#38bdf8' : '#64748b', padding: '6px 16px', borderRadius: '8px', cursor: 'pointer', fontSize: '0.875rem', fontWeight: '500', display: 'flex', alignItems: 'center', gap: '6px' }}
+              >
+                  <Mail size={15} /> Meus Convites {convitesPendentesGlobais > 0 && `(${convitesPendentesGlobais})`}
+              </button>
+              
+              {equipeAtiva && (equipeAtiva.papel === 'admin' || equipeAtiva.papel === 'sub_admin' || (ehSuperAdmin && equipeAtiva.gestao_global)) && (
+                <button 
+                  onClick={() => setSubAbaNotificacoes('solicitacoes')} 
+                  style={{ background: subAbaNotificacoes === 'solicitacoes' ? 'rgba(56,189,248,0.15)' : 'transparent', border: subAbaNotificacoes === 'solicitacoes' ? '1px solid rgba(56,189,248,0.3)' : '1px solid transparent', color: subAbaNotificacoes === 'solicitacoes' ? '#38bdf8' : '#64748b', padding: '6px 16px', borderRadius: '8px', cursor: 'pointer', fontSize: '0.875rem', fontWeight: '500', display: 'flex', alignItems: 'center', gap: '6px' }}
+                >
+                    <Users size={15} /> Gestão da Equipe {solicitacoes.length > 0 && `(${solicitacoes.length})`}
+                </button>
+              )}
           </div>
 
-          <h3 style={{ marginTop: '2rem', marginBottom: '1rem', color: 'var(--texto-titulo)' }}>Convites Enviados</h3>
-          <p>Jogadores que você convidou para a equipe.</p>
-          <div className="lista-solicitacoes">
-            {convitesEnviados.length > 0 ? (
-              convitesEnviados.map(conv => (
-                <div key={conv.id} className="item-solicitacao">
-                  <div className="solicitacao-user">
-                    <div className="user-avatar-mini">
-                      {conv.jogador?.foto_url ? <img src={conv.jogador.foto_url} alt={conv.jogador.apelido} /> : <Users size={20} />}
+          {subAbaNotificacoes === 'solicitacoes' && equipeAtiva && (equipeAtiva.papel === 'admin' || equipeAtiva.papel === 'sub_admin' || (ehSuperAdmin && equipeAtiva.gestao_global)) && (
+            <div className="secao-solicitacoes animate-fade-in">
+              <h3>Solicitações Pendentes</h3>
+              <p style={{ color: '#64748b', marginBottom: '1rem', fontSize: '0.9rem' }}>Atletas querendo entrar no time.</p>
+              
+              <div className="lista-solicitacoes">
+                {solicitacoes.length > 0 ? (
+                  solicitacoes.map(sol => (
+                    <div key={sol.id} className="item-solicitacao">
+                      <div className="solicitacao-user">
+                        <div className="user-avatar-mini">
+                          {sol.usuarios.foto_url ? <img src={sol.usuarios.foto_url} alt={sol.usuarios.apelido} /> : <Users size={20} />}
+                        </div>
+                        <div className="user-info-mini">
+                          <strong>{sol.usuarios.nome_completo} ({sol.usuarios.apelido})</strong>
+                          <span>{sol.usuarios.cidade}, {sol.usuarios.estado}</span>
+                        </div>
+                      </div>
+                      <div className="solicitacao-acoes">
+                        <button className="btn-negar" onClick={() => handlesRespostaMembro(sol.id, false)}>Recusar</button>
+                        <button className="btn-aceitar" onClick={() => handlesRespostaMembro(sol.id, true)}>Aceitar</button>
+                      </div>
                     </div>
-                    <div className="user-info-mini">
-                      <strong>{conv.jogador?.nome_completo} ({conv.jogador?.apelido})</strong>
-                      <span>Status: <strong style={{ color: conv.status === 'pendente' ? '#fbbf24' : conv.status === 'aceito' ? '#10b981' : '#f43f5e' }}>{conv.status.toUpperCase()}</strong></span>
-                      {conv.mensagem_resposta && <span style={{ fontStyle: 'italic', marginTop: '4px' }}>Resposta: "{conv.mensagem_resposta}"</span>}
-                    </div>
-                  </div>
-                  {conv.status === 'pendente' && (
-                    <div className="solicitacao-acoes">
-                      <button className="btn-negar" onClick={() => handleCancelarConvite(conv.id)}>Cancelar</button>
-                    </div>
-                  )}
-                </div>
-              ))
-            ) : (
-              <p className="msg-vazia">Nenhum convite enviado.</p>
-            )}
-          </div>
-        </div>
-      )}
+                  ))
+                ) : (
+                  <p className="msg-vazia" style={{ padding: '2rem' }}>Nenhuma solicitação pendente no momento.</p>
+                )}
+              </div>
 
-      {abaAtiva === 'convites' && (
-        <div className="secao-solicitacoes">
-          <h2>Convites Recebidos</h2>
-          <p>Equipes que estão chamando você para participar.</p>
-          
-          <div className="grade-explorar" style={{ marginTop: '1.5rem' }}>
+              <h3 style={{ marginTop: '2.5rem', marginBottom: '0.5rem', color: 'var(--texto-titulo)' }}>Convites Emitidos (Saindo)</h3>
+              <p style={{ color: '#64748b', marginBottom: '1rem', fontSize: '0.9rem' }}>Jogadores que foram convidados por administradores do time.</p>
+              <div className="lista-solicitacoes">
+                {convitesEnviados.length > 0 ? (
+                  convitesEnviados.map(conv => {
+                    const resolvido = conv.status !== 'pendente';
+                    const expandido = expandidosEnviados[conv.id];
+
+                    if (resolvido && !expandido) {
+                      return (
+                        <div key={conv.id} className="item-solicitacao-resolvido" onClick={() => toggleExpandido('enviados', conv.id)} style={{ cursor: 'pointer', padding: '0.75rem 1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(255,255,255,0.02)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)', marginBottom: '0.5rem' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                            <div className="user-avatar-mini" style={{ width: 28, height: 28 }}>
+                              {conv.jogador?.foto_url ? <img src={conv.jogador.foto_url} alt={conv.jogador.apelido} /> : <Users size={16} />}
+                            </div>
+                            <span style={{ fontSize: '0.9rem', color: '#f1f5f9' }}>Convite para <strong>{conv.jogador?.nome_completo}</strong></span>
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                            <span style={{ fontSize: '0.75rem', fontWeight: 600, color: conv.status === 'aceito' ? '#10b981' : '#f43f5e', background: conv.status === 'aceito' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(244, 63, 94, 0.1)', padding: '4px 8px', borderRadius: '4px' }}>{conv.status.toUpperCase()}</span>
+                            <ChevronDown size={18} color="#94a3b8" />
+                          </div>
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <div key={conv.id} className="item-solicitacao" style={{ marginBottom: '0.5rem' }}>
+                        <div className="solicitacao-user">
+                          <div className="user-avatar-mini">
+                            {conv.jogador?.foto_url ? <img src={conv.jogador.foto_url} alt={conv.jogador.apelido} /> : <Users size={20} />}
+                          </div>
+                          <div className="user-info-mini">
+                            <strong>{conv.jogador?.nome_completo} ({conv.jogador?.apelido})</strong>
+                            <span>Status: <strong style={{ color: conv.status === 'pendente' ? '#fbbf24' : conv.status === 'aceito' ? '#10b981' : '#f43f5e' }}>{conv.status.toUpperCase()}</strong></span>
+                            {conv.mensagem_resposta && <span style={{ fontStyle: 'italic', marginTop: '4px' }}>Resposta: "{conv.mensagem_resposta}"</span>}
+                          </div>
+                        </div>
+                        {conv.status === 'pendente' ? (
+                          <div className="solicitacao-acoes">
+                            <button className="btn-negar" onClick={() => handleCancelarConvite(conv.id)}>Cancelar</button>
+                          </div>
+                        ) : (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', width: '100%', marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', color: '#64748b', fontSize: '0.75rem' }}>
+                              <span><strong>Enviado:</strong> {new Date(conv.criado_em).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+                              {conv.respondido_em && <span><strong>Respondido:</strong> {new Date(conv.respondido_em).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>}
+                            </div>
+                            <div style={{ display: 'flex', gap: '0.5rem', width: '100%', marginTop: '0.5rem' }}>
+                              <button onClick={() => toggleExpandido('enviados', conv.id)} style={{ background: 'none', border: 'none', color: '#94a3b8', fontSize: '0.8rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.25rem', justifyContent: 'center', flex: 1 }}>
+                                <ChevronUp size={16} /> Ocultar detalhes
+                              </button>
+                              <button onClick={() => handleCancelarConvite(conv.id)} title="Limpar histórico" style={{ background: 'rgba(244, 63, 94, 0.1)', border: '1px solid rgba(244, 63, 94, 0.2)', color: '#f43f5e', padding: '0.4rem 0.8rem', borderRadius: '6px', fontSize: '0.8rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                                <Trash2 size={14} /> Excluir
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })
+                ) : (
+                  <p className="msg-vazia" style={{ padding: '2rem' }}>Nenhum convite enviado pela equipe.</p>
+                )}
+              </div>
+            </div>
+          )}
+
+          {subAbaNotificacoes === 'convites' && (
+            <div className="secao-solicitacoes animate-fade-in">
+              <div className="grade-explorar" style={{ marginTop: '1rem' }}>
             {convitesRecebidos.length > 0 ? (
-              convitesRecebidos.map(conv => (
-                <div key={conv.id} className="card-explorar">
+              convitesRecebidos.map(conv => {
+                const resolvido = conv.status !== 'pendente';
+                const expandido = expandidosRecebidos[conv.id];
+
+                if (resolvido && !expandido) {
+                  return (
+                    <div key={conv.id} className="item-solicitacao-resolvido" onClick={() => toggleExpandido('recebidos', conv.id)} style={{ cursor: 'pointer', padding: '0.75rem 1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(255,255,255,0.02)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)', marginBottom: '0.5rem', width: '100%', gridColumn: '1 / -1' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                        <div className="logo-explorar-placeholder" style={{ width: 32, height: 32, minWidth: 32, borderRadius: '50%', padding: '2px', background: 'var(--bg-card)' }}>
+                          {conv.equipes?.logo_url ? <img src={conv.equipes.logo_url} alt={conv.equipes.nome} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} /> : <Trophy size={16} />}
+                        </div>
+                        <span style={{ fontSize: '0.9rem', color: '#f1f5f9' }}>Convite da equipe <strong>{conv.equipes?.nome}</strong></span>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                        <span style={{ fontSize: '0.75rem', fontWeight: 600, color: conv.status === 'aceito' ? '#10b981' : '#f43f5e', background: conv.status === 'aceito' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(244, 63, 94, 0.1)', padding: '4px 8px', borderRadius: '4px' }}>{conv.status.toUpperCase()}</span>
+                        <ChevronDown size={18} color="#94a3b8" />
+                      </div>
+                    </div>
+                  );
+                }
+
+                return (
+                 <div key={conv.id} className="card-explorar" style={{ marginBottom: resolvido ? '0.5rem' : '0' }}>
                   <div className="card-explorar-topo">
                     {conv.equipes?.logo_url ? (
                       <img src={conv.equipes.logo_url} alt={conv.equipes.nome} className="logo-explorar" />
@@ -706,22 +882,53 @@ const PaginaEquipe = ({ aoVoltar, abrirGestao }) => {
                       </div>
                     </div>
                   ) : (
+                    <>
                     <div className={conv.status === 'aceito' ? 'tag-ja-membro' : 'tag-pendente'} style={{ background: conv.status === 'recusado' ? 'rgba(244, 63, 94, 0.1)' : '', color: conv.status === 'recusado' ? '#f43f5e' : '', borderColor: conv.status === 'recusado' ? 'rgba(244, 63, 94, 0.2)' : '' }}>
                       {conv.status === 'aceito' ? 'Você aceitou o convite ✓' : 'Convite recusado ✗'}
                     </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', width: '100%', marginTop: '1rem', paddingTop: '0.75rem', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', color: '#64748b', fontSize: '0.75rem' }}>
+                        <span><strong>Recebido:</strong> {new Date(conv.criado_em).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+                        {conv.respondido_em && <span><strong>Respondido:</strong> {new Date(conv.respondido_em).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>}
+                      </div>
+                      <div style={{ display: 'flex', gap: '0.5rem', width: '100%', marginTop: '0.5rem' }}>
+                        <button onClick={() => toggleExpandido('recebidos', conv.id)} style={{ background: 'none', border: 'none', color: '#94a3b8', fontSize: '0.8rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.25rem', justifyContent: 'center', flex: 1 }}>
+                          <ChevronUp size={16} /> Ocultar detalhes
+                        </button>
+                        <button onClick={() => handleCancelarConvite(conv.id, 'recebidos')} title="Limpar histórico" style={{ background: 'rgba(244, 63, 94, 0.1)', border: '1px solid rgba(244, 63, 94, 0.2)', color: '#f43f5e', padding: '0.4rem 0.8rem', borderRadius: '6px', fontSize: '0.8rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                          <Trash2 size={14} /> Excluir
+                        </button>
+                      </div>
+                    </div>
+                    </>
                   )}
                 </div>
-              ))
+                );
+              })
             ) : (
-              <div className="explorar-vazio" style={{ gridColumn: '1 / -1' }}>
-                <Mail size={48} strokeWidth={1} />
-                <p>Nenhum convite recebido no momento.</p>
+              <div className="explorar-vazio" style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '2rem' }}>
+                <Mail size={48} strokeWidth={1} style={{ opacity: 0.5, marginBottom: '1rem' }} />
+                <p style={{ color: '#94a3b8' }}>Nenhum convite recebido no momento.</p>
               </div>
             )}
+            </div>
           </div>
+          )}
         </div>
       )}
 
+      {/* ABA DISCIPLINA (Renderizado Fora do Container Notificações para isolamento de Contexto) */}
+      {abaAtiva === 'disciplina' && equipeAtiva && (
+        <div style={{ padding: '0 1rem' }}>
+          <header style={{ marginBottom: '20px' }}>
+            <h2 style={{ fontSize: '1.4rem', color: '#f8fafc', marginBottom: '4px' }}>Tribunal Disciplinar</h2>
+            <p style={{ color: '#94a3b8', fontSize: '0.9rem' }}>Controle de faltas em jogos, suspensões e punições automáticas geradas pela moderação.</p>
+          </header>
+          <AbaPunicoes />
+        </div>
+      )}
+
+      {/* MODAIS GLOBAIS DA PÁGINA */}
       {modalEditarAberto && (
         <ModalCriacaoEquipe 
           isOpen={modalEditarAberto}
@@ -756,6 +963,7 @@ const PaginaEquipe = ({ aoVoltar, abrirGestao }) => {
           </div>
         </div>
       )}
+
     </div>
   );
 };

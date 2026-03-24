@@ -26,6 +26,7 @@ import { usarFinanceiro } from '../../../contextos/FinanceiroContexto';
 import { usarEquipe } from '../../../contextos/EquipeContexto';
 import Botao from '../../../componentes/Botao/Botao';
 import FinanceiroDashboard from './FinanceiroDashboard';
+import FinanceiroAvulsos from './FinanceiroAvulsos';
 
 const FinanceiroTab = ({ modoLeitura = false }) => {
 
@@ -337,15 +338,19 @@ const FinanceiroTab = ({ modoLeitura = false }) => {
         <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
             
             <div style={{ display: 'flex', gap: '4px', background: 'rgba(15,23,42,0.6)', padding: '4px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)', width: 'fit-content' }}>
-                <button onClick={() => setSubAba('gestao')} title="Gestão Mensal" style={{ background: subAba === 'gestao' ? 'rgba(56,189,248,0.15)' : 'transparent', border: subAba === 'gestao' ? '1px solid rgba(56,189,248,0.3)' : '1px solid transparent', color: subAba === 'gestao' ? '#38bdf8' : '#64748b', padding: '6px 16px', borderRadius: '8px', cursor: 'pointer', fontSize: '0.875rem', fontWeight: '500', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <DollarSign size={15} /> Gestão do Ciclo
+                <button onClick={() => setSubAba('gestao')} title="Gestão de Mensalidades" style={{ background: subAba === 'gestao' ? 'rgba(56,189,248,0.15)' : 'transparent', border: subAba === 'gestao' ? '1px solid rgba(56,189,248,0.3)' : '1px solid transparent', color: subAba === 'gestao' ? '#38bdf8' : '#64748b', padding: '6px 16px', borderRadius: '8px', cursor: 'pointer', fontSize: '0.875rem', fontWeight: '500', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <DollarSign size={15} /> Mensalistas
+                </button>
+                <button onClick={() => setSubAba('avulsos')} title="Gestão Dinâmica de Convidados" style={{ background: subAba === 'avulsos' ? 'rgba(56,189,248,0.15)' : 'transparent', border: subAba === 'avulsos' ? '1px solid rgba(56,189,248,0.3)' : '1px solid transparent', color: subAba === 'avulsos' ? '#38bdf8' : '#64748b', padding: '6px 16px', borderRadius: '8px', cursor: 'pointer', fontSize: '0.875rem', fontWeight: '500', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <Wallet size={15} /> Avulsos
                 </button>
                 <button onClick={() => setSubAba('dashboard')} title="Visão Analítica" style={{ background: subAba === 'dashboard' ? 'rgba(56,189,248,0.15)' : 'transparent', border: subAba === 'dashboard' ? '1px solid rgba(56,189,248,0.3)' : '1px solid transparent', color: subAba === 'dashboard' ? '#38bdf8' : '#64748b', padding: '6px 16px', borderRadius: '8px', cursor: 'pointer', fontSize: '0.875rem', fontWeight: '500', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <BarChart2 size={15} /> Dashboard
+                    <BarChart2 size={15} /> Dashboard Mensal
                 </button>
             </div>
 
-            {subAba === 'dashboard' ? <FinanceiroDashboard /> : (
+            {subAba === 'dashboard' ? <FinanceiroDashboard /> : 
+             subAba === 'avulsos' ? <FinanceiroAvulsos /> : (
             <>
                 <div style={{ background: 'rgba(15,23,42,0.6)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)', padding: '20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>

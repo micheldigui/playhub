@@ -260,7 +260,7 @@ const EquipeMembrosTab = () => {
                         </div>
 
                         <p style={{ color: '#94a3b8', fontSize: '0.875rem', marginBottom: '20px', lineHeight: '1.5' }}>
-                            ⚠️ Esta ação é <strong style={{ color: '#f43f5e' }}>irreversível sem a cooperação do novo admin</strong>. Selecione o membro que assumirá a titularidade:
+                            ⚠️ Isto enviará uma solicitação para o novo capitão. A transferência só será efetivada após o atleta <strong>aceitar o convite</strong>. Selecione o membro:
                         </p>
 
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '240px', overflowY: 'auto', marginBottom: '20px' }}>
@@ -303,8 +303,8 @@ const EquipeMembrosTab = () => {
                                 <div style={{ background: 'rgba(244,63,94,0.1)', border: '1px solid rgba(244,63,94,0.3)', borderRadius: '12px', padding: '14px', marginBottom: '12px', display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
                                     <AlertTriangle size={18} color="#f43f5e" style={{ flexShrink: 0, marginTop: '1px' }} />
                                     <p style={{ color: '#f43f5e', fontSize: '0.85rem', lineHeight: '1.5', margin: 0 }}>
-                                        <strong>{membroParaTransferir?.usuarios?.nome_completo}</strong> se tornará o novo Administrador Geral. Você passará a ser Co-Admin.
-                                        <br /><span style={{ color: '#94a3b8', fontSize: '0.8rem' }}>Esta ação não pode ser desfeita sozinho.</span>
+                                        Uma solicitação será enviada para <strong>{membroParaTransferir?.usuarios?.nome_completo}</strong> se tornar o novo Administrador Geral.
+                                        <br /><span style={{ color: '#94a3b8', fontSize: '0.8rem' }}>Você deixará de ser o capitão apenas quando ele aceitar a mudança.</span>
                                     </p>
                                 </div>
                                 <div style={{ display: 'flex', gap: '8px' }}>
@@ -317,7 +317,7 @@ const EquipeMembrosTab = () => {
                                         disabled={salvando}
                                         style={{ flex: 2, padding: '11px', background: 'rgba(244,63,94,0.2)', border: '1px solid rgba(244,63,94,0.5)', color: '#f43f5e', borderRadius: '10px', fontWeight: '700', fontSize: '0.88rem', cursor: 'pointer' }}
                                     >
-                                        {salvando ? 'Transferindo...' : 'Confirmar Transferência'}
+                                        {salvando ? 'Solicitando...' : 'Solicitar Transferência'}
                                     </button>
                                 </div>
                             </div>
