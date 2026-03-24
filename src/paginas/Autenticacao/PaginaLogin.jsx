@@ -28,7 +28,9 @@ const PaginaLogin = ({ aoIrParaCadastro }) => {
   return (
     <div className="auth-cartao">
       <div className="auth-logo-wrap">
-        <div className="auth-logo">PH</div>
+        <div className="auth-logo" style={{ background: 'transparent', boxShadow: 'none' }}>
+          <img src="/icon.svg" alt="PlayHub" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+        </div>
         <h2>Bem-vindo de volta!</h2>
         <p className="auth-subtitulo">Acesse sua conta PlayHub</p>
       </div>
