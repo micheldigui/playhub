@@ -3,15 +3,13 @@ import { X, Calendar, MapPin, Clock, Users, Star, DollarSign } from 'lucide-reac
 import { usarPartidas } from '../../../../contextos/PartidasContexto';
 import { usarEquipe } from '../../../../contextos/EquipeContexto';
 import { usarAutenticacao } from '../../../../contextos/AutenticacaoContexto';
-import { usarFinanceiro } from '../../../../contextos/FinanceiroContexto';
 import Botao from '../../../../componentes/Botao/Botao';
 import '../../../../componentes/Modal/Modal.css';
 
 const ModalDetalhesPartida = ({ isOpen, onClose, partida }) => {
     const { usuario } = usarAutenticacao();
-    const { buscarPresencas, confirmarPresenca, cancelarPresenca, lancarFrequencia, removerInscricaoAdmin, adicionarInscricaoAdmin, alternarPagamentoAvulso } = usarPartidas();
+    const { buscarPresencas, confirmarPresenca, cancelarPresenca, lancarFrequencia, removerInscricaoAdmin, adicionarInscricaoAdmin, alternarPagamentoAvulso, buscarPagamentosAvulsosPartida, registrarPagamentoAvulso, removerPagamentoAvulso } = usarPartidas();
     const { equipeAtiva, carregarMembrosEquipe } = usarEquipe();
-    const { buscarPagamentosAvulsosPartida, registrarPagamentoAvulso, removerPagamentoAvulso } = usarFinanceiro();
 
     const [presencas, setPresencas] = useState([]);
     const [membros, setMembros] = useState([]);

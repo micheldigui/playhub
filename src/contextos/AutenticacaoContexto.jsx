@@ -54,13 +54,32 @@ export const AutenticacaoProvedor = ({ children }) => {
         }
     };
 
+    const alternarVisibilidadePerfil = async () => {
+        if (!dadosUsuario) return;
+        const novoStatus = !dadosUsuario.perfil_publico;
+        try {
+            const { error } = await supabase
+                .from('usuarios')
+                .update({ perfil_publico: novoStatus })
+                .eq('id', dadosUsuario.id);
+
+            if (error) throw error;
+            setDadosUsuario(prev => ({ ...prev, perfil_publico: novoStatus }));
+            return { sucesso: true };
+        } catch (error) {
+            console.error('Erro alternar perfil:', error.message);
+            return { sucesso: false, erro: error.message };
+        }
+    };
+
     const valor = {
         usuario,
         dadosUsuario,
         carregando,
         ehSuperAdmin: dadosUsuario?.eh_super_admin === true,
         estaLogado: !!usuario,
-        recarregarUsuario: () => usuario && carregarDadosUsuario(usuario.id)
+        recarregarUsuario: () => usuario && carregarDadosUsuario(usuario.id),
+        alternarVisibilidadePerfil
     };
 
     return (

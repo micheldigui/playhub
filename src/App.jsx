@@ -1,7 +1,5 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Layout from './componentes/Layout/Layout'
-import Botao from './componentes/Botao/Botao'
-import ModalCriacaoEquipe from './componentes/Equipe/ModalCriacaoEquipe'
 import PaginaAutenticacao from './paginas/Autenticacao/PaginaAutenticacao'
 import PaginaPerfil from './paginas/Perfil/PaginaPerfil'
 import PaginaPerfilEsportivo from './paginas/PerfilEsportivo/PaginaPerfilEsportivo'
@@ -10,12 +8,11 @@ import PaginaExplorar from './paginas/Explorar/PaginaExplorar'
 import PaginaConvite from './paginas/Equipe/PaginaConvite'
 import PaginaAdminSistema from './paginas/Admin/PaginaAdminSistema'
 import EquipeAdminDashboard from './paginas/Equipe/Admin/EquipeAdminDashboard'
+import Dashboard from './paginas/Inicio/Dashboard'
 import { usarAutenticacao } from './contextos/AutenticacaoContexto'
-import { useEffect } from 'react'
 
 function App() {
   const { estaLogado } = usarAutenticacao()
-  const [modalAberto, setModalAberto] = useState(false)
   
   // Analisa URL na inicialização para capturar links de convite
   const pathInicial = () => {
@@ -70,27 +67,13 @@ function App() {
         return <PaginaConvite equipeId={equipeConviteId} aoVoltar={() => setTelaAtiva('inicio')} />
       case 'inicio':
       default:
-        return (
-          <div className="boas-vindas">
-            <h1>Bem-vindo ao PlayHub</h1>
-            <p>Sua nova plataforma de gestão multi-equipes rápida e profissional.</p>
-            <div style={{ marginTop: '2rem' }}>
-              <Botao onClick={() => setModalAberto(true)}>Criar Nova Equipe</Botao>
-            </div>
-          </div>
-        )
+        return <Dashboard aoNavegar={setTelaAtiva} />
     }
   }
 
   return (
     <Layout telaAtiva={telaAtiva} setTelaAtiva={setTelaAtiva}>
       {renderizarTela()}
-      
-      <ModalCriacaoEquipe
-        isOpen={modalAberto}
-        onClose={() => setModalAberto(false)}
-        aoCriarSucesso={() => setTelaAtiva('equipe')}
-      />
     </Layout>
   )
 }
