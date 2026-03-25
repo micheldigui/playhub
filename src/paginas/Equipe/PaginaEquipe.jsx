@@ -88,15 +88,15 @@ const PaginaEquipe = ({ aoVoltar, abrirGestao }) => {
     setResultadosJog(data || []);
     setBuscando(false);
   };
-  // Carregar solicitações se for admin para o badge
+  // Carregar solicitações se for admin ou sub_admin para o badge
   useEffect(() => {
-    if (equipeAtiva?.id && equipeAtiva?.papel === 'admin') {
+    if (equipeAtiva?.id && (equipeAtiva?.papel === 'admin' || equipeAtiva?.papel === 'sub_admin' || ehSuperAdmin)) {
       obterSolicitacoes();
       obterConvitesEnviados();
     }
     // Carregar convites recebidos para qualquer usuário
     obterConvitesRecebidos();
-  }, [equipeAtiva]);
+  }, [equipeAtiva, ehSuperAdmin]);
 
   const obterSolicitacoes = async () => {
     const data = await carregarSolicitacoes(equipeAtiva.id);
@@ -369,13 +369,13 @@ const PaginaEquipe = ({ aoVoltar, abrirGestao }) => {
           </button>
         )}
 
-        {/* Aba 4: Descobrir Atletas — apenas admin e co-admin da equipe selecionada (ou super admin em modo manutenção) */}
+        {/* Aba 4: Atletas — apenas admin e co-admin da equipe selecionada (ou super admin em modo manutenção) */}
         {equipeAtiva && (equipeAtiva.papel === 'admin' || equipeAtiva.papel === 'sub_admin' || (ehSuperAdmin && equipeAtiva.gestao_global)) && (
           <button 
             className={`aba ${abaAtiva === 'descobrir' ? 'ativa' : ''}`}
             onClick={() => setAbaAtiva('descobrir')}
           >
-            <Globe size={18} /> Descobrir Atletas
+            <Globe size={18} /> Atletas
           </button>
         )}
 
@@ -431,6 +431,11 @@ const PaginaEquipe = ({ aoVoltar, abrirGestao }) => {
                       {equipeAtiva.visibilidade === 'publica' ? <Globe size={14} /> : <Lock size={14} />}
                       {equipeAtiva.visibilidade === 'publica' ? 'Pública' : 'Privada'}
                     </span>
+                    {equipeAtiva.admin?.nome_completo && (
+                      <span className="badge" style={{ background: 'rgba(251, 191, 36, 0.1)', color: '#fbbf24', borderColor: 'rgba(251, 191, 36, 0.2)' }}>
+                        <Crown size={14} /> Capitão: {equipeAtiva.admin.nome_completo}
+                      </span>
+                    )}
                   </div>
 
                   <div className="acoes-equipe">
@@ -490,6 +495,7 @@ const PaginaEquipe = ({ aoVoltar, abrirGestao }) => {
               <div className="grade-detalhes" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))' }}>
                 <div className="card-detalhe">
                   <h3><Users size={20} color="var(--primaria)" /> Informações Gerais</h3>
+                  <p><strong>Capitão:</strong> {equipeAtiva.admin?.nome_completo || 'Não definido'}</p>
                   <p><strong>Nível:</strong> {equipeAtiva.nivel || 'Não definido'}</p>
                   <p><strong>Status:</strong> Ativo</p>
                   <p><strong>Visibilidade:</strong> {equipeAtiva.visibilidade === 'publica' ? 'Pública' : 'Privada'}</p>

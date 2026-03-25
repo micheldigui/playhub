@@ -2,7 +2,7 @@
 
 .dashboard-container {
     padding: 1.5rem 1.5rem 3rem;
-    max-width: 900px;
+    max-width: 1000px;
     margin: 0 auto;
     animation: fadeSlide 0.4s ease both;
 }

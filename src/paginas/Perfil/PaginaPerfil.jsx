@@ -39,7 +39,8 @@ const PaginaPerfil = ({ aoVoltar }) => {
   const [form, setForm] = useState({
     nome_completo: '', apelido: '', data_nascimento: '', genero: '',
     telefone: '', cep: '', rua: '', numero: '', complemento: '',
-    bairro: '', cidade: '', estado: '', perfil_publico: true
+    bairro: '', cidade: '', estado: '', perfil_publico: true,
+    compartilhar_whatsapp_match: false
   });
 
   // Preenche o formulário com os dados carregados do Supabase
@@ -58,7 +59,8 @@ const PaginaPerfil = ({ aoVoltar }) => {
         bairro: dadosUsuario.bairro || '',
         cidade: dadosUsuario.cidade || '',
         estado: dadosUsuario.estado || '',
-        perfil_publico: dadosUsuario.perfil_publico ?? true
+        perfil_publico: dadosUsuario.perfil_publico ?? true,
+        compartilhar_whatsapp_match: dadosUsuario.compartilhar_whatsapp_match ?? false
       });
       carregarModalidades(dadosUsuario.id);
     }
@@ -121,18 +123,39 @@ const PaginaPerfil = ({ aoVoltar }) => {
     }
   };
 
+  const getCoordenadasPorCEPLocal = async (cep) => {
+    if (!cep) return { lat: null, lon: null };
+    try {
+      const cepLimpo = cep.replace(/\D/g, '');
+      if (cepLimpo.length !== 8) return { lat: null, lon: null };
+      const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&postalcode=${cepLimpo}&country=Brazil&limit=1`, {
+        headers: { 'Accept-Language': 'pt-BR' }
+      });
+      const data = await response.json();
+      if (data && data.length > 0) {
+        return { lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon) };
+      }
+    } catch (error) {
+      console.error('Erro ao buscar coordenadas:', error);
+    }
+    return { lat: null, lon: null };
+  };
+
   const salvarPerfil = async (e) => {
     e.preventDefault();
     setMensagem({ tipo: '', texto: '' });
     setCarregando(true);
 
     try {
+      // 0. Obter coordenadas antes de salvar
+      const coords = await getCoordenadasPorCEPLocal(form.cep);
+
       const { error } = await supabase
         .from('usuarios')
         .update({
           nome_completo: form.nome_completo,
           apelido: form.apelido,
-          data_nascimento: form.data_nascimento || null, // null evita erro do Postgres de string vazia em campo DATE
+          data_nascimento: form.data_nascimento || null,
           genero: form.genero,
           telefone: form.telefone,
           cep: form.cep,
@@ -142,7 +165,10 @@ const PaginaPerfil = ({ aoVoltar }) => {
           bairro: form.bairro,
           cidade: form.cidade,
           estado: form.estado,
-          perfil_publico: form.perfil_publico
+          perfil_publico: form.perfil_publico,
+          compartilhar_whatsapp_match: form.compartilhar_whatsapp_match,
+          latitude: coords.lat,
+          longitude: coords.lon
         })
         .eq('id', dadosUsuario.id);
 
@@ -373,6 +399,21 @@ const PaginaPerfil = ({ aoVoltar }) => {
               <Tooltip texto="Ativando esta opção, as equipes poderão encontrar seu perfil pela busca da plataforma (Diga sim ao Matchmaking!)." />
             </label>
           </div>
+
+          <div className="grupo-checkbox" style={{ marginTop: '0.5rem' }}>
+            <label className="checkbox-label">
+              <input 
+                type="checkbox" 
+                checked={form.compartilhar_whatsapp_match}
+                onChange={(e) => setForm(prev => ({ ...prev, compartilhar_whatsapp_match: e.target.checked }))} 
+              />
+              <span className="checkbox-texto">
+                {form.compartilhar_whatsapp_match ? <Phone size={18} color="#25D366"/> : <Phone size={18} color="#64748b"/>}
+                Compartilhar WhatsApp em caso de Match
+              </span>
+              <Tooltip texto="Seu número só será exibido para atletas que você também passou a bola e que sejam maiores de 18 anos." />
+            </label>
+          </div>
         </div>
 
         <div className="perfil-cartao">
@@ -431,7 +472,7 @@ const PaginaPerfil = ({ aoVoltar }) => {
             </div>
           </div>
           
-          <div className="grade-2" style={{ gridTemplateColumns: '3fr 1fr' }}>
+          <div className="auth-grade-uf">
             <div className="grupo-input">
               <label>Cidade *</label>
               <div className="campo-input">

@@ -71,7 +71,6 @@ const FinanceiroTab = ({ modoLeitura = false }) => {
     useEffect(() => {
         if (equipeAtiva?.id) {
             const iniciar = async () => {
-                console.log('FinanceiroTab: Carregando configurações para equipe:', equipeAtiva.id);
                 try {
                     const cfg = await carregarConfiguracao(equipeAtiva.id);
                     if (cfg) {
@@ -107,7 +106,6 @@ const FinanceiroTab = ({ modoLeitura = false }) => {
         
         setCarregando(true);
         try {
-            console.log('FinanceiroTab: Carregando dados do ciclo:', periodoAtivo);
             
             // Verificação de segurança antes de chamar
             if (typeof buscarDadosCiclo !== 'function') {
@@ -121,8 +119,6 @@ const FinanceiroTab = ({ modoLeitura = false }) => {
                 buscarMensalidadesCiclo(equipeAtiva.id, periodoAtivo),
                 buscarDadosCiclo(equipeAtiva.id, periodoAtivo)
             ]);
-            
-            console.log(`FinanceiroTab: Carregados ${membros?.length || 0} membros e ${pagamentos?.length || 0} mensalidades`);
             
             setTodosMembros(membros || []);
             setMensalidades(pagamentos || []);
@@ -147,8 +143,6 @@ const FinanceiroTab = ({ modoLeitura = false }) => {
     const handleAlternarPagamento = async (pag) => {
         const novoStatus = pag.status === 'pago' ? 'pendente' : 'pago';
         setProcessando('pagamento_' + pag.id);
-        
-        console.log(`FinanceiroTab: Alterando pagamento ID ${pag.id} para ${novoStatus}`);
         
         const dados = {
             id: pag.id,

@@ -37,6 +37,27 @@ const AbaPunicoes = () => {
 
     useEffect(() => {
         carregarPunicoes();
+
+        // Configuração de REALTIME para atualizações instantâneas
+        const canal = supabase
+            .channel(`punicoes-${equipeAtiva?.id}`)
+            .on(
+                'postgres_changes', 
+                { 
+                    event: '*', 
+                    schema: 'public', 
+                    table: 'punicoes_equipe',
+                    filter: `equipe_id=eq.${equipeAtiva?.id}`
+                }, 
+                () => {
+                    carregarPunicoes();
+                }
+            )
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(canal);
+        };
     }, [equipeAtiva]);
 
     const anistiarPunicao = async (id, ativaAtualmente) => {

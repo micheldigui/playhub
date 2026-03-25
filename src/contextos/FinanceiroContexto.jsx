@@ -140,7 +140,6 @@ export const FinanceiroProvider = ({ children }) => {
     };
 
     const removerMensalidade = async (id) => {
-        console.log('Contexto: Removendo mensalidade ID:', id);
         try {
             const { error } = await supabase
                 .from('mensalidades')
@@ -148,7 +147,6 @@ export const FinanceiroProvider = ({ children }) => {
                 .eq('id', id);
 
             if (error) throw error;
-            console.log('Contexto: Remoção de mensalidade bem sucedida');
             return { success: true };
         } catch (error) {
             console.error('Contexto: Erro ao remover mensalidade:', error);
@@ -157,7 +155,6 @@ export const FinanceiroProvider = ({ children }) => {
     };
 
     const inicializarCiclo = async (equipeId, periodo, membros) => {
-        console.log(`Contexto: Inicializando ciclo ${periodo} com ${membros.length} membros`);
         try {
             // 1. Criar ou atualizar o registro do ciclo (Snapshot)
             const snapshot = {
@@ -200,7 +197,6 @@ export const FinanceiroProvider = ({ children }) => {
     };
 
     const removerCiclo = async (equipeId, periodo) => {
-        console.log(`Contexto: Removendo ciclo completo: ${periodo} para equipe: ${equipeId}`);
         try {
             // 1. Remover mensalidades
             const { error: erroMensalidades } = await supabase
@@ -229,7 +225,6 @@ export const FinanceiroProvider = ({ children }) => {
     };
 
     const atualizarValoresMensalidadesCiclo = async (equipeId, periodo, novoValor) => {
-        console.log(`Contexto: Atualizando pendentes de ${periodo} para R$ ${novoValor}`);
         try {
             // 1. Atualiza as mensalidades individuais
             const { error: erroMensalidades } = await supabase

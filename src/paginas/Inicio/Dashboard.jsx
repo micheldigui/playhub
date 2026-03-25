@@ -136,9 +136,9 @@ const Dashboard = ({ aoNavegar }) => {
                 { data: mensalidade },
                 { data: avulsos }
             ] = await Promise.all([
-                supabase.from('financeiro_config').select('*').eq('equipe_id', equipeId).single(),
-                supabase.from('ciclos_financeiros').select('*').eq('equipe_id', equipeId).eq('periodo', periodo).single(),
-                supabase.from('mensalidades').select('*').eq('equipe_id', equipeId).eq('usuario_id', dadosUsuario.id).eq('periodo', periodo).single(),
+                supabase.from('financeiro_config').select('*').eq('equipe_id', equipeId).maybeSingle(),
+                supabase.from('ciclos_financeiros').select('*').eq('equipe_id', equipeId).eq('periodo', periodo).maybeSingle(),
+                supabase.from('mensalidades').select('*').eq('equipe_id', equipeId).eq('usuario_id', dadosUsuario.id).eq('periodo', periodo).maybeSingle(),
                 supabase.from('pagamentos_avulsos').select('*').eq('equipe_id', equipeId).eq('usuario_id', dadosUsuario.id)
             ]);
 

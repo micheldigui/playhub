@@ -254,7 +254,6 @@ const PaginaCadastro = ({ aoIrParaLogin }) => {
               tabIndex="7"
             />
           </div>
-194: 
         <div className="auth-grupo">
           <label style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             Visibilidade do Perfil
@@ -343,7 +342,7 @@ const PaginaCadastro = ({ aoIrParaLogin }) => {
           </div>
         </div>
 
-        <div className="auth-grade-2" style={{ gridTemplateColumns: '3fr 1fr' }}>
+        <div className="auth-grade-uf">
           <div className="auth-grupo">
             <label>Cidade *</label>
             <div className="auth-campo">

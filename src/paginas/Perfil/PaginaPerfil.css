@@ -3,7 +3,8 @@
    ============================================ */
 
 .perfil-container {
-  max-width: 800px;
+  padding: 1rem;
+  max-width: 1000px;
   margin: 0 auto;
   padding-bottom: 2rem;
 }
@@ -206,6 +207,18 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 1.25rem;
+}
+
+.auth-grade-uf {
+  display: grid;
+  grid-template-columns: 3fr 1fr;
+  gap: 1.25rem;
+}
+
+@media (max-width: 480px) {
+  .auth-grade-uf {
+    grid-template-columns: 1fr;
+  }
 }
 
 .grade-cep {

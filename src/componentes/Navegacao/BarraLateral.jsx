@@ -1,27 +1,33 @@
 import { useState } from 'react';
 import { 
   LayoutDashboard, Users, Settings, LogOut, Menu, X, 
-  ChevronRight, UserCircle, Trophy, Globe, Building2 
+  ChevronRight, UserCircle, Trophy, Globe, Building2, Shield, Bell 
 } from 'lucide-react';
 import './BarraLateral.css';
 import { supabase } from '../../servicos/supabase';
 import { usarEquipe } from '../../contextos/EquipeContexto';
 import { usarAutenticacao } from '../../contextos/AutenticacaoContexto';
+import { usarNotificacoes } from '../../contextos/NotificacoesContexto';
 
 const BarraLateral = ({ ativo, setAtivo }) => {
   const [aberta, setAberta] = useState(false);
   const { convitesPendentesGlobais, transferenciasPendentesGlobais, solicitacoesPendentesGlobais } = usarEquipe();
+  const { contagemNaoLidas: bolasRecebidas } = usarNotificacoes();
   const { ehSuperAdmin, dadosUsuario } = usarAutenticacao();
   
-  const totalNotificacoes = (convitesPendentesGlobais || 0) + (transferenciasPendentesGlobais || 0) + (solicitacoesPendentesGlobais || 0);
+  const totalNotificacoesEquipe = (convitesPendentesGlobais || 0) + (transferenciasPendentesGlobais || 0) + (solicitacoesPendentesGlobais || 0);
 
   const ITENS_NAV = [
     { id: 'inicio',           icone: LayoutDashboard, label: 'Início' },
+    { id: 'notificacoes',     icone: Bell,            label: 'Notificações' },
     { id: 'equipe',           icone: Users,            label: 'Equipe' },
     { id: 'perfil',           icone: UserCircle,       label: 'Meu Perfil' },
     { id: 'perfil_esportivo', icone: Trophy,           label: 'Perfil Esportivo' },
     { id: 'explorar',         icone: Globe,            label: 'Explorar' },
-    ...(ehSuperAdmin ? [{ id: 'sistema', icone: Building2, label: 'Equipes do Sistema' }] : []),
+    ...(ehSuperAdmin ? [
+      { id: 'sistema', icone: Building2, label: 'Equipes do Sistema' },
+      { id: 'usuarios_sistema', icone: Shield, label: 'Usuários do Sistema' }
+    ] : []),
     { id: 'configuracoes',    icone: Settings,          label: 'Configurações' },
   ];
 
@@ -60,17 +66,12 @@ const BarraLateral = ({ ativo, setAtivo }) => {
               <span className="item-nav-icone"><Icone size={19} /></span>
               <span className="item-nav-label">
                 {label}
-                {id === 'equipe' && totalNotificacoes > 0 && (
-                  <span style={{
-                    background: '#f43f5e',
-                    color: 'white',
-                    fontSize: '0.7rem',
-                    fontWeight: 'bold',
-                    padding: '2px 6px',
-                    borderRadius: '10px',
-                    marginLeft: '8px'
-                  }}>
-                    {totalNotificacoes}
+                {id === 'equipe' && totalNotificacoesEquipe > 0 && (
+                  <span className="badge-nav-num">{totalNotificacoesEquipe}</span>
+                )}
+                {id === 'notificacoes' && bolasRecebidas > 0 && (
+                  <span className="badge-nav-num" style={{ background: 'var(--primaria)', color: '#0f172a' }}>
+                    {bolasRecebidas}
                   </span>
                 )}
               </span>

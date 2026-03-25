@@ -172,14 +172,11 @@
 /* Sistema de Abas */
 .equipe-abas {
   display: flex;
-  gap: 1rem;
+  flex-wrap: wrap;
+  gap: 0.75rem;
   margin-bottom: 2rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
   padding-bottom: 0.5rem;
-  overflow-x: auto;
-  white-space: nowrap;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none; /* Firefox */
 }
 
 .equipe-abas::-webkit-scrollbar {
@@ -190,8 +187,8 @@
   background: transparent;
   border: none;
   color: #64748b;
-  padding: 0.75rem 1.25rem;
-  font-size: 0.95rem;
+  padding: 0.6rem 1rem;
+  font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
   display: flex;
@@ -201,6 +198,7 @@
   border-radius: 8px;
   position: relative;
   flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .aba:hover {

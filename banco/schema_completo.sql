@@ -32,6 +32,9 @@ CREATE TABLE IF NOT EXISTS public.usuarios (
   eh_super_admin BOOLEAN DEFAULT FALSE,
   eh_sub_super_admin BOOLEAN DEFAULT FALSE,
   status TEXT DEFAULT 'ativo',
+  latitude FLOAT8,
+  longitude FLOAT8,
+  compartilhar_whatsapp_match BOOLEAN DEFAULT FALSE,
   criado_em TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   atualizado_em TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -60,6 +63,8 @@ CREATE TABLE IF NOT EXISTS public.equipes (
   local_nome TEXT, local_cep TEXT, local_rua TEXT, local_numero TEXT, 
   local_complemento TEXT, local_bairro TEXT, local_cidade TEXT, local_estado TEXT,
   local_mapa_link TEXT, localizacao TEXT, nivel TEXT,
+  latitude FLOAT8,
+  longitude FLOAT8,
   max_jogadores INTEGER DEFAULT 20,
   link_grupo TEXT,
   regras JSONB DEFAULT '{}',
@@ -588,4 +593,31 @@ CREATE POLICY "Gestao_Pagamentos_Admins" ON public.pagamentos_avulsos FOR ALL US
 );
 
 -- END MÓDULO PARTIDAS
-SELECT 'Schema PlayHub Consolidado Completamente com RPCs, RLS Refinado e Modulo de Partidas!' as status;
+
+-- Tabela de Interações Sociais (Cutucadas, etc)
+CREATE TABLE public.interacoes (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  remetente_id UUID REFERENCES public.usuarios(id) ON DELETE CASCADE,
+  destinatario_id UUID REFERENCES public.usuarios(id) ON DELETE CASCADE,
+  tipo TEXT NOT NULL DEFAULT 'cutucada',
+  criado_em TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+ALTER TABLE public.interacoes ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Interações podem ser criadas por quem envia" ON public.interacoes;
+CREATE POLICY "Interações podem ser criadas por quem envia" ON public.interacoes
+  FOR INSERT WITH CHECK (auth.uid() = remetente_id);
+
+DROP POLICY IF EXISTS "Usuários podem ver interações que enviaram ou receberam" ON public.interacoes;
+CREATE POLICY "Usuários podem ver interações que enviaram ou receberam" ON public.interacoes
+  FOR SELECT USING (auth.uid() = remetente_id OR auth.uid() = destinatario_id);
+
+DROP POLICY IF EXISTS "Usuários podem deletar interações recebidas" ON public.interacoes;
+CREATE POLICY "Usuários podem deletar interações recebidas" ON public.interacoes
+  FOR DELETE USING (auth.uid() = destinatario_id);
+
+-- Habilita Tempo Real (Realtime)
+ALTER PUBLICATION supabase_realtime ADD TABLE interacoes;
+
+SELECT 'Schema PlayHub Consolidado v4!' as status;

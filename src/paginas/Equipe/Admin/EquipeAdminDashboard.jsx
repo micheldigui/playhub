@@ -35,7 +35,7 @@ const EquipeAdminDashboard = ({ aoVoltar }) => {
     }
 
     // Função auxiliar para checar permissão
-    const temPermissao = (perm) => ehSuperAdmin || isDono || (permissoes && permissoes.includes(perm));
+    const temPermissao = (perm) => ehSuperAdmin || isDono || isSubAdmin || (permissoes && permissoes.includes(perm));
 
     return (
         <div className="pagina-equipe animate-fade-in">

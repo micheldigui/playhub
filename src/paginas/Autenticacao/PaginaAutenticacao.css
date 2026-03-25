@@ -201,6 +201,19 @@ input:-webkit-autofill:focus {
   align-items: flex-end;
 }
 
+/* Grade específico para Cidade/UF */
+.auth-grade-uf {
+  display: grid;
+  grid-template-columns: 3fr 1fr;
+  gap: 0.75rem;
+}
+
+@media (max-width: 480px) {
+  .auth-grade-uf {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* Botão de busca CEP */
 .btn-buscar-cep {
   height: 44px;

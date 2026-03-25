@@ -1,8 +1,61 @@
 .pagina-admin-sistema {
   padding: 2rem;
-  max-width: 1400px;
+  max-width: 1000px;
   margin: 0 auto;
   animation: fadeIn 0.4s ease-out;
+}
+
+/* Índice Alfabético */
+.indice-alfabetico {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 2rem;
+  padding: 10px;
+  background: rgba(15, 23, 42, 0.3);
+  border-radius: 12px;
+  justify-content: center;
+}
+
+.btn-letra {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #94a3b8;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-letra:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  border-color: var(--primaria);
+}
+
+.btn-letra.ativo {
+  background: var(--primaria);
+  color: #0f172a;
+  border-color: var(--primaria);
+}
+
+.btn-letra:first-child {
+  width: auto;
+  padding: 0 12px;
+}
+
+/* Carregar Mais */
+.carregar-mais {
+  display: flex;
+  justify-content: center;
+  margin: 3rem 0;
+  width: 100%;
 }
 
 .admin-header {

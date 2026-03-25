@@ -16,40 +16,81 @@ const PaginaAdminSistema = ({ aoSelecionarEquipe }) => {
   const [cidadeBusca, setCidadeBusca] = useState('');
   const [resultados, setResultados] = useState([]);
   const [buscando, setBuscando] = useState(false);
+  const [pagina, setPagina] = useState(0);
+  const [temMais, setTemMais] = useState(true);
+  const [letraFiltro, setLetraFiltro] = useState('');
+
+  const ITENS_POR_PAGINA = 20;
 
   // Busca inicial e dinâmica com debounce
   useEffect(() => {
     if (!ehSuperAdmin) return;
     
     const timer = setTimeout(() => {
-      handleBuscarEquipes();
+      handleBuscarEquipes(true);
     }, 500);
     
     return () => clearTimeout(timer);
-  }, [termoBusca, cidadeBusca, modalidadeBusca, ehSuperAdmin]);
+  }, [termoBusca, cidadeBusca, modalidadeBusca, letraFiltro, ehSuperAdmin]);
 
-  const handleBuscarEquipes = async () => {
+  const handleBuscarEquipes = async (novaBusca = false) => {
     if (!ehSuperAdmin) return;
     setBuscando(true);
     
-    const data = await buscarEquipes({
-      termo: termoBusca,
-      modalidade: modalidadeBusca,
-      cidade: cidadeBusca,
-    }, false); // false = buscar TODAS (incluindo privadas)
+    const novaPagina = novaBusca ? 0 : pagina + 1;
+    const de = novaPagina * ITENS_POR_PAGINA;
+    const ate = de + ITENS_POR_PAGINA - 1;
 
-    // Identifica se o usuário já é membro ou dono de cada equipe
-    const resultadosProcessados = data.map(eq => {
-      const membro = equipes.find(me => me.id === eq.id);
-      return {
-        ...eq,
-        isMember: !!membro,
-        isOwner: eq.admin_id === usuario.id || membro?.papel === 'admin'
-      };
-    });
-    
-    setResultados(resultadosProcessados || []);
-    setBuscando(false);
+    try {
+      let query = supabase
+        .from('equipes')
+        .select('*, membros_equipe(count)', { count: 'exact' })
+        .eq('status', 'ativo')
+        .order('nome', { ascending: true })
+        .range(de, ate);
+
+      if (termoBusca) {
+        query = query.or(`nome.ilike.%${termoBusca}%,slug_convite.eq.${termoBusca}`);
+      }
+
+      if (modalidadeBusca) {
+        query = query.eq('modalidade', modalidadeBusca);
+      }
+
+      if (cidadeBusca) {
+        query = query.ilike('local_cidade', `%${cidadeBusca}%`);
+      }
+
+      if (letraFiltro) {
+        query = query.ilike('nome', `${letraFiltro}%`);
+      }
+
+      const { data, error, count } = await query;
+      if (error) throw error;
+
+      // Identifica se o usuário já é membro ou dono de cada equipe
+      const processados = (data || []).map(eq => {
+        const membro = equipes.find(me => me.id === eq.id);
+        return {
+          ...eq,
+          isMember: !!membro,
+          isOwner: eq.admin_id === usuario.id || membro?.papel === 'admin'
+        };
+      });
+      
+      if (novaBusca) {
+        setResultados(processados);
+      } else {
+        setResultados(prev => [...prev, ...processados]);
+      }
+
+      setPagina(novaPagina);
+      setTemMais(count > (de + (data?.length || 0)));
+    } catch (error) {
+      console.error('Erro ao buscar equipes:', error.message);
+    } finally {
+      setBuscando(false);
+    }
   };
 
   const handleGerenciar = (eq) => {
@@ -83,7 +124,10 @@ const PaginaAdminSistema = ({ aoSelecionarEquipe }) => {
             type="text"
             placeholder="Nome ou código da equipe..."
             value={termoBusca}
-            onChange={(e) => setTermoBusca(e.target.value)}
+            onChange={(e) => {
+              setTermoBusca(e.target.value);
+              setLetraFiltro('');
+            }}
           />
         </div>
         <div className="grupo-input-admin">
@@ -114,55 +158,91 @@ const PaginaAdminSistema = ({ aoSelecionarEquipe }) => {
             onChange={(e) => setCidadeBusca(e.target.value)}
           />
         </div>
-        <Botao onClick={handleBuscarEquipes} disabled={buscando}>
+        <Botao onClick={() => handleBuscarEquipes(true)} disabled={buscando}>
           {buscando ? 'Buscando...' : 'Pesquisar'}
         </Botao>
       </div>
 
+      <div className="indice-alfabetico">
+        <button 
+          className={`btn-letra ${letraFiltro === '' ? 'ativo' : ''}`}
+          onClick={() => setLetraFiltro('')}
+        >
+          TODOS
+        </button>
+        {'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').map(letra => (
+          <button
+            key={letra}
+            className={`btn-letra ${letraFiltro === letra ? 'ativo' : ''}`}
+            onClick={() => {
+              setLetraFiltro(letra);
+              setTermoBusca('');
+            }}
+          >
+            {letra}
+          </button>
+        ))}
+      </div>
+
       <div className="resultados-admin">
-        {buscando ? (
-          <div className="admin-vazio"><p>Carregando equipes do sistema...</p></div>
-        ) : resultados.length > 0 ? (
-          <div className="grade-admin">
-            {resultados.map((eq) => (
-              <div key={eq.id} className="card-admin">
-                <div className="card-admin-topo">
-                  {eq.logo_url ? (
-                    <img src={eq.logo_url} alt={eq.nome} className="logo-admin" />
-                  ) : (
-                    <div className="logo-admin-placeholder">
-                      <Trophy size={20} />
+        {resultados.length > 0 ? (
+          <>
+            <div className="grade-admin">
+              {resultados.map((eq) => (
+                <div key={eq.id} className="card-admin">
+                  <div className="card-admin-topo">
+                    {eq.logo_url ? (
+                      <img src={eq.logo_url} alt={eq.nome} className="logo-admin" />
+                    ) : (
+                      <div className="logo-admin-placeholder">
+                        <Trophy size={20} />
+                      </div>
+                    )}
+                    <div className="card-admin-info">
+                      <h4>{eq.nome}</h4>
+                      <span>{eq.modalidade}</span>
                     </div>
-                  )}
-                  <div className="card-admin-info">
-                    <h4>{eq.nome}</h4>
-                    <span>{eq.modalidade}</span>
                   </div>
-                </div>
 
-                <div className="card-admin-meta">
-                  <span><MapPin size={14} /> {eq.local_cidade || eq.cidade}, {eq.local_estado || eq.estado}</span>
-                  <span><Users size={14} /> {eq.membros_equipe?.[0]?.count || 0} {eq.membros_equipe?.[0]?.count === 1 ? 'Jogador' : 'Jogadores'}</span>
-                  <div style={{ display: 'flex', gap: '4px', marginTop: '4px' }}>
-                    <span className={`tag-visibilidade ${eq.visibilidade}`}>
-                      {eq.visibilidade === 'publica' ? <Globe size={12} /> : <Lock size={12} />}
-                      {eq.visibilidade === 'publica' ? 'Pública' : 'Privada'}
-                    </span>
-                    {eq.isOwner && <span className="tag-vinculo dono">DONO</span>}
-                    {eq.isMember && !eq.isOwner && <span className="tag-vinculo membro">MEMBRO</span>}
+                  <div className="card-admin-meta">
+                    <span><MapPin size={14} /> {eq.local_cidade || eq.cidade}, {eq.local_estado || eq.estado}</span>
+                    <span><Users size={14} /> {eq.membros_equipe?.[0]?.count || 0} {eq.membros_equipe?.[0]?.count === 1 ? 'Jogador' : 'Jogadores'}</span>
+                    <div style={{ display: 'flex', gap: '4px', marginTop: '4px' }}>
+                      <span className={`tag-visibilidade ${eq.visibilidade}`}>
+                        {eq.visibilidade === 'publica' ? <Globe size={12} /> : <Lock size={12} />}
+                        {eq.visibilidade === 'publica' ? 'Pública' : 'Privada'}
+                      </span>
+                      {eq.isOwner && <span className="tag-vinculo dono">DONO</span>}
+                      {eq.isMember && !eq.isOwner && <span className="tag-vinculo membro">MEMBRO</span>}
+                    </div>
                   </div>
-                </div>
 
+                  <Botao 
+                    onClick={() => handleGerenciar(eq)} 
+                    variant="primario"
+                    style={{ width: '100%', marginTop: '1rem', justifyContent: 'center', gap: '0.5rem' }}
+                  >
+                    <Shield size={16} /> Gerenciar Equipe
+                  </Botao>
+                </div>
+              ))}
+            </div>
+
+            {temMais && (
+              <div className="carregar-mais">
                 <Botao 
-                  onClick={() => handleGerenciar(eq)} 
-                  variant="primario"
-                  style={{ width: '100%', marginTop: '1rem', justifyContent: 'center', gap: '0.5rem' }}
+                  variant="secundario" 
+                  onClick={() => handleBuscarEquipes(false)}
+                  disabled={buscando}
+                  style={{ minWidth: '200px' }}
                 >
-                  <Shield size={16} /> Gerenciar Equipe
+                  {buscando ? 'Carregando...' : 'Carregar mais equipes'}
                 </Botao>
               </div>
-            ))}
-          </div>
+            )}
+          </>
+        ) : buscando ? (
+          <div className="admin-vazio"><p>Carregando equipes do sistema...</p></div>
         ) : (
           <div className="admin-vazio">
             <p>Nenhuma equipe encontrada no sistema.</p>

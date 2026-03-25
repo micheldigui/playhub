@@ -19,6 +19,7 @@ export const EquipeProvedor = ({ children }) => {
     const [carregando, setCarregando] = useState(true);
     const [convitesPendentesGlobais, setConvitesPendentesGlobais] = useState(0);
     const [solicitacoesPendentesGlobais, setSolicitacoesPendentesGlobais] = useState(0);
+    const [minhasSolicitacoes, setMinhasSolicitacoes] = useState([]);
 
     // Efeito para manter a contagem de aprovações pendentes em dia (SOMA P/ GESTORES)
     useEffect(() => {
@@ -57,27 +58,43 @@ export const EquipeProvedor = ({ children }) => {
             carregarEquipes();
             carregarConvitesRecebidos();
 
-            // Listener realtime: detecta quando o próprio usuário é removido de uma equipe
-            const canal = supabase
+            // 1. Listener para o PRÓPRIO usuário (detalhes do seu vínculo)
+            const canalProprio = supabase
                 .channel(`membros_equipe_user_${usuario.id}`)
                 .on(
                     'postgres_changes',
                     {
-                        event: '*', // INSERT, UPDATE, DELETE
+                        event: '*',
                         schema: 'public',
                         table: 'membros_equipe',
                         filter: `usuario_id=eq.${usuario.id}`
                     },
                     (payload) => {
-                        // Recarrega a lista de equipes para refletir a mudança (remoção, atualização de papel etc.)
-                        console.log('[Realtime] membros_equipe mudou:', payload.eventType);
+                        carregarEquipes();
+                    }
+                )
+                .subscribe();
+
+            // 2. Listener para GESTORES (detectar novas solicitações de entrada)
+            const canalGestao = supabase
+                .channel(`membros_equipe_gestao_${usuario.id}`)
+                .on(
+                    'postgres_changes',
+                    {
+                        event: '*',
+                        schema: 'public',
+                        table: 'membros_equipe'
+                    },
+                    (payload) => {
+                        // Recarrega em qualquer entrada/saída ou mudança de status para manter badges e listas sincronizados
                         carregarEquipes();
                     }
                 )
                 .subscribe();
 
             return () => {
-                supabase.removeChannel(canal);
+                supabase.removeChannel(canalProprio);
+                supabase.removeChannel(canalGestao);
             };
         } else {
             setEquipes([]);
@@ -124,30 +141,36 @@ export const EquipeProvedor = ({ children }) => {
                         link_grupo,
                         regras,
                         admin_id_pendente,
-                        data_solicitacao_posse
+                        data_solicitacao_posse,
+                        admin:usuarios!equipes_admin_id_fkey (id, nome_completo, apelido, foto_url)
                     )
                 `)
                 .eq('usuario_id', usuario.id)
-                .eq('status', 'ativo');
+                .in('status', ['ativo', 'pendente']);
 
             if (error) throw error;
             
-            const listaEquipes = data.map(m => ({
+            const listaCompleta = data.map(m => ({
                 ...m.equipes,
+                id: m.equipe_id, // Garante o ID mesmo se o join 'equipes' falhar por RLS
                 papel: m.papel,
                 permissoes: m.permissoes || [],
                 membroStatus: m.status
             })).filter(e => e.id);
 
-            setEquipes(listaEquipes);
+            const listaAtivas = listaCompleta.filter(e => e.membroStatus === 'ativo');
+            const listaPendentes = listaCompleta.filter(e => e.membroStatus === 'pendente');
+
+            setEquipes(listaAtivas);
+            setMinhasSolicitacoes(listaPendentes);
             
             // Tenta recuperar a equipe ativa do localStorage ou pega a primeira
             const equipeSalva = localStorage.getItem('playhub_equipe_ativa');
             if (equipeSalva) {
-                const encontrada = listaEquipes.find(e => e.id === equipeSalva);
-                setEquipeAtiva(encontrada || listaEquipes[0] || null);
+                const encontrada = listaAtivas.find(e => e.id === equipeSalva);
+                setEquipeAtiva(encontrada || listaAtivas[0] || null);
             } else {
-                setEquipeAtiva(listaEquipes[0] || null);
+                setEquipeAtiva(listaAtivas[0] || null);
             }
         } catch (error) {
             console.error('Erro ao carregar equipes:', error.message);
@@ -175,8 +198,36 @@ export const EquipeProvedor = ({ children }) => {
         localStorage.setItem('playhub_equipe_ativa', equipe.id);
     };
 
+    // Função auxiliar para converter CEP em coordenadas geográficas (Geocoding)
+    const getCoordenadasPorCEP = async (cep) => {
+        if (!cep) return { lat: null, lon: null };
+        try {
+            // Limpa o CEP (remove traços/pontos)
+            const cepLimpo = cep.replace(/\D/g, '');
+            if (cepLimpo.length !== 8) return { lat: null, lon: null };
+
+            const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&postalcode=${cepLimpo}&country=Brazil&limit=1`, {
+                headers: { 'Accept-Language': 'pt-BR' }
+            });
+            const data = await response.json();
+            
+            if (data && data.length > 0) {
+                return { 
+                    lat: parseFloat(data[0].lat), 
+                    lon: parseFloat(data[0].lon) 
+                };
+            }
+        } catch (error) {
+            console.error('Erro ao buscar coordenadas pelo CEP:', error);
+        }
+        return { lat: null, lon: null };
+    };
+
     const criarEquipe = async (dadosDaEquipe, arquivoLogo) => {
         try {
+            // 0. Obter coordenadas se houver CEP
+            const coords = await getCoordenadasPorCEP(dadosDaEquipe.local_cep);
+
             // 1. Inserir equipe
             const { data: equipeNova, error: equipeErro } = await supabase
                 .from('equipes')
@@ -198,7 +249,9 @@ export const EquipeProvedor = ({ children }) => {
                     local_numero: dadosDaEquipe.local_numero || null,
                     local_complemento: dadosDaEquipe.local_complemento || null,
                     local_mapa_link: dadosDaEquipe.local_mapa_link || null,
-                    link_grupo: dadosDaEquipe.link_grupo || null
+                    link_grupo: dadosDaEquipe.link_grupo || null,
+                    latitude: coords.lat,
+                    longitude: coords.lon
                 })
                 .select()
                 .single();
@@ -263,6 +316,9 @@ export const EquipeProvedor = ({ children }) => {
 
     const editarEquipe = async (equipeId, dadosDaEquipe, arquivoLogo) => {
         try {
+            // 0. Obter coordenadas se houver CEP
+            const coords = await getCoordenadasPorCEP(dadosDaEquipe.local_cep);
+
             // 1. Atualizar dados básicos
             const { error: updateErro } = await supabase
                 .from('equipes')
@@ -283,7 +339,9 @@ export const EquipeProvedor = ({ children }) => {
                     local_numero: dadosDaEquipe.local_numero || null,
                     local_complemento: dadosDaEquipe.local_complemento || null,
                     local_mapa_link: dadosDaEquipe.local_mapa_link || null,
-                    link_grupo: dadosDaEquipe.link_grupo || null
+                    link_grupo: dadosDaEquipe.link_grupo || null,
+                    latitude: coords.lat,
+                    longitude: coords.lon
                 })
                 .eq('id', equipeId);
 
@@ -322,6 +380,9 @@ export const EquipeProvedor = ({ children }) => {
 
             setEquipes(prev => prev.map(e => e.id === equipeId ? equipeAtualizada : e));
             setEquipeAtiva(equipeAtualizada);
+
+            // Recarrega a página para garantir sincronização total (App.jsx manterá a aba ativa)
+            window.location.reload();
 
             return { sucesso: true, equipe: equipeAtualizada };
         } catch (error) {
@@ -362,6 +423,9 @@ export const EquipeProvedor = ({ children }) => {
             setEquipes(prev => prev.map(e => e.id === equipeId ? { ...e, regras: novasRegras } : e));
             setEquipeAtiva(prev => prev.id === equipeId ? { ...prev, regras: novasRegras } : prev);
 
+            // Recarrega a página para garantir sincronização total (App.jsx manterá a aba ativa)
+            window.location.reload();
+
             return { sucesso: true };
         } catch (error) {
             console.error('Erro ao atualizar regras:', error);
@@ -375,7 +439,8 @@ export const EquipeProvedor = ({ children }) => {
             const { count, error: countError } = await supabase
                 .from('membros_equipe')
                 .select('*', { count: 'exact', head: true })
-                .eq('equipe_id', equipeId);
+                .eq('equipe_id', equipeId)
+                .in('status', ['ativo', 'pendente']);
 
             if (countError) throw countError;
 
@@ -508,6 +573,7 @@ export const EquipeProvedor = ({ children }) => {
                     .eq('usuario_id', usuario.id);
                 
                 if (errUpdate) throw errUpdate;
+                await carregarEquipes();
                 return { sucesso: true };
             }
 
@@ -605,7 +671,6 @@ export const EquipeProvedor = ({ children }) => {
                 .in('status', ['ativo', 'pendente']);
 
             if (error) throw error;
-            console.log('carregarMembrosEquipe retornou:', data?.length, 'membros', data?.[0]);
             return data;
         } catch (error) {
             console.error('Erro ao carregar membros ativos:', error);
@@ -729,8 +794,6 @@ export const EquipeProvedor = ({ children }) => {
 
     const sairDaEquipe = async (equipeId) => {
         try {
-            console.log(`[Sair] Soft-delete (status: saiu): Equipe ${equipeId} / Usuario ${usuario?.id}`);
-            
             // Em vez de deletar/atualizar com Supabase puro (que sofre de "Sucesso Fantasma" do RLS), 
             // usamos RPC Atomic para forçar a baixa do encargo
             const { data: sucesso, error: errUpdate } = await supabase.rpc('sair_da_equipe_seguro', {
@@ -745,8 +808,6 @@ export const EquipeProvedor = ({ children }) => {
             if (!sucesso) {
                 throw new Error('Não foi possível sair (Você pode já ter saído ou o time não foi localizado).');
             }
-
-            console.log('[Sair] Status atualizado com sucesso para: saiu');
 
             // Remove equipe da lista local e reseta a ativa
             setEquipes(prev => {
@@ -940,6 +1001,7 @@ export const EquipeProvedor = ({ children }) => {
         convitesPendentesGlobais,
         solicitacoesPendentesGlobais,
         transferenciasPendentesGlobais,
+        minhasSolicitacoes,
         carregarStatusMembro,
         transferirTitularidade,
         aceitarTransferenciaPosse,

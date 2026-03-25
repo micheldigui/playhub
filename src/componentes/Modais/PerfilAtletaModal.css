@@ -1,0 +1,170 @@
+.modal-perfil-atleta {
+    background: #0f172a;
+    width: 90%;
+    max-width: 500px;
+    border-radius: 20px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.btn-fechar-modal {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    color: white;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 10;
+    transition: all 0.2s;
+}
+
+.btn-fechar-modal:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: rotate(90deg);
+}
+
+.perfil-topo {
+    padding: 2.5rem 2rem;
+    background: linear-gradient(to bottom, #1e293b, #0f172a);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.perfil-avatar-grande {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    border: 4px solid var(--primaria);
+    overflow: hidden;
+    background: #334155;
+}
+
+.perfil-avatar-grande img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.avatar-placeholder-grande {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.5rem;
+    font-weight: bold;
+    color: white;
+}
+
+.perfil-info-basica h2 {
+    color: white;
+    font-size: 1.5rem;
+    margin-bottom: 0.25rem;
+}
+
+.perfil-apelido {
+    color: var(--primaria);
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+}
+
+.perfil-badges {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: center;
+}
+
+.badge-perfil {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    color: #94a3b8;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.perfil-corpo {
+    padding: 2rem;
+}
+
+.perfil-secao h3 {
+    color: white;
+    font-size: 1.1rem;
+    margin-bottom: 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.grade-modalidades-atleta {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+}
+
+.item-modalidade-atleta {
+    background: rgba(255, 255, 255, 0.03);
+    padding: 1rem;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.mod-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.mod-header strong {
+    color: white;
+    font-size: 0.95rem;
+}
+
+.nivel-tag {
+    font-size: 0.7rem;
+    padding: 2px 8px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    font-weight: bold;
+}
+
+.nivel-tag.iniciante { background: rgba(148, 163, 184, 0.2); color: #94a3b8; }
+.nivel-tag.intermediário { background: rgba(56, 189, 248, 0.2); color: #38bdf8; }
+.nivel-tag.avançado { background: rgba(34, 197, 94, 0.2); color: #22c55e; }
+.nivel-tag.profissional { background: rgba(168, 85, 247, 0.2); color: #a855f7; }
+
+.mod-posicao {
+    font-size: 0.85rem;
+    color: #64748b;
+}
+
+.perfil-rodape {
+    padding: 1.5rem 2rem;
+    background: rgba(0, 0, 0, 0.2);
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.vazio {
+    text-align: center;
+    color: #64748b;
+    font-size: 0.9rem;
+    font-style: italic;
+    padding: 1rem 0;
+}

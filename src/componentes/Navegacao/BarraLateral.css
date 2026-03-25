@@ -137,9 +137,24 @@
   font-size: 0.875rem;
   font-weight: 500;
   transition: font-weight 0.1s;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .item-nav.ativo .item-nav-label { font-weight: 600; }
+
+.badge-nav-num {
+  background: #f43f5e;
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 10px;
+  line-height: 1.4;
+  min-width: 18px;
+  text-align: center;
+}
 
 .item-nav-seta {
   opacity: 0;
@@ -151,6 +166,15 @@
 .item-nav:hover .item-nav-seta {
   opacity: 0.4;
   transform: translateX(0);
+}
+
+.contato-bloqueado {
+    font-size: 0.75rem;
+    color: #94a3b8;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 6px 12px;
+    border-radius: 8px;
+    border: 1px dashed rgba(255, 255, 255, 0.1);
 }
 
 .item-nav.ativo .item-nav-seta {

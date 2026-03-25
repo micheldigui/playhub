@@ -8,6 +8,8 @@ import PaginaExplorar from './paginas/Explorar/PaginaExplorar'
 import PaginaConvite from './paginas/Equipe/PaginaConvite'
 import PaginaAdminSistema from './paginas/Admin/PaginaAdminSistema'
 import EquipeAdminDashboard from './paginas/Equipe/Admin/EquipeAdminDashboard'
+import PaginaAdminUsuarios from './paginas/Admin/PaginaAdminUsuarios'
+import PaginaNotificacoes from './paginas/Notificacoes/PaginaNotificacoes'
 import Dashboard from './paginas/Inicio/Dashboard'
 import { usarAutenticacao } from './contextos/AutenticacaoContexto'
 
@@ -22,10 +24,22 @@ function App() {
         return 'convite';
       }
     }
-    return 'inicio';
+    return null;
   };
 
-  const [telaAtiva, setTelaAtiva] = useState(pathInicial())
+  const [telaAtiva, setTelaAtiva] = useState(() => {
+    // 1. Prioridade para links de convite (URL direta)
+    const inicial = pathInicial();
+    if (inicial === 'convite') return 'convite';
+
+    // 2. Tentar recuperar última tela salva
+    const salva = localStorage.getItem('playhub_tela_ativa');
+    if (salva && salva !== 'convite') return salva;
+
+    // 3. Padrão: início
+    return 'inicio';
+  })
+
   const [equipeConviteId, setEquipeConviteId] = useState(() => {
     if (typeof window !== 'undefined') {
       const path = window.location.pathname;
@@ -36,8 +50,13 @@ function App() {
     return null;
   });
 
-  // Corrige a URL visualmente após carregar o estado
+  // Salva a tela ativa no localStorage e sincroniza a URL
   useEffect(() => {
+    // Salva para persistir após F5 (exceto convite, que depende da URL)
+    if (telaAtiva !== 'convite') {
+      localStorage.setItem('playhub_tela_ativa', telaAtiva);
+    }
+
     if (telaAtiva === 'convite' && equipeConviteId) {
       window.history.replaceState(null, '', `/convite/${equipeConviteId}`);
     } else if (telaAtiva === 'inicio' && window.location.pathname !== '/') {
@@ -61,8 +80,12 @@ function App() {
         return <EquipeAdminDashboard aoVoltar={() => setTelaAtiva('equipe')} />
       case 'sistema':
         return <PaginaAdminSistema aoSelecionarEquipe={() => setTelaAtiva('equipe')} />
+      case 'usuarios_sistema':
+        return <PaginaAdminUsuarios />
       case 'explorar':
         return <PaginaExplorar aoVoltar={() => setTelaAtiva('inicio')} />
+      case 'notificacoes':
+        return <PaginaNotificacoes aoVoltar={() => setTelaAtiva('inicio')} />
       case 'convite':
         return <PaginaConvite equipeId={equipeConviteId} aoVoltar={() => setTelaAtiva('inicio')} />
       case 'inicio':
