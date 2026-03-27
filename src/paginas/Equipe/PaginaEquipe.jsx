@@ -86,7 +86,7 @@ const PaginaEquipe = ({ abaAtiva, setAbaAtiva, aoVoltar }) => {
         if (!res.sucesso) alert(res.erro);
     };
 
-    if (!equipeAtiva && !modalCriacaoAberto) {
+    if (!equipeAtiva) {
         return (
             <div className="lista-vazia" style={{ padding: '4rem 1rem', textAlign: 'center' }}>
                 <Trophy size={64} color="rgba(255,255,255,0.1)" style={{ marginBottom: '1.5rem' }} />

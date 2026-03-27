@@ -1,7 +1,7 @@
 import React from 'react';
-import { 
-  Trophy, Users, Calendar, Shield, 
-  ArrowRight, CheckCircle2, Star, Zap 
+import {
+  Trophy, Users, Calendar, Shield,
+  ArrowRight, CheckCircle2, Star, Zap
 } from 'lucide-react';
 import './LandingPage.css';
 
@@ -28,8 +28,8 @@ const LandingPage = ({ aoLogin }) => {
           <span style={{ color: '#38bdf8' }}>seu próximo nível.</span>
         </h1>
         <p className="hero-subheadline">
-          A plataforma definitiva para gestores de equipes e atletas. 
-          Organize partidas, controle mensalidades e encontre os melhores parceiros de jogo em um só lugar.
+          A solução inteligente para organizar sua equipe e elevar o nível do seu jogo.
+          Gerencie partidas, mensalidades e conecte-se com novos atletas de forma eficiente.
         </p>
         <div className="hero-cta-group">
           <button className="btn-hero-primary" onClick={aoLogin}>
@@ -91,8 +91,8 @@ const LandingPage = ({ aoLogin }) => {
             <div className="feature-icon-box">
               <Trophy size={32} />
             </div>
-            <h3>Ranking e Estatísticas</h3>
-            <p>Acompanhe o desempenho da sua equipe e suba no ranking da maior comunidade esportiva amadora.</p>
+            <h3>Sua Carreira no App</h3>
+            <p>Acompanhe seu histórico de jogos, presenças e conquistas em todas as equipes que você participa.</p>
           </div>
         </div>
       </section>
@@ -116,7 +116,7 @@ const LandingPage = ({ aoLogin }) => {
             <span>PlayHub</span>
           </div>
           <p>© {new Date().getFullYear()} PlayHub - Todos os direitos reservados.</p>
-          <p style={{ marginTop: '0.5rem', fontSize: '0.8rem' }}>A melhor plataforma para gestão esportiva do Brasil.</p>
+          <p style={{ marginTop: '0.5rem', fontSize: '0.8rem' }}>Sua equipe no próximo nível.</p>
         </div>
       </footer>
     </div>

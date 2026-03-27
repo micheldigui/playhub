@@ -59,7 +59,9 @@ const BarraLateral = ({ ativo, setAtivo, abaEquipe, setAbaEquipe }) => {
     ...(temPermissao('gerenciar_equipe') ? [{ id: 'regras-config', label: 'Regras & Config', icone: Settings }] : []),
     ...(temPermissao('gerenciar_membros') ? [{ id: 'descobrir', label: 'Buscar Atletas', icone: Globe }] : []),
     ...(equipeAtiva.papel === 'admin' || (ehSuperAdmin && equipeAtiva.gestao_global) ? [{ id: 'permissoes', label: 'Permissões (Vice)', icone: ShieldCheck }] : []),
-  ] : []
+  ] : [
+    { id: 'criar-equipe-vazio', label: 'Criar Minha Equipe', icone: Plus }
+  ]
     },
     { id: 'perfil',           icone: UserCircle,       label: 'Meu Perfil' },
     { id: 'perfil_esportivo', icone: Trophy,           label: 'Perfil Esportivo' },
@@ -149,9 +151,10 @@ const BarraLateral = ({ ativo, setAtivo, abaEquipe, setAbaEquipe }) => {
                   )}
                 </button>
 
-                {isEquipe && hasSubmenu && menuEquipeExpandido && (
+            {/* SELETOR DE EQUIPE / CRIAR NOVO (Sempre visível se houver permissão ou se tiver equipe ativa) */}
+            {isEquipe && menuEquipeExpandido && (
           <div className="submenu">
-            {/* SELETOR DE EQUIPE (Se houver mais de uma) */}
+            {/* Lista outras equipes se houver mais de uma */}
             {equipes.length > 1 && (
               <div className="seletor-equipe-menu">
                 <p className="seletor-titulo">Trocar Equipe</p>
@@ -170,22 +173,27 @@ const BarraLateral = ({ ativo, setAtivo, abaEquipe, setAbaEquipe }) => {
                       {eq.id === equipeAtiva?.id && <div className="ponto-ativo"></div>}
                     </button>
                   ))}
-                  {podeCriarEquipe && (
-                    <button 
-                        className="btn-troca-equipe btn-add-equipe-sidebar" 
-                        onClick={() => {
-                            setModalCriacaoAberto(true);
-                            setAberta(false);
-                        }}
-                    >
-                        <div className="avatar-troca add-icon">
-                            <SquarePlus size={14} />
-                        </div>
-                        <span className="nome-troca">Criar Novo Time</span>
-                    </button>
-                  )}
                 </div>
                 <div className="divisor-submenu"></div>
+              </div>
+            )}
+
+            {/* Botão de Criar Equipe (Sempre visível no submenu da equipe se puder criar) */}
+            {podeCriarEquipe && (
+              <div style={{ padding: '4px 8px 8px' }}>
+                <button 
+                    className="btn-troca-equipe btn-add-equipe-sidebar" 
+                    onClick={() => {
+                        setModalCriacaoAberto(true);
+                        setAberta(false);
+                    }}
+                    style={{ background: 'rgba(255,255,255,0.03)', border: '1px dashed rgba(255,255,255,0.1)', width: '100%', borderRadius: '8px' }}
+                >
+                    <div className="avatar-troca add-icon">
+                        <SquarePlus size={14} />
+                    </div>
+                    <span className="nome-troca" style={{ fontWeight: '600', color: 'var(--primaria)' }}>Criar Novo Time</span>
+                </button>
               </div>
             )}
 
@@ -196,9 +204,13 @@ const BarraLateral = ({ ativo, setAtivo, abaEquipe, setAbaEquipe }) => {
                         <button
                           key={sub.id}
                           className={`submenu-item ${isSubAtivo ? 'sub-ativo' : ''}`}
-                          onClick={() => {
-                            setAbaEquipe(sub.id);
-                            setAtivo('equipe');
+                        onClick={() => {
+                            if (sub.id === 'criar-equipe-vazio') {
+                                setModalCriacaoAberto(true);
+                            } else {
+                                setAbaEquipe(sub.id);
+                                setAtivo('equipe');
+                            }
                             setAberta(false);
                           }}
                         >

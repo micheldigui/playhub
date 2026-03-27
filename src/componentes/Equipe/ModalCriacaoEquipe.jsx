@@ -97,7 +97,12 @@ const ModalCriacaoEquipe = ({ isOpen, onClose, aoSucesso, equipeParaEditar = nul
         });
         setPreviewLogo(null);
       }
-      setTimeout(() => campoNomeRef.current?.focus(), 100);
+      const timeoutId = setTimeout(() => {
+        if (campoNomeRef.current) {
+          campoNomeRef.current.focus();
+        }
+      }, 150);
+      return () => clearTimeout(timeoutId);
     }
   }, [isOpen, equipeParaEditar]);
 
