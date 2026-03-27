@@ -7,12 +7,14 @@ import ModalCriacaoPartida from './modais/ModalCriacaoPartida';
 import ModalEdicaoPartida from './modais/ModalEdicaoPartida';
 
 const EquipePartidasTab = () => {
-    const { equipeAtiva } = usarEquipe();
+    const { equipeAtiva, temPermissaoEquipe } = usarEquipe();
     const { carregarPartidas, excluirPartida, partidasCarregadas } = usarPartidas();
     const [carregando, setCarregando] = useState(true);
     const [mostrarHistorico, setMostrarHistorico] = useState(false);
     const [modalCriacaoAberto, setModalCriacaoAberto] = useState(false);
     const [partidaEditando, setPartidaEditando] = useState(null);
+
+    const podeGerenciar = equipeAtiva?.papel === 'admin' || temPermissaoEquipe('gerenciar_partidas');
 
     useEffect(() => {
         if (equipeAtiva?.id) {
@@ -31,10 +33,9 @@ const EquipePartidasTab = () => {
     };
 
     const handleDeletePartida = async (id) => {
-        if (window.confirm('Tem certeza que deseja excluir esta partida? Todas as presenças serão perdidas.')) {
-            const result = await excluirPartida(id);
-            if (!result.sucesso) alert('Erro ao excluir partida: ' + result.erro);
-        }
+        if (!window.confirm('Tem certeza que deseja excluir esta partida?')) return;
+        const result = await excluirPartida(id);
+        if (!result.sucesso) alert('Erro ao excluir partida: ' + result.erro);
     };
 
     const PartidaCard = ({ partida }) => {
@@ -73,12 +74,16 @@ const EquipePartidasTab = () => {
                         {equipeAtiva?.modalidade?.toUpperCase() || 'ESPORTE'}
                     </div>
                     <div style={{ display: 'flex', gap: '8px' }}>
-                        <button className="btn-acao-icone" title="Editar" onClick={() => setPartidaEditando(partida)}>
-                            <Edit size={18} />
-                        </button>
-                        <button className="btn-acao-icone btn-perigo" onClick={() => handleDeletePartida(partida.id)} title="Excluir">
-                            <Trash2 size={18} />
-                        </button>
+                        {podeGerenciar && (
+                            <>
+                                <button className="btn-acao-icone" title="Editar" onClick={() => setPartidaEditando(partida)}>
+                                    <Edit size={18} />
+                                </button>
+                                <button className="btn-acao-icone btn-perigo" onClick={() => handleDeletePartida(partida.id)} title="Excluir">
+                                    <Trash2 size={18} />
+                                </button>
+                            </>
+                        )}
                     </div>
                 </div>
 
@@ -147,9 +152,11 @@ const EquipePartidasTab = () => {
                                 }} />
                             </div>
                         </div>
-                        <Botao onClick={handleNovaPartida} style={{ gap: '8px' }}>
-                            <Plus size={18} /> Nova Partida
-                        </Botao>
+            {podeGerenciar && (
+                <Botao onClick={handleNovaPartida} style={{ gap: '8px' }}>
+                    <Plus size={18} /> Nova Partida
+                </Botao>
+            )}
                     </div>
                 </div>
 

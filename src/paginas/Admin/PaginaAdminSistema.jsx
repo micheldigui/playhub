@@ -4,6 +4,7 @@ import {
 } from 'lucide-react';
 import { usarEquipe } from '../../contextos/EquipeContexto';
 import { usarAutenticacao } from '../../contextos/AutenticacaoContexto';
+import { supabase } from '../../servicos/supabase';
 import Botao from '../../componentes/Botao/Botao';
 import './PaginaAdminSistema.css';
 

@@ -28,8 +28,7 @@ import Botao from '../../../componentes/Botao/Botao';
 import FinanceiroDashboard from './FinanceiroDashboard';
 import FinanceiroAvulsos from './FinanceiroAvulsos';
 
-const FinanceiroTab = ({ modoLeitura = false }) => {
-
+const FinanceiroTab = ({ abaExterna, modoLeitura = false, membrosIniciais = [] }) => {
     const { 
         configuracao, 
         carregarConfiguracao, 
@@ -45,19 +44,28 @@ const FinanceiroTab = ({ modoLeitura = false }) => {
         formatarPeriodoParaExibicao
     } = usarFinanceiro();
     
-    const { equipeAtiva, carregarMembrosEquipe, atualizarRegrasEquipe } = usarEquipe();
+    const { equipeAtiva, atualizarRegrasEquipe } = usarEquipe();
     
     // Estado principal
     const [periodoAtivo, setPeriodoAtivo] = useState('');
     const [mensalidades, setMensalidades] = useState([]);
     const [dadosCiclo, setDadosCiclo] = useState(null);
-    const [todosMembros, setTodosMembros] = useState([]);
+    const [todosMembros, setTodosMembros] = useState(membrosIniciais);
     const [carregando, setCarregando] = useState(true);
     const [processando, setProcessando] = useState(null);
     const [exibirConfig, setExibirConfig] = useState(false);
     const [modalImportarAberto, setModalImportarAberto] = useState(false);
-    const [subAba, setSubAba] = useState('gestao'); // 'gestao' | 'dashboard'
+    const [subAba, setSubAba] = useState(abaExterna || 'gestao'); 
+
+    // Sincroniza membros se as props mudarem
+    useEffect(() => {
+        setTodosMembros(membrosIniciais);
+    }, [membrosIniciais]);
     
+    useEffect(() => {
+        if (abaExterna) setSubAba(abaExterna);
+    }, [abaExterna]);
+
     const [configLocal, setConfigLocal] = useState({
         valor_mensalidade: 50,
         dia_vencimento: 10,
@@ -106,7 +114,6 @@ const FinanceiroTab = ({ modoLeitura = false }) => {
         
         setCarregando(true);
         try {
-            
             // Verificação de segurança antes de chamar
             if (typeof buscarDadosCiclo !== 'function') {
                 console.error('ERRO: buscarDadosCiclo não é uma função no contexto financeiro!');
@@ -114,13 +121,11 @@ const FinanceiroTab = ({ modoLeitura = false }) => {
                 return;
             }
 
-            const [membros, pagamentos, metaCiclo] = await Promise.all([
-                carregarMembrosEquipe(equipeAtiva.id),
+            const [pagamentos, metaCiclo] = await Promise.all([
                 buscarMensalidadesCiclo(equipeAtiva.id, periodoAtivo),
                 buscarDadosCiclo(equipeAtiva.id, periodoAtivo)
             ]);
             
-            setTodosMembros(membros || []);
             setMensalidades(pagamentos || []);
             setDadosCiclo(metaCiclo?.success ? metaCiclo.data : null);
         } catch (error) {
@@ -331,17 +336,7 @@ const FinanceiroTab = ({ modoLeitura = false }) => {
     return (
         <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
             
-            <div style={{ display: 'flex', gap: '4px', background: 'rgba(15,23,42,0.6)', padding: '4px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)', width: 'fit-content' }}>
-                <button onClick={() => setSubAba('gestao')} title="Gestão de Mensalidades" style={{ background: subAba === 'gestao' ? 'rgba(56,189,248,0.15)' : 'transparent', border: subAba === 'gestao' ? '1px solid rgba(56,189,248,0.3)' : '1px solid transparent', color: subAba === 'gestao' ? '#38bdf8' : '#64748b', padding: '6px 16px', borderRadius: '8px', cursor: 'pointer', fontSize: '0.875rem', fontWeight: '500', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <DollarSign size={15} /> Mensalistas
-                </button>
-                <button onClick={() => setSubAba('avulsos')} title="Gestão Dinâmica de Convidados" style={{ background: subAba === 'avulsos' ? 'rgba(56,189,248,0.15)' : 'transparent', border: subAba === 'avulsos' ? '1px solid rgba(56,189,248,0.3)' : '1px solid transparent', color: subAba === 'avulsos' ? '#38bdf8' : '#64748b', padding: '6px 16px', borderRadius: '8px', cursor: 'pointer', fontSize: '0.875rem', fontWeight: '500', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <Wallet size={15} /> Avulsos
-                </button>
-                <button onClick={() => setSubAba('dashboard')} title="Visão Analítica" style={{ background: subAba === 'dashboard' ? 'rgba(56,189,248,0.15)' : 'transparent', border: subAba === 'dashboard' ? '1px solid rgba(56,189,248,0.3)' : '1px solid transparent', color: subAba === 'dashboard' ? '#38bdf8' : '#64748b', padding: '6px 16px', borderRadius: '8px', cursor: 'pointer', fontSize: '0.875rem', fontWeight: '500', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <BarChart2 size={15} /> Dashboard Mensal
-                </button>
-            </div>
+
 
             {subAba === 'dashboard' ? <FinanceiroDashboard /> : 
              subAba === 'avulsos' ? <FinanceiroAvulsos /> : (

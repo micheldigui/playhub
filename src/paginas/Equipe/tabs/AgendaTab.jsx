@@ -1,14 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, MapPin, Clock, Users, ChevronRight } from 'lucide-react';
+import { Calendar, MapPin, Clock, Users, ChevronRight, Plus, Wallet, Edit, Trash2 } from 'lucide-react';
 import { usarPartidas } from '../../../contextos/PartidasContexto';
 import { usarEquipe } from '../../../contextos/EquipeContexto';
+import { usarAutenticacao } from '../../../contextos/AutenticacaoContexto';
+import Botao from '../../../componentes/Botao/Botao';
 import ModalDetalhesPartida from './modais/ModalDetalhesPartida';
+import ModalCriacaoPartida from '../Admin/tabs/modais/ModalCriacaoPartida';
+import ModalEdicaoPartida from '../Admin/tabs/modais/ModalEdicaoPartida';
 
 const AgendaTab = () => {
-    const { partidasCarregadas, carregarPartidas } = usarPartidas();
-    const { equipeAtiva } = usarEquipe();
+    const { partidasCarregadas, carregarPartidas, excluirPartida } = usarPartidas();
+    const { equipeAtiva, temPermissaoEquipe } = usarEquipe();
     const [carregando, setCarregando] = useState(true);
     const [partidaSelecionada, setPartidaSelecionada] = useState(null);
+    const [modalCriacaoAberto, setModalCriacaoAberto] = useState(false);
+    const [partidaEditando, setPartidaEditando] = useState(null);
+
+    const podeGerenciar = equipeAtiva?.papel === 'admin' || temPermissaoEquipe('gerenciar_partidas');
 
     useEffect(() => {
         if (equipeAtiva?.id) {
@@ -28,6 +36,13 @@ const AgendaTab = () => {
         return `${diasSemana[dataObj.getDay()]}, ${dataObj.toLocaleDateString('pt-BR')}`;
     };
 
+    const handleExcluir = async (partida, e) => {
+        e.stopPropagation();
+        if (!window.confirm(`Excluir a partida do dia ${formatarData(partida.data)}?`)) return;
+        const res = await excluirPartida(partida.id);
+        if (!res.sucesso) alert('Erro: ' + res.erro);
+    };
+
     if (carregando) {
         return <div className="p-8 text-center text-muted">Buscando agenda...</div>;
     }
@@ -39,9 +54,16 @@ const AgendaTab = () => {
                     <h3 style={{ fontSize: '1.25rem', fontWeight: '700', marginBottom: '8px', color: '#f8fafc', display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <Calendar size={20} color="#38bdf8" /> Próximos Jogos
                     </h3>
-                    <p style={{ color: '#94a3b8', fontSize: '0.9rem' }}>
-                        Confira as próximas partidas agendadas e confirme sua presença.
-                    </p>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+                        <p style={{ color: '#94a3b8', fontSize: '0.9rem', margin: 0 }}>
+                            Confira as próximas partidas agendadas e confirme sua presença.
+                        </p>
+                        {(equipeAtiva.papel === 'admin' || temPermissaoEquipe('gerenciar_partidas')) && (
+                            <Botao onClick={() => setModalCriacaoAberto(true)} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <Plus size={18} /> Agendar Partida
+                            </Botao>
+                        )}
+                    </div>
                 </div>
 
                 <div style={{ display: 'grid', gap: '16px' }}>
@@ -62,7 +84,7 @@ const AgendaTab = () => {
                             className="hover-card"
                             onClick={() => setPartidaSelecionada(partida)}
                         >
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1 }}>
                                 <div style={{ fontSize: '1.1rem', fontWeight: '600', color: '#f8fafc' }}>
                                     {formatarData(partida.data)} às {partida.hora.substring(0, 5)}
                                 </div>
@@ -71,12 +93,36 @@ const AgendaTab = () => {
                                         <MapPin size={14} /> {partida.local_nome || 'Local a definir'}
                                     </div>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                        <Users size={14} /> Vagas: {partida.limite_jogadores || 'Ilimitadas'}
+                                        <Users size={14} /> Vagas: {partida.vagas || 'Ilimitadas'}
+                                    </div>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#10b981', fontWeight: 'bold' }}>
+                                        <Wallet size={14} /> {Number(partida.valor_avulso) > 0 ? `R$ ${Number(partida.valor_avulso).toFixed(2).replace('.', ',')}` : 'Grátis'}
                                     </div>
                                 </div>
                             </div>
-                            <div style={{ color: '#38bdf8', padding: '8px' }}>
-                                <ChevronRight size={20} />
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                {podeGerenciar && (
+                                    <>
+                                        <button 
+                                            className="btn-acao-icone" 
+                                            title="Editar partida"
+                                            onClick={(e) => { e.stopPropagation(); setPartidaEditando(partida); }}
+                                            style={{ color: '#38bdf8' }}
+                                        >
+                                            <Edit size={16} />
+                                        </button>
+                                        <button 
+                                            className="btn-acao-icone btn-perigo" 
+                                            title="Excluir partida"
+                                            onClick={(e) => handleExcluir(partida, e)}
+                                        >
+                                            <Trash2 size={16} />
+                                        </button>
+                                    </>
+                                )}
+                                <div style={{ color: '#38bdf8', padding: '8px' }}>
+                                    <ChevronRight size={20} />
+                                </div>
                             </div>
                         </div>
                     )) : (
@@ -100,6 +146,21 @@ const AgendaTab = () => {
                     isOpen={!!partidaSelecionada}
                     partida={partidaSelecionada}
                     onClose={() => setPartidaSelecionada(null)}
+                />
+            )}
+
+            <ModalCriacaoPartida 
+                isOpen={modalCriacaoAberto}
+                onClose={() => setModalCriacaoAberto(false)}
+                equipeId={equipeAtiva.id}
+                aoSucesso={() => carregarPartidas(equipeAtiva.id)}
+            />
+
+            {partidaEditando && (
+                <ModalEdicaoPartida
+                    isOpen={!!partidaEditando}
+                    onClose={() => setPartidaEditando(null)}
+                    partida={partidaEditando}
                 />
             )}
         </div>

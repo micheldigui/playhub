@@ -15,8 +15,8 @@ export const NotificacoesProvedor = ({ children }) => {
         if (!usuario) return;
         
         try {
-            // 1. Buscar notificações recebidas
-            const { data: recebidas, error: errorRecebidas } = await supabase
+            // 1. Buscar notificações recebidas (Passar a bola)
+            const promessaInteracoes = supabase
                 .from('interacoes')
                 .select(`
                     *,
@@ -33,20 +33,51 @@ export const NotificacoesProvedor = ({ children }) => {
                 .eq('destinatario_id', usuario.id)
                 .order('criado_em', { ascending: false });
 
-            if (errorRecebidas) throw errorRecebidas;
+            // 1.1 Buscar convites de equipe pendentes
+            const promessaConvites = supabase
+                .from('convites_equipe')
+                .select(`
+                    id, status, criado_em, mensagem_convite,
+                    equipes (
+                        id, nome, modalidade, logo_url, nivel, local_cidade, local_estado,
+                        admin:admin_id (nome_completo, apelido, foto_url)
+                    )
+                `)
+                .eq('jogador_id', usuario.id)
+                .eq('status', 'pendente');
 
             // 2. Buscar interações enviadas (para checar matches)
-            const { data: enviadas, error: errorEnviadas } = await supabase
+            const promessaEnviadas = supabase
                 .from('interacoes')
                 .select('destinatario_id')
                 .eq('remetente_id', usuario.id);
 
-            if (errorEnviadas) throw errorEnviadas;
+            const [resInteracoes, resConvites, resEnviadas] = await Promise.all([
+                promessaInteracoes, 
+                promessaConvites, 
+                promessaEnviadas
+            ]);
 
-            const idsEnviados = new Set(enviadas.map(e => e.destinatario_id));
+            if (resInteracoes.error) throw resInteracoes.error;
+            if (resConvites.error) throw resConvites.error;
+            if (resEnviadas.error) throw resEnviadas.error;
+
+            const interacoesFormatadas = (resInteracoes.data || []).map(i => ({ 
+                ...i, 
+                // Se o tipo já veio do banco (ex: solicitacao_ingresso), mantém. 
+                // Se for nulo ou o padrão antigo, podemos rotular como 'interacao'.
+                tipo: i.tipo || 'interacao' 
+            }));
+            const convitesFormatados = (resConvites.data || []).map(c => ({ ...c, tipo: 'convite_equipe' }));
+
+            const todasNotificacoes = [...interacoesFormatadas, ...convitesFormatados].sort((a, b) => 
+                new Date(b.criado_em).getTime() - new Date(a.criado_em).getTime()
+            );
+
+            const idsEnviados = new Set((resEnviadas.data || []).map(e => e.destinatario_id));
             setMatches(idsEnviados);
-            setNotificacoes(recebidas || []);
-            setContagemNaoLidas((recebidas || []).length);
+            setNotificacoes(todasNotificacoes);
+            setContagemNaoLidas(todasNotificacoes.length);
         } catch (error) {
             console.error('Erro ao carregar notificações:', error);
         }
@@ -55,22 +86,31 @@ export const NotificacoesProvedor = ({ children }) => {
     useEffect(() => {
         carregarNotificacoes();
 
-        // Inscrição em tempo real para novas notificações
+        // Inscrição em tempo real para novas notificações e convites
         if (usuario) {
+            console.log("🔔 Iniciando Realtime para: ", usuario.id);
             const canal = supabase
-                .channel(`public:interacoes:${usuario.id}`)
+                .channel(`realtime_notificacoes_${usuario.id}`)
                 .on('postgres_changes', { 
-                    event: 'INSERT', 
+                    event: '*', 
                     schema: 'public', 
-                    table: 'interacoes'
+                    table: 'interacoes',
+                    filter: `destinatario_id=eq.${usuario.id}`
                 }, (payload) => {
-                    // Verificação robusta do destinatário
-                    if (payload.new && payload.new.destinatario_id === usuario.id) {
-                        carregarNotificacoes();
-                    }
+                    console.log("⚡ Nova Interação (Passar a Bola):", payload);
+                    carregarNotificacoes();
+                })
+                .on('postgres_changes', { 
+                    event: '*', 
+                    schema: 'public', 
+                    table: 'convites_equipe',
+                    filter: `jogador_id=eq.${usuario.id}`
+                }, (payload) => {
+                    console.log("⚡ Novo Convite/Mudança de Equipe:", payload);
+                    carregarNotificacoes();
                 })
                 .subscribe((status) => {
-                    // status da conexão
+                    console.log(`🔌 Status do Canal Realtime (${usuario.id}):`, status);
                 });
 
             return () => {
@@ -82,19 +122,19 @@ export const NotificacoesProvedor = ({ children }) => {
     const limparNotificacoes = useCallback(async () => {
         if (!usuario) return;
         try {
+            // Limpa apenas as interações
             const { error } = await supabase
                 .from('interacoes')
                 .delete()
                 .eq('destinatario_id', usuario.id);
             
             if (error) throw error;
-            setNotificacoes([]);
-            setContagemNaoLidas(0);
+            carregarNotificacoes(); // Recarrega para manter os convites pendentes na tela, mas remover os avatares de interacao
         } catch (error) {
             console.error('Erro ao limpar notificações:', error);
             alert('Erro ao limpar notificações.');
         }
-    }, [usuario]);
+    }, [usuario, carregarNotificacoes]);
 
     return (
         <NotificacoesContexto.Provider value={{ 

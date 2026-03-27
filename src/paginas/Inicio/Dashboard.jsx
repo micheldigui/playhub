@@ -2,11 +2,15 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { supabase } from '../../servicos/supabase';
 import { usarAutenticacao } from '../../contextos/AutenticacaoContexto';
 import { usarEquipe } from '../../contextos/EquipeContexto';
+import BannerInstalacaoApp from '../../componentes/Pwa/BannerInstalacaoApp';
+import ModalInstalacaoApp from '../../componentes/Pwa/ModalInstalacaoApp';
+import ModalDetalhesPartida from '../Equipe/tabs/modais/ModalDetalhesPartida';
+import { usePwaInstall } from '../../hooks/usePwaInstall';
 import {
     Calendar, Users, DollarSign, Globe, Lock, MapPin,
     CheckCircle, AlertCircle, Activity, ChevronRight,
     Settings, User, Trophy, Search, Swords, BarChart2,
-    ShieldCheck, Bell, Plus, X, GripHorizontal
+    ShieldCheck, Bell, Plus, X, GripHorizontal, Download
 } from 'lucide-react';
 import './Dashboard.css';
 
@@ -23,18 +27,18 @@ const CATALOGO_ATALHOS = [
     { id: 'notificacoes',     label: 'Notificações',         emoji: '🔔', icone: Bell,       tela: 'equipe',           roles: [] },
     // Exclusivos p/ Admins
     { id: 'gestao_equipe',    label: 'Gestão da Equipe',     emoji: '⚙️', icone: Settings,   tela: 'equipe_admin',     roles: ['admin','sub_admin'] },
-    { id: 'gestao_membros',   label: 'Gestão de Membros',    emoji: '🛡️', icone: ShieldCheck, tela: 'equipe_admin',    roles: ['admin','sub_admin'] },
-    { id: 'relatorios',       label: 'Relatórios',           emoji: '📊', icone: BarChart2,  tela: 'equipe_admin',     roles: ['admin','sub_admin'] },
     { id: 'criar_partida',    label: 'Criar Partida',        emoji: '⚽', icone: Swords,     tela: 'equipe',           roles: ['admin','sub_admin'] },
 ];
 
 const STORAGE_KEY_ATALHOS = 'playhub_atalhos_dashboard';
 
-const Dashboard = ({ aoNavegar }) => {
+const Dashboard = ({ aoNavegar, setAbaEquipe }) => {
     const { dadosUsuario, alternarVisibilidadePerfil } = usarAutenticacao();
     const { equipes } = usarEquipe();
+    const { isInstalled } = usePwaInstall();
 
     const [proximasPartidas, setProximasPartidas] = useState([]);
+    const [partidaSelecionada, setPartidaSelecionada] = useState(null);
     const [carregando, setCarregando] = useState(true);
     const [alterandoPriv, setAlterandoPriv] = useState(false);
 
@@ -42,6 +46,7 @@ const Dashboard = ({ aoNavegar }) => {
     const [equipeFinSelecionada, setEquipeFinSelecionada] = useState(null);
     const [finDados, setFinDados] = useState(null);
     const [carregandoFin, setCarregandoFin] = useState(false);
+    const [modalInstalacaoAberto, setModalInstalacaoAberto] = useState(false);
 
     // ── Atalhos personalizáveis ───────────────────────────────────────────
     const [modalAtalhosAberto, setModalAtalhosAberto] = useState(false);
@@ -101,7 +106,7 @@ const Dashboard = ({ aoNavegar }) => {
                 const equipeIds = equipes.map(e => e.id);
                 const { data: partidasData } = await supabase
                     .from('partidas')
-                    .select('*, equipes(nome, logo_url)')
+                    .select('*, equipes(id, nome, logo_url, regras)')
                     .in('equipe_id', equipeIds)
                     .gte('data', hoje)
                     .lte('data', daqui14Str)
@@ -134,23 +139,21 @@ const Dashboard = ({ aoNavegar }) => {
                 { data: config },
                 { data: ciclo },
                 { data: mensalidade },
-                { data: avulsos }
+                { data: avulsos },
+                totalMembrosRes
             ] = await Promise.all([
                 supabase.from('financeiro_config').select('*').eq('equipe_id', equipeId).maybeSingle(),
                 supabase.from('ciclos_financeiros').select('*').eq('equipe_id', equipeId).eq('periodo', periodo).maybeSingle(),
                 supabase.from('mensalidades').select('*').eq('equipe_id', equipeId).eq('usuario_id', dadosUsuario.id).eq('periodo', periodo).maybeSingle(),
-                supabase.from('pagamentos_avulsos').select('*').eq('equipe_id', equipeId).eq('usuario_id', dadosUsuario.id)
+                supabase.from('pagamentos_avulsos').select('*').eq('equipe_id', equipeId).eq('usuario_id', dadosUsuario.id),
+                supabase.from('membros_equipe').select('id', { count: 'exact', head: true }).eq('equipe_id', equipeId).eq('status', 'ativo')
             ]);
 
             const valorMensalidade = mensalidade?.valor_configurado || config?.valor_mensalidade || 0;
             const statusMensalidade = mensalidade?.status || 'sem_registro';
             const custoCt = config?.custo_quadra || 0;
-            const totalMembros = await supabase
-                .from('membros_equipe')
-                .select('*', { count: 'exact', head: true })
-                .eq('equipe_id', equipeId)
-                .eq('status', 'ativo');
-            const numMembros = totalMembros.count || 1;
+            
+            const numMembros = totalMembrosRes.count || 1;
             const custoProporcionado = custoCt > 0 ? (custoCt / numMembros).toFixed(2) : null;
 
             // Data de vencimento
@@ -195,7 +198,18 @@ const Dashboard = ({ aoNavegar }) => {
     const saudacao = horaAtual < 12 ? 'Bom dia' : horaAtual < 18 ? 'Boa tarde' : 'Boa noite';
 
     const equipeFinAtual = equipes.find(e => e.id === equipeFinSelecionada);
-    const atalhosExibidos = CATALOGO_ATALHOS.filter(a => atalhosSelecionados.includes(a.id) && (a.roles.length === 0 || a.roles.includes(papelMaximo)));
+    
+    // Injetar atalho de instalação dinamicamente
+    let atalhosExibidos = CATALOGO_ATALHOS.filter(a => 
+        atalhosSelecionados.includes(a.id) && (a.roles.length === 0 || a.roles.includes(papelMaximo))
+    );
+
+    if (!isInstalled) {
+        atalhosExibidos = [
+            ...atalhosExibidos,
+            { id: 'instalar_pwa', label: 'Instalar App', emoji: '📲', icone: Download, action: () => setModalInstalacaoAberto(true), roles: [] }
+        ];
+    }
 
     return (
         <div className="dashboard-container">
@@ -223,6 +237,10 @@ const Dashboard = ({ aoNavegar }) => {
                 </button>
             </header>
 
+            <div style={{ padding: '0 20px' }}>
+                <BannerInstalacaoApp local="dashboard" />
+            </div>
+
             {carregando ? (
                 <div className="dash-loading">
                     <Activity size={30} className="dash-spinner" />
@@ -246,20 +264,42 @@ const Dashboard = ({ aoNavegar }) => {
                                     const [, mes, dia] = p.data.split('-');
                                     const inscrita = p.minhaInscricao?.status === 'confirmado';
                                     const emEspera = p.minhaInscricao?.status === 'espera';
+                                    
+                                    // Regras de Inscrição
+                                    const regras = p.equipes?.regras || {};
+                                    const openDays = regras.registrationOpenDays || 7;
+                                    const eventDate = new Date(`${p.data}T${p.hora}`);
+                                    const openDate = new Date(eventDate.getTime() - (openDays * 24 * 60 * 60 * 1000));
+                                    const agora = new Date();
+                                    const aberta = agora >= openDate;
+
                                     return (
-                                        <div key={p.id} className="agenda-item" onClick={() => aoNavegar('equipe')}>
+                                        <div 
+                                            key={p.id} 
+                                            className="agenda-item" 
+                                            onClick={() => setPartidaSelecionada(p)}
+                                            style={{ cursor: 'pointer' }}
+                                        >
                                             <div className="agenda-data">
                                                 <strong>{dia}/{mes}</strong>
                                                 <span>{p.hora?.substring(0, 5)}</span>
                                             </div>
-                                            <div className="agenda-info">
+                                            <div className="agenda-info" style={{ flex: 1 }}>
                                                 <span className="agenda-equipe">{p.equipes?.nome}</span>
-                                                <span className="agenda-local"><MapPin size={11} /> {p.local || 'Local a definir'}</span>
+                                                <span className="agenda-local">
+                                                    <MapPin size={11} /> {p.local_nome || p.local || 'Local a definir'}
+                                                </span>
+                                                {!aberta && (
+                                                    <span style={{ fontSize: '10px', color: '#f59e0b', marginTop: '4px', display: 'block' }}>
+                                                        Abre inscrição: {openDate.toLocaleDateString('pt-BR')} às {openDate.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                                                    </span>
+                                                )}
                                             </div>
-                                            <div>
+                                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
                                                 {inscrita && <span className="badge confirmado">✓ Confirmado</span>}
                                                 {emEspera && <span className="badge espera">Espera</span>}
-                                                {!p.minhaInscricao && <span className="badge aviso">Sem Inscrição</span>}
+                                                {aberta && !p.minhaInscricao && <span className="badge aviso">Participar</span>}
+                                                {!aberta && <span className="badge" style={{ background: 'rgba(255,255,255,0.05)', color: '#64748b' }}>Em breve</span>}
                                             </div>
                                         </div>
                                     );
@@ -288,7 +328,10 @@ const Dashboard = ({ aoNavegar }) => {
                             {equipes.length > 0 ? (
                                 <div className="equipes-carrossel">
                                     {equipes.map(e => (
-                                        <button key={e.id} className="equipe-chip" onClick={() => aoNavegar('equipe')} title={e.nome}>
+                                        <button key={e.id} className="equipe-chip" onClick={() => { 
+                                            setAbaEquipe('minha-equipe');
+                                            aoNavegar('equipe'); 
+                                        }} title={e.nome}>
                                             <div className="equipe-chip-foto">
                                                 {e.logo_url ? <img src={e.logo_url} alt={e.nome} /> : <span>{e.nome.charAt(0).toUpperCase()}</span>}
                                             </div>
@@ -317,7 +360,10 @@ const Dashboard = ({ aoNavegar }) => {
                                     <span className="bento-icone green"><DollarSign size={17} /></span>
                                     <h2>Situação Financeira</h2>
                                 </div>
-                                <button className="bento-atalho" onClick={() => aoNavegar('equipe')}>Detalhes</button>
+                                <button className="bento-atalho" onClick={() => {
+                                    setAbaEquipe('minha-equipe');
+                                    aoNavegar('equipe');
+                                }}>Detalhes</button>
                             </div>
 
                             {/* Seletor de equipe */}
@@ -427,7 +473,7 @@ const Dashboard = ({ aoNavegar }) => {
                             {atalhosExibidos.length > 0 ? (
                                 <div className="atalhos-win-grid">
                                     {atalhosExibidos.map(a => (
-                                        <button key={a.id} className="atalho-win-btn" onClick={() => aoNavegar(a.tela)}>
+                                        <button key={a.id} className="atalho-win-btn" onClick={a.action ? a.action : () => aoNavegar(a.tela)}>
                                             <span className="atalho-win-emoji">{a.emoji}</span>
                                             <span className="atalho-win-label">{a.label}</span>
                                         </button>
@@ -480,6 +526,22 @@ const Dashboard = ({ aoNavegar }) => {
                         </div>
                     </div>
                 </div>
+            )}
+
+            {/* === MODAIS === */}
+            {partidaSelecionada && (
+                <ModalDetalhesPartida 
+                    isOpen={!!partidaSelecionada}
+                    partida={partidaSelecionada}
+                    onClose={() => {
+                        setPartidaSelecionada(null);
+                        carregarPartidas(); // Recarregar para atualizar estado no dashboard
+                    }}
+                />
+            )}
+
+            {modalInstalacaoAberto && (
+                <ModalInstalacaoApp aoFechar={() => setModalInstalacaoAberto(false)} />
             )}
         </div>
     );

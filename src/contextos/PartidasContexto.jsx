@@ -57,6 +57,21 @@ export const PartidasProvider = ({ children }) => {
 
     const excluirPartida = async (id) => {
         try {
+            // Verifica se há inscritos antes de excluir
+            const { count, error: errCount } = await supabase
+                .from('partidas_presencas')
+                .select('id', { count: 'exact', head: true })
+                .eq('partida_id', id);
+
+            if (errCount) throw errCount;
+
+            if (count > 0) {
+                return { 
+                    sucesso: false, 
+                    erro: `Não é possível excluir: ${count} atleta(s) já estão inscritos nesta partida.` 
+                };
+            }
+
             const { error } = await supabase
                 .from('partidas')
                 .delete()

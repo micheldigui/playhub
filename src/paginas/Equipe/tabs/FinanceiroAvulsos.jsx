@@ -4,12 +4,12 @@ import { usarEquipe } from '../../../contextos/EquipeContexto';
 import { DollarSign, User, CheckCircle2, AlertCircle, Trash2, Calendar } from 'lucide-react';
 
 const FinanceiroAvulsos = () => {
-    const { equipeAtiva } = usarEquipe();
+    const { equipeAtiva, temPermissaoEquipe } = usarEquipe();
     const [pagamentos, setPagamentos] = useState([]);
     const [carregando, setCarregando] = useState(true);
     const [processando, setProcessando] = useState(null);
 
-    const isAdmin = equipeAtiva?.papel === 'admin' || equipeAtiva?.papel === 'sub_admin';
+    const isAdmin = equipeAtiva?.papel === 'admin' || temPermissaoEquipe('gerenciar_financeiro');
 
     const carregarAvulsos = async () => {
         if (!equipeAtiva) return;

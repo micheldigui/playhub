@@ -35,7 +35,7 @@ const PaginaConvite = ({ equipeId, aoVoltar }) => {
             )
           `)
           .eq('slug_convite', equipeId)
-          .single();
+          .maybeSingle();
 
         if (error) throw error;
         setEquipe(data);
@@ -91,12 +91,6 @@ const PaginaConvite = ({ equipeId, aoVoltar }) => {
 
   return (
     <div className="pagina-explorar" style={{ maxWidth: '600px', margin: '0 auto' }}>
-      {aoVoltar && (
-        <button className="btn-voltar-explorar" onClick={aoVoltar} style={{ marginBottom: '2rem' }}>
-          <ArrowLeft size={18} /> Voltar ao Dashboard
-        </button>
-      )}
-
       <header className="explorar-header">
         <h1>Convite para Equipe</h1>
         <p>Você foi convidado(a) para conhecer e ingressar na equipe abaixo.</p>

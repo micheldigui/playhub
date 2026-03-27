@@ -5,12 +5,12 @@ import Botao from '../../../componentes/Botao/Botao';
 import { Shield, AlertTriangle, Scale, Calendar, Trash2, CheckCircle2 } from 'lucide-react';
 
 const AbaPunicoes = () => {
-    const { equipeAtiva } = usarEquipe();
+    const { equipeAtiva, temPermissaoEquipe } = usarEquipe();
     const [punicoes, setPunicoes] = useState([]);
     const [carregando, setCarregando] = useState(true);
     const [processando, setProcessando] = useState(null);
 
-    const isAdmin = equipeAtiva?.papel === 'admin' || equipeAtiva?.papel === 'sub_admin';
+    const isAdmin = equipeAtiva?.papel === 'admin' || temPermissaoEquipe('gerenciar_membros');
 
     const carregarPunicoes = async () => {
         if (!equipeAtiva) return;
@@ -109,10 +109,16 @@ const AbaPunicoes = () => {
     const anistiadas = punicoes.filter(p => !p.ativa);
 
     return (
-        <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+        <div className="animate-fade-in" style={{ padding: '0 1rem' }}>
+            <header style={{ marginBottom: '24px' }}>
+                <h2 style={{ fontSize: '1.6rem', color: '#f8fafc', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <Shield size={28} color="#f43f5e" /> Painel Disciplinar
+                </h2>
+                <p style={{ color: '#94a3b8', fontSize: '0.9rem' }}>Acompanhe suspensões, avisos e o histórico de conduta dos atletas.</p>
+            </header>
             
             {/* HEROS DE ESTATÍSTICAS */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '24px' }}>
                 <div style={{ background: 'rgba(244, 63, 94, 0.1)', border: '1px solid rgba(244, 63, 94, 0.2)', padding: '16px', borderRadius: '12px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#fca5a5', marginBottom: '8px' }}>
                         <AlertTriangle size={18} /> Punições Ativas

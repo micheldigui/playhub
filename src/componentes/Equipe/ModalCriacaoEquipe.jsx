@@ -49,9 +49,57 @@ const ModalCriacaoEquipe = ({ isOpen, onClose, aoSucesso, equipeParaEditar = nul
 
   useEffect(() => {
     if (isOpen) {
+      if (equipeParaEditar) {
+        setForm({
+          nome: equipeParaEditar.nome || '',
+          modalidade: equipeParaEditar.modalidade || '',
+          observacoes: equipeParaEditar.observacoes || '',
+          maxJogadores: equipeParaEditar.max_jogadores || 20,
+          visibilidade: equipeParaEditar.visibilidade || 'publica',
+          nivel: equipeParaEditar.nivel || '',
+          cep: equipeParaEditar.cep || '',
+          cidade: equipeParaEditar.cidade || '',
+          estado: equipeParaEditar.estado || '',
+          local_nome: equipeParaEditar.local_nome || '',
+          local_cep: equipeParaEditar.local_cep || '',
+          local_rua: equipeParaEditar.local_rua || '',
+          local_numero: equipeParaEditar.local_numero || '',
+          local_complemento: equipeParaEditar.local_complemento || '',
+          local_bairro: equipeParaEditar.local_bairro || '',
+          local_cidade: equipeParaEditar.local_cidade || '',
+          local_estado: equipeParaEditar.local_estado || '',
+          local_mapa_link: equipeParaEditar.local_mapa_link || '',
+          link_grupo: equipeParaEditar.link_grupo || ''
+        });
+        setPreviewLogo(equipeParaEditar.logo_url || null);
+      } else {
+        // Resetar para criação de nova equipe
+        setForm({
+          nome: '',
+          modalidade: '',
+          observacoes: '',
+          maxJogadores: 20,
+          visibilidade: 'publica',
+          nivel: '',
+          cep: '',
+          cidade: '',
+          estado: '',
+          local_nome: '',
+          local_cep: '',
+          local_rua: '',
+          local_numero: '',
+          local_complemento: '',
+          local_bairro: '',
+          local_cidade: '',
+          local_estado: '',
+          local_mapa_link: '',
+          link_grupo: ''
+        });
+        setPreviewLogo(null);
+      }
       setTimeout(() => campoNomeRef.current?.focus(), 100);
     }
-  }, [isOpen]);
+  }, [isOpen, equipeParaEditar]);
 
   const mascaraCep = (valor) => {
     const nums = valor.replace(/\D/g, '').slice(0, 8);

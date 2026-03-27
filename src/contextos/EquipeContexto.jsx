@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { supabase } from '../servicos/supabase';
 import { usarAutenticacao } from './AutenticacaoContexto';
 
@@ -13,13 +13,27 @@ export const usarEquipe = () => {
 };
 
 export const EquipeProvedor = ({ children }) => {
-    const { usuario } = usarAutenticacao();
+    const { usuario, ehSuperAdmin } = usarAutenticacao();
     const [equipes, setEquipes] = useState([]);
     const [equipeAtiva, setEquipeAtiva] = useState(null);
     const [carregando, setCarregando] = useState(true);
     const [convitesPendentesGlobais, setConvitesPendentesGlobais] = useState(0);
     const [solicitacoesPendentesGlobais, setSolicitacoesPendentesGlobais] = useState(0);
     const [minhasSolicitacoes, setMinhasSolicitacoes] = useState([]);
+    
+    // Limite de equipes que o usuário pode ser Administrador (Dono)
+    const LIMITE_EQUIPES_AD_POR_CONTA = 3;
+    
+    // Filtramos apenas as equipes onde o usuário é o ADMIN (CRIADOR/PROPRIETÁRIO) principal
+    const equipesOndeAdmin = equipes.filter(e => e.papel === 'admin' && !membroGestaoGlobal(e.id));
+    const totalCriadas = equipesOndeAdmin.length;
+    const podeCriarEquipe = totalCriadas < LIMITE_EQUIPES_AD_POR_CONTA;
+
+    function membroGestaoGlobal(id) {
+        // Ajuda a evitar que equipes em modo manutenção do super admin contem no limite pessoal dele
+        const eq = equipes.find(eqp => eqp.id === id);
+        return eq?.gestao_global === true;
+    }
 
     // Efeito para manter a contagem de aprovações pendentes em dia (SOMA P/ GESTORES)
     useEffect(() => {
@@ -53,59 +67,8 @@ export const EquipeProvedor = ({ children }) => {
         carregarContagemSolicitacoes();
     }, [equipes]);
 
-    useEffect(() => {
-        if (usuario) {
-            carregarEquipes();
-            carregarConvitesRecebidos();
-
-            // 1. Listener para o PRÓPRIO usuário (detalhes do seu vínculo)
-            const canalProprio = supabase
-                .channel(`membros_equipe_user_${usuario.id}`)
-                .on(
-                    'postgres_changes',
-                    {
-                        event: '*',
-                        schema: 'public',
-                        table: 'membros_equipe',
-                        filter: `usuario_id=eq.${usuario.id}`
-                    },
-                    (payload) => {
-                        carregarEquipes();
-                    }
-                )
-                .subscribe();
-
-            // 2. Listener para GESTORES (detectar novas solicitações de entrada)
-            const canalGestao = supabase
-                .channel(`membros_equipe_gestao_${usuario.id}`)
-                .on(
-                    'postgres_changes',
-                    {
-                        event: '*',
-                        schema: 'public',
-                        table: 'membros_equipe'
-                    },
-                    (payload) => {
-                        // Recarrega em qualquer entrada/saída ou mudança de status para manter badges e listas sincronizados
-                        carregarEquipes();
-                    }
-                )
-                .subscribe();
-
-            return () => {
-                supabase.removeChannel(canalProprio);
-                supabase.removeChannel(canalGestao);
-            };
-        } else {
-            setEquipes([]);
-            setEquipeAtiva(null);
-            setCarregando(false);
-            setConvitesPendentesGlobais(0);
-            setSolicitacoesPendentesGlobais(0);
-        }
-    }, [usuario?.id]);
-
-    const carregarEquipes = async () => {
+    const carregarEquipes = useCallback(async () => {
+        if (!usuario) return;
         setCarregando(true);
         try {
             const { data, error } = await supabase
@@ -177,15 +140,87 @@ export const EquipeProvedor = ({ children }) => {
         } finally {
             setCarregando(false);
         }
-    };
+    }, [usuario?.id]);
 
-    const selecionarEquipe = (equipeId) => {
+    useEffect(() => {
+        let timeoutId;
+
+        const debouncedCarregarEquipes = () => {
+            clearTimeout(timeoutId);
+            timeoutId = setTimeout(() => {
+                carregarEquipes();
+            }, 1000);
+        };
+
+        if (usuario) {
+            carregarEquipes();
+
+            // 1. Listener para o PRÓPRIO usuário (detalhes do seu vínculo)
+            const canalProprio = supabase
+                .channel(`membros_equipe_user_${usuario.id}`)
+                .on(
+                    'postgres_changes',
+                    {
+                        event: '*',
+                        schema: 'public',
+                        table: 'membros_equipe',
+                        filter: `usuario_id=eq.${usuario.id}`
+                    },
+                    (payload) => {
+                        debouncedCarregarEquipes();
+                    }
+                )
+                .subscribe();
+
+            // 2. Listener para GESTORES (detectar novas solicitações de entrada e mudanças de membros)
+            const canalGestao = supabase
+                .channel(`membros_equipe_gestao_${usuario.id}`)
+                .on(
+                    'postgres_changes',
+                    {
+                        event: '*',
+                        schema: 'public',
+                        table: 'membros_equipe'
+                    },
+                    (payload) => {
+                        // Verifica se a mudança pertence a alguma equipe que o usuário gerencia em tempo real
+                        const novaEquipeId = payload.new?.equipe_id;
+                        const antigaEquipeId = payload.old?.equipe_id;
+                        
+                        // Buscamos as equipes que o usuário gerencia (Admin ou Sub-Admin)
+                        const idsGeridos = equipes
+                            .filter(e => e.papel === 'admin' || e.papel === 'sub_admin')
+                            .map(e => e.id);
+
+                        if (idsGeridos.includes(novaEquipeId) || idsGeridos.includes(antigaEquipeId)) {
+                            debouncedCarregarEquipes();
+                        }
+                    }
+                )
+                .subscribe();
+
+            return () => {
+                clearTimeout(timeoutId);
+                supabase.removeChannel(canalProprio);
+                supabase.removeChannel(canalGestao);
+            };
+        } else {
+            setEquipes([]);
+            setEquipeAtiva(null);
+            setCarregando(false);
+            setConvitesPendentesGlobais(0);
+            setSolicitacoesPendentesGlobais(0);
+        }
+    }, [usuario?.id, carregarEquipes]);
+
+
+    const selecionarEquipe = useCallback((equipeId) => {
         const encontrada = equipes.find(e => e.id === equipeId);
         if (encontrada) {
             setEquipeAtiva(encontrada);
             localStorage.setItem('playhub_equipe_ativa', equipeId);
         }
-    };
+    }, [equipes]);
 
     const selecionarEquipeGlobal = (equipe) => {
         // Para Super Admin, permitimos selecionar qualquer equipe e damos papel de admin "virtual"
@@ -202,13 +237,19 @@ export const EquipeProvedor = ({ children }) => {
     const getCoordenadasPorCEP = async (cep) => {
         if (!cep) return { lat: null, lon: null };
         try {
-            // Limpa o CEP (remove traços/pontos)
             const cepLimpo = cep.replace(/\D/g, '');
             if (cepLimpo.length !== 8) return { lat: null, lon: null };
 
+            // Timeout de 2 segundos para evitar que a aplicação trave se o Nominatim estiver instável
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 2000);
+
             const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&postalcode=${cepLimpo}&country=Brazil&limit=1`, {
-                headers: { 'Accept-Language': 'pt-BR' }
+                headers: { 'Accept-Language': 'pt-BR' },
+                signal: controller.signal
             });
+            
+            clearTimeout(timeoutId);
             const data = await response.json();
             
             if (data && data.length > 0) {
@@ -218,12 +259,15 @@ export const EquipeProvedor = ({ children }) => {
                 };
             }
         } catch (error) {
-            console.error('Erro ao buscar coordenadas pelo CEP:', error);
+            console.warn('Busca de coordenadas ignorada (timeout ou erro):', error.name === 'AbortError' ? 'Timeout' : error);
         }
         return { lat: null, lon: null };
     };
 
     const criarEquipe = async (dadosDaEquipe, arquivoLogo) => {
+        if (!podeCriarEquipe) {
+            return { sucesso: false, erro: `Limite de ${LIMITE_EQUIPES_AD_POR_CONTA} equipes atingido. Exclua uma equipe para criar outra.` };
+        }
         try {
             // 0. Obter coordenadas se houver CEP
             const coords = await getCoordenadasPorCEP(dadosDaEquipe.local_cep);
@@ -291,6 +335,7 @@ export const EquipeProvedor = ({ children }) => {
                     equipe_id: equipeId,
                     usuario_id: usuario.id,
                     papel: 'admin',
+                    status: 'ativo',
                     permissoes: ['gerenciar_equipe', 'gerenciar_membros']
                 });
 
@@ -423,9 +468,6 @@ export const EquipeProvedor = ({ children }) => {
             setEquipes(prev => prev.map(e => e.id === equipeId ? { ...e, regras: novasRegras } : e));
             setEquipeAtiva(prev => prev.id === equipeId ? { ...prev, regras: novasRegras } : prev);
 
-            // Recarrega a página para garantir sincronização total (App.jsx manterá a aba ativa)
-            window.location.reload();
-
             return { sucesso: true };
         } catch (error) {
             console.error('Erro ao atualizar regras:', error);
@@ -514,13 +556,19 @@ export const EquipeProvedor = ({ children }) => {
     const buscarJogadores = async (filtros = {}) => {
         setCarregando(true);
         try {
+            // Calcular data de corte para 18 anos
+            const hoje = new Date();
+            const dataCorte = new Date(hoje.getFullYear() - 18, hoje.getMonth(), hoje.getDate())
+                .toISOString().split('T')[0];
+
             let query = supabase
                 .from('usuarios')
                 .select(`
                     id, nome_completo, apelido, cidade, estado, foto_url,
-                    esportes_interesse
+                    esportes_interesse, data_nascimento
                 `)
-                .eq('perfil_publico', true);
+                .eq('perfil_publico', true)
+                .lte('data_nascimento', dataCorte); // Apenas maiores de 18
 
             if (filtros.termo) {
                 query = query.or(`nome_completo.ilike.%${filtros.termo}%,apelido.ilike.%${filtros.termo}%`);
@@ -587,9 +635,51 @@ export const EquipeProvedor = ({ children }) => {
                 });
 
             if (error) throw error;
+
+            // Criar Alerta Global (Sino) para o ADMIN da equipe
+            const { data: equipeAlvo } = await supabase
+                .from('equipes')
+                .select('admin_id, nome')
+                .eq('id', equipeId)
+                .maybeSingle();
+
+            if (equipeAlvo?.admin_id) {
+                await supabase
+                    .from('interacoes')
+                    .insert({
+                        remetente_id: usuario.id,
+                        destinatario_id: equipeAlvo.admin_id,
+                        tipo: 'solicitacao_ingresso',
+                        payload: {
+                            equipe_id: equipeId,
+                            nome_equipe: equipeAlvo.nome,
+                            mensagem: `Solicitou ingresso na equipe ${equipeAlvo.nome}`
+                        }
+                    });
+            }
+
             return { sucesso: true };
         } catch (error) {
             console.error('Erro ao solicitar ingresso:', error);
+            return { sucesso: false, erro: error.message };
+        }
+    };
+
+    const cancelarSolicitacaoIngresso = async (equipeId) => {
+        try {
+            // Utilizamos uma RPC para garantir bypass das regras de RLS (que estavam gerando falso-sucesso na deleção)
+            // e para fazer a exclusão do membro e da notificação em uma única transação atômica.
+            const { error } = await supabase.rpc('cancelar_solicitacao_ingresso', {
+                p_equipe_id: equipeId,
+                p_usuario_id: usuario.id
+            });
+
+            if (error) throw error;
+
+            await carregarEquipes();
+            return { sucesso: true };
+        } catch (error) {
+            console.error('Erro ao cancelar solicitação:', error);
             return { sucesso: false, erro: error.message };
         }
     };
@@ -608,7 +698,8 @@ export const EquipeProvedor = ({ children }) => {
                         apelido,
                         foto_url,
                         cidade,
-                        estado
+                        estado,
+                        data_nascimento
                     )
                 `)
                 .eq('equipe_id', equipeId)
@@ -644,7 +735,7 @@ export const EquipeProvedor = ({ children }) => {
         }
     };
 
-    const carregarMembrosEquipe = async (equipeId) => {
+    const carregarMembrosEquipe = useCallback(async (equipeId) => {
         try {
             const { data, error } = await supabase
                 .from('membros_equipe')
@@ -660,25 +751,21 @@ export const EquipeProvedor = ({ children }) => {
                         id,
                         nome_completo,
                         apelido,
-                        foto_url,
-                        email,
-                        telefone,
-                        cidade,
-                        estado
+                        foto_url
                     )
                 `)
                 .eq('equipe_id', equipeId)
-                .in('status', ['ativo', 'pendente']);
+                .neq('status', 'removido');
 
             if (error) throw error;
             return data;
         } catch (error) {
-            console.error('Erro ao carregar membros ativos:', error);
+            console.error('Erro ao carregar membros:', error);
             return [];
         }
-    };
+    }, []);
 
-    const removerMembro = async (membroId) => {
+    const removerMembro = useCallback(async (membroId) => {
         try {
             // Soft-delete para preservar históricos de pagamentos/partidas
             const { error } = await supabase
@@ -691,9 +778,9 @@ export const EquipeProvedor = ({ children }) => {
             console.error('Erro ao remover membro (soft-delete):', error);
             return { sucesso: false, erro: error.message };
         }
-    };
+    }, []);
 
-    const atualizarMembro = async (membroId, atualizacoes) => {
+    const atualizarMembro = useCallback(async (membroId, atualizacoes) => {
         try {
             const { error } = await supabase
                 .from('membros_equipe')
@@ -705,47 +792,23 @@ export const EquipeProvedor = ({ children }) => {
             console.error('Erro ao atualizar membro:', error);
             return { sucesso: false, erro: error.message };
         }
-    };
+    }, []);
 
     // ── SISTEMA DE CONVITES ──────────────────────────────────────────
 
     const enviarConvite = async (jogadorId, equipeId, mensagem = '') => {
         try {
-            // Verificar se já existe convite pendente
-            const { data: existente } = await supabase
-                .from('convites_equipe')
-                .select('id, status')
-                .eq('equipe_id', equipeId)
-                .eq('jogador_id', jogadorId)
-                .single();
+            // Usar RPC com SECURITY DEFINER para contornar bloqueios de RLS
+            const { data: conviteId, error } = await supabase.rpc('enviar_convite_seguro', {
+                p_equipe_id: equipeId,
+                p_jogador_id: jogadorId,
+                p_admin_id: usuario.id,
+                p_mensagem: mensagem || null
+            });
 
-            if (existente) {
-                if (existente.status === 'pendente') {
-                    return { sucesso: false, erro: 'Já existe um convite pendente para este jogador.' };
-                }
-                if (existente.status === 'aceito') {
-                    return { sucesso: false, erro: 'Este jogador já é membro da equipe.' };
-                }
-                // Se recusado, reenviar (update)
-                const { error } = await supabase
-                    .from('convites_equipe')
-                    .update({ status: 'pendente', mensagem_convite: mensagem, mensagem_resposta: null, respondido_em: null, criado_em: new Date().toISOString() })
-                    .eq('id', existente.id);
-                if (error) throw error;
-                return { sucesso: true, reenviado: true };
-            }
-
-            const { error } = await supabase
-                .from('convites_equipe')
-                .insert({
-                    equipe_id: equipeId,
-                    jogador_id: jogadorId,
-                    admin_id: usuario.id,
-                    mensagem_convite: mensagem || null,
-                    status: 'pendente'
-                });
             if (error) throw error;
-            return { sucesso: true };
+
+            return { sucesso: true, conviteId };
         } catch (error) {
             console.error('Erro ao enviar convite:', error);
             return { sucesso: false, erro: error.message };
@@ -778,7 +841,7 @@ export const EquipeProvedor = ({ children }) => {
                     equipes (
                         id, nome, modalidade, logo_url, nivel,
                         local_cidade, local_estado,
-                        admin:usuarios!equipes_admin_id_fkey (nome_completo, apelido, foto_url)
+                        admin:admin_id (nome_completo, apelido, foto_url)
                     )
                 `)
                 .eq('jogador_id', usuario.id)
@@ -961,8 +1024,8 @@ export const EquipeProvedor = ({ children }) => {
                 .select('status, papel, permissoes')
                 .eq('equipe_id', equipeId)
                 .eq('usuario_id', usuarioId)
-                .single();
-            if (error && error.code !== 'PGRST116') throw error; // PGRST116 = No rows found
+                .maybeSingle();
+            if (error) throw error;
             return data;
         } catch (error) {
             console.error('Erro ao carregar status do membro:', error);
@@ -973,11 +1036,20 @@ export const EquipeProvedor = ({ children }) => {
     // Conta quantas solicitações de posse pendentes o usuário atual recebeu (para exibir o badge no menu)
     const transferenciasPendentesGlobais = equipes.filter(e => e.admin_id_pendente === usuario?.id).length;
 
+    const temPermissaoEquipe = useCallback((perm) => {
+        if (!equipeAtiva) return false;
+        if (ehSuperAdmin && equipeAtiva.gestao_global) return true;
+        if (equipeAtiva.papel === 'admin') return true;
+        if (equipeAtiva.papel === 'sub_admin' && equipeAtiva.permissoes?.includes(perm)) return true;
+        return false;
+    }, [equipeAtiva, ehSuperAdmin]);
+
     const valor = {
         equipes,
         equipeAtiva,
         carregando,
         selecionarEquipe,
+        temPermissaoEquipe,
         atualizarEquipes: carregarEquipes,
         criarEquipe,
         editarEquipe,
@@ -986,9 +1058,11 @@ export const EquipeProvedor = ({ children }) => {
         buscarEquipes,
         selecionarEquipeGlobal,
         solicitarIngresso,
+        cancelarSolicitacaoIngresso,
         carregarSolicitacoes,
         responderSolicitacao,
         buscarJogadores,
+        buscarAtletas: buscarJogadores,
         carregarMembrosEquipe,
         atualizarMembro,
         atualizarPermissoesMembro,
@@ -1007,6 +1081,9 @@ export const EquipeProvedor = ({ children }) => {
         aceitarTransferenciaPosse,
         recusarTransferenciaPosse,
         sairDaEquipe,
+        podeCriarEquipe,
+        totalCriadas,
+        limiteEquipes: LIMITE_EQUIPES_AD_POR_CONTA
     };
 
 

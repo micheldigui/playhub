@@ -1,16 +1,21 @@
 import { useState } from 'react';
 import { usarNotificacoes } from '../../contextos/NotificacoesContexto';
 import { usarAutenticacao } from '../../contextos/AutenticacaoContexto';
+import { usarEquipe } from '../../contextos/EquipeContexto';
 import { supabase } from '../../servicos/supabase';
-import { Bell, User, MessageSquare, ArrowLeft, RefreshCw, Trash2, Phone } from 'lucide-react';
+import { Bell, User, MessageSquare, ArrowLeft, RefreshCw, Trash2, Phone, Shield } from 'lucide-react';
 import Botao from '../../componentes/Botao/Botao';
 import PerfilAtletaModal from '../../componentes/Modais/PerfilAtletaModal';
+import PerfilEquipeModal from '../../componentes/Modais/PerfilEquipeModal';
 import './PaginaNotificacoes.css';
 
-const PaginaNotificacoes = ({ aoVoltar }) => {
+const PaginaNotificacoes = ({ aoVoltar, abrirEquipeTab }) => {
     const { notificacoes, carregarNotificacoes, limparNotificacoes, matches } = usarNotificacoes();
     const { usuario, dadosUsuario } = usarAutenticacao();
+    const { responderConvite, selecionarEquipe } = usarEquipe();
     const [atletaSelecionado, setAtletaSelecionado] = useState(null);
+    const [equipeSelecionada, setEquipeSelecionada] = useState(null);
+    const [processando, setProcessando] = useState(null);
 
     const calcularIdade = (dataNasc) => {
         if (!dataNasc) return 0;
@@ -23,6 +28,39 @@ const PaginaNotificacoes = ({ aoVoltar }) => {
     };
 
     const idadeUsuario = calcularIdade(dadosUsuario?.data_nascimento);
+
+    const handleVerPedido = async (notificacao) => {
+        setProcessando(notificacao.id);
+        const equipeId = notificacao.payload?.equipe_id;
+        
+        try {
+            // Remove a notificação do sino (marcando como lida) e envia o capitão para a área da equipe
+            await supabase.from('interacoes').delete().eq('id', notificacao.id);
+            carregarNotificacoes();
+            
+            if (equipeId && abrirEquipeTab) {
+                selecionarEquipe(equipeId);
+                // Pequeno delay para garantir que a equipe virou a ativa no localStorage
+                setTimeout(() => {
+                    abrirEquipeTab('solicitacoes');
+                }, 50);
+            }
+        } catch (err) {
+            console.error('Falha ao redirecionar: ', err.message);
+        }
+        setProcessando(null);
+    };
+
+    const handleRespostaConvite = async (conviteId, aceitar) => {
+        setProcessando(conviteId);
+        const res = await responderConvite(conviteId, aceitar);
+        if (res.sucesso) {
+            alert(aceitar ? 'Você aceitou o convite e está na equipe! 🎉' : 'Convite recusado com sucesso.');
+        } else {
+            alert('Falha ao processar o convite: ' + res.erro);
+        }
+        setProcessando(null);
+    };
 
     const handleRetribuir = async (destinatarioId) => {
         try {
@@ -56,10 +94,7 @@ const PaginaNotificacoes = ({ aoVoltar }) => {
         <div className="pagina-notificacoes">
             <header className="notificacoes-header">
                 <div className="topo-acoes">
-                    <button className="btn-voltar-minimal" onClick={aoVoltar}>
-                        <ArrowLeft size={20} />
-                    </button>
-                    <h1>Notificações</h1>
+                    <h1 style={{ flex: 1 }}>Notificações</h1>
                     <div className="acoes-direita">
                         <button className="btn-header-acao" onClick={carregarNotificacoes} title="Atualizar">
                             <RefreshCw size={18} />
@@ -85,6 +120,88 @@ const PaginaNotificacoes = ({ aoVoltar }) => {
             <div className="lista-notificacoes">
                 {notificacoes.length > 0 ? (
                     notificacoes.map((notificacao) => {
+                        // 1. Renderização de Convite de Equipe
+                        if (notificacao.tipo === 'convite_equipe') {
+                            const admin = notificacao.equipes?.admin;
+                            return (
+                                <div key={`convite-${notificacao.id}`} className="card-notificacao animacao-entrada">
+                                    <div className="notificacao-logo">
+                                        {notificacao.equipes?.logo_url ? (
+                                            <img src={notificacao.equipes.logo_url} alt="Equipe" />
+                                        ) : (
+                                            <div className="avatar-placeholder" style={{ background: 'rgba(56, 189, 248, 0.1)', color: '#38bdf8' }}>
+                                                <Shield size={20} />
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className="notificacao-conteudo">
+                                        <p>
+                                            <strong>{admin?.nome_completo || admin?.apelido || 'O Capitão'}</strong> convidou você para jogar pelo time{' '}
+                                            <strong 
+                                                style={{ color: '#38bdf8', cursor: 'pointer', textDecoration: 'underline' }} 
+                                                onClick={() => setEquipeSelecionada(notificacao)}
+                                                title="Ver Perfil da Equipe"
+                                            >
+                                                {notificacao.equipes?.nome}
+                                            </strong>!
+                                        </p>
+                                        <span className="notificacao-data">
+                                            {new Date(notificacao.criado_em).toLocaleDateString()} às {new Date(notificacao.criado_em).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                        </span>
+                                        {notificacao.mensagem_convite && (
+                                            <div style={{ marginTop: '8px', padding: '10px', background: 'rgba(0,0,0,0.2)', borderRadius: '8px', fontSize: '0.8rem', color: '#cbd5e1', fontStyle: 'italic', borderLeft: '2px solid #38bdf8' }}>
+                                                "{notificacao.mensagem_convite}"
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className="notificacao-acoes">
+                                        <Botao 
+                                            variant="primario" 
+                                            style={{ padding: '8px 12px', fontSize: '0.8rem', width: '100%' }} 
+                                            onClick={() => setEquipeSelecionada(notificacao)} 
+                                        >
+                                            Ver Convite da Equipe
+                                        </Botao>
+                                    </div>
+                                </div>
+                            );
+                        }
+
+                        // 1.1 Renderização de Solicitação de Ingresso (ALTO-NÍVEL GESTOR)
+                        if (notificacao.tipo === 'solicitacao_ingresso') {
+                            return (
+                                <div key={`solicitacao-${notificacao.id}`} className="card-notificacao animacao-entrada" style={{ borderLeft: '3px solid #38bdf8' }}>
+                                    <div className="notificacao-logo">
+                                        {notificacao.remetente?.foto_url ? (
+                                            <img src={notificacao.remetente.foto_url} alt="Candidato" />
+                                        ) : (
+                                            <div className="avatar-placeholder" style={{ background: 'rgba(56, 189, 248, 0.1)', color: '#38bdf8' }}>
+                                                <User size={20} />
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className="notificacao-conteudo">
+                                        <p>
+                                            <strong>{notificacao.remetente?.nome_completo || notificacao.remetente?.apelido || 'Um atleta'}</strong> solicitou ingresso na equipe <strong>{notificacao.payload?.nome_equipe || 'sua equipe'}</strong>.
+                                        </p>
+                                        <span className="notificacao-data">
+                                            {new Date(notificacao.criado_em).toLocaleDateString()} às {new Date(notificacao.criado_em).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                        </span>
+                                    </div>
+                                    <div className="notificacao-acoes">
+                                        <Botao 
+                                            style={{ background: '#38bdf8', padding: '8px 12px', fontSize: '0.8rem', width: '100%' }} 
+                                            onClick={() => handleVerPedido(notificacao)} 
+                                            disabled={processando === notificacao.id}
+                                        >
+                                            Avaliar Perfil e Pedido
+                                        </Botao>
+                                    </div>
+                                </div>
+                            );
+                        }
+
+                        // 2. Renderização de Interações ("Passar a bola")
                         const ehMatch = matches.has(notificacao.remetente_id);
                         const idadeRemetente = calcularIdade(notificacao.remetente?.data_nascimento);
                         const ambosMaiores = idadeUsuario >= 18 && idadeRemetente >= 18;
@@ -92,7 +209,7 @@ const PaginaNotificacoes = ({ aoVoltar }) => {
                         const contatoLiberado = ehMatch && ambosMaiores && ambosAutorizaram;
 
                         return (
-                            <div key={notificacao.id} className={`card-notificacao animacao-entrada ${ehMatch ? 'card-match' : ''}`}>
+                            <div key={`interacao-${notificacao.id}`} className={`card-notificacao animacao-entrada ${ehMatch ? 'card-match' : ''}`}>
                                 <div className="notificacao-logo">
                                     {notificacao.remetente?.foto_url ? (
                                         <img src={notificacao.remetente.foto_url} alt="Remetente" />
@@ -160,7 +277,6 @@ const PaginaNotificacoes = ({ aoVoltar }) => {
                         <Bell size={48} strokeWidth={1} />
                         <h3>Nenhuma notificação por enquanto</h3>
                         <p>Continue explorando e passando a bola para outros atletas!</p>
-                        <Botao onClick={aoVoltar} style={{ marginTop: '1rem' }}>Voltar ao Início</Botao>
                     </div>
                 )}
             </div>
@@ -171,6 +287,16 @@ const PaginaNotificacoes = ({ aoVoltar }) => {
                     aoFechar={() => setAtletaSelecionado(null)}
                     aoPassarBola={handleRetribuir}
                     ehEu={atletaSelecionado.id === usuario?.id}
+                />
+            )}
+
+            {equipeSelecionada && (
+                <PerfilEquipeModal 
+                    equipeId={typeof equipeSelecionada === 'string' ? equipeSelecionada : (equipeSelecionada.equipes?.id || equipeSelecionada.payload?.equipe_id)}
+                    convite={typeof equipeSelecionada !== 'string' && equipeSelecionada.tipo === 'convite_equipe' ? equipeSelecionada : null}
+                    aoResponderConvite={handleRespostaConvite}
+                    processando={processando}
+                    aoFechar={() => setEquipeSelecionada(null)}
                 />
             )}
         </div>

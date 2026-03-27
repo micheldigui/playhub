@@ -188,7 +188,6 @@ export const FinanceiroProvider = ({ children }) => {
 
             if (erroMensalidades) throw erroMensalidades;
 
-            console.log('Contexto: Ciclo e mensalidades inicializados com sucesso');
             return { success: true };
         } catch (error) {
             console.error('Contexto: Erro ao inicializar ciclo:', error);
@@ -216,7 +215,6 @@ export const FinanceiroProvider = ({ children }) => {
             
             if (erroCiclo) throw erroCiclo;
 
-            console.log('Contexto: Ciclo removido com sucesso do banco');
             return { success: true };
         } catch (error) {
             console.error('Contexto: Erro ao remover ciclo:', error);

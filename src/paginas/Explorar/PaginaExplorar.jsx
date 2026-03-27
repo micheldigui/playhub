@@ -38,7 +38,7 @@ const PaginaExplorar = ({ aoVoltar }) => {
   const [cidadeBusca, setCidadeBusca] = useState('');
   const [resultados, setResultados] = useState([]);
   const [buscando, setBuscando] = useState(false);
-  const { solicitarIngresso, equipes: minhasEquipes, minhasSolicitacoes } = usarEquipe();
+  const { solicitarIngresso, cancelarSolicitacaoIngresso, equipes: minhasEquipes, minhasSolicitacoes } = usarEquipe();
   const { usuario, dadosUsuario } = usarAutenticacao();
   
   const [abaAtiva, setAbaAtiva] = useState('equipes'); // 'equipes' ou 'atletas'
@@ -48,6 +48,7 @@ const PaginaExplorar = ({ aoVoltar }) => {
   const [buscouUmaVez, setBuscouUmaVez] = useState(false);
   const [solicitadosGatilho, setSolicitadosGatilho] = useState({});
   const [atletaSelecionado, setAtletaSelecionado] = useState(null);
+  const [processando, setProcessando] = useState(null);
 
   // IDs de equipes onde o usuario já é membro ou já solicitou
   const idsMinhasEquipes = new Set((minhasEquipes || []).map((e) => e.id));
@@ -74,7 +75,8 @@ const PaginaExplorar = ({ aoVoltar }) => {
               nome_completo,
               apelido,
               foto_url
-            )
+            ),
+            membros:membros_equipe(id, status)
           `, { count: 'exact' })
           .eq('visibilidade', 'publica')
           .eq('status', 'ativo')
@@ -84,11 +86,16 @@ const PaginaExplorar = ({ aoVoltar }) => {
         if (cidadeBusca)     query = query.ilike('local_cidade', `%${cidadeBusca}%`);
         if (termoBusca)      query = query.or(`nome.ilike.%${termoBusca}%,slug_convite.ilike.%${termoBusca}%`);
       } else {
-        // Busca de Atletas
+        // Busca de Atletas - Apenas Maiores de 18 anos por segurança
+        const hoje = new Date();
+        const dataCorte = new Date(hoje.getFullYear() - 18, hoje.getMonth(), hoje.getDate())
+          .toISOString().split('T')[0];
+
         query = supabase
           .from('usuarios')
           .select('*', { count: 'exact' })
           .eq('perfil_publico', true)
+          .lte('data_nascimento', dataCorte) // Filtro de maioridade
           .order('nome_completo', { ascending: true });
 
         if (termoBusca) {
@@ -126,14 +133,20 @@ const PaginaExplorar = ({ aoVoltar }) => {
     executarBusca();
   };
 
-  const handleCutucar = async (atletaAlvo) => {
-    if (!usuario) {
-      alert('Você precisa estar logado para interagir!');
+    const handleCutucar = async (atletaAlvo) => {
+    if (!usuario || !dadosUsuario) {
+      alert('Carregando seus dados... Tente novamente em instantes ou certifique-se de estar logado.');
       return;
     }
 
-    const idadeEu = calcularIdade(dadosUsuario?.data_nascimento);
+    const idadeEu = calcularIdade(dadosUsuario.data_nascimento);
     const idadeAlvo = calcularIdade(atletaAlvo.data_nascimento);
+
+    // Se não tiver data de nascimento, vamos assumir que pode ser menor por segurança (ou avisar)
+    if (idadeEu === null || idadeAlvo === null) {
+        alert('Para interagir, ambos os atletas precisam ter a data de nascimento preenchida no perfil. 🛡️');
+        return;
+    }
 
     if (idadeEu < 18 || idadeAlvo < 18) {
       alert('Para segurança de todos, a interação direta ("Passar a bola") só é permitida entre maiores de 18 anos. 🛡️');
@@ -161,10 +174,26 @@ const PaginaExplorar = ({ aoVoltar }) => {
     }
   };
 
-  const handleSolicitar = async (equipeId) => {
+    const handleSolicitar = async (equipeId) => {
+    setProcessando(equipeId);
     const result = await solicitarIngresso(equipeId);
     if (result.sucesso) {
       setSolicitadosGatilho((prev) => ({ ...prev, [equipeId]: true }));
+    } else {
+      alert(result.erro);
+    }
+    setProcessando(null);
+  };
+
+  const handleCancelarSolicitacao = async (equipeId) => {
+    const result = await cancelarSolicitacaoIngresso(equipeId);
+    if (result.sucesso) {
+      setSolicitadosGatilho((prev) => {
+        const novo = { ...prev };
+        delete novo[equipeId];
+        return novo;
+      });
+      // Forçar atualização do contexto se necessário, mas o delete local já limpa o estado visual
     } else {
       alert(result.erro);
     }
@@ -179,12 +208,6 @@ const PaginaExplorar = ({ aoVoltar }) => {
 
   return (
     <div className="pagina-explorar">
-      {aoVoltar && (
-        <button className="btn-voltar-explorar" onClick={aoVoltar}>
-          <ArrowLeft size={18} /> Voltar ao Dashboard
-        </button>
-      )}
-
       <header className="explorar-header">
         <h1>
           <Globe size={32} />
@@ -267,6 +290,7 @@ const PaginaExplorar = ({ aoVoltar }) => {
               resultados.map((equipe) => {
                 const meuStatus = statusEquipe(equipe);
                 const nomeAdmin = equipe.admin?.nome_completo || equipe.admin?.apelido || 'Desconhecido';
+                const qtdMembros = (equipe.membros || []).filter(m => m.status === 'ativo').length;
                 return (
                   <div key={equipe.id} className={`card-explorar ${meuStatus ? 'card-explorar--meu' : ''} animacao-entrada`}>
                     {meuStatus && (
@@ -293,27 +317,42 @@ const PaginaExplorar = ({ aoVoltar }) => {
                       {equipe.local_cidade && (
                         <span><MapPin size={14} /> {equipe.local_cidade}{equipe.local_estado ? ` - ${equipe.local_estado}` : ''}</span>
                       )}
-                      {equipe.nivel && (
-                        <span><Users size={14} /> {equipe.nivel}</span>
-                      )}
+                      <span><Users size={14} /> {qtdMembros} {qtdMembros === 1 ? 'membro' : 'membros'}{equipe.nivel ? ` • ${equipe.nivel}` : ''}</span>
                       <span className="admin-do-time">
                         <Crown size={13} /> Capitão: {nomeAdmin}
                       </span>
                     </div>
 
                     {meuStatus ? (
-                      <div className="tag-ja-membro">
+                      <div className="tag-ja-membro" style={{ marginTop: 'auto' }}>
                         {meuStatus === 'dono' ? '👑 Você administra esta equipe' : '✓ Você já faz parte desta equipe'}
                       </div>
                     ) : (solicitadosGatilho[equipe.id] || idsSolicitacoesEnviadas.has(equipe.id)) ? (
-                      <div className="tag-pendente">Solicitação Enviada ✓</div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%', marginTop: 'auto' }}>
+                        <div className="tag-pendente" style={{ width: '100%', textAlign: 'center' }}>Solicitação Enviada ✓</div>
+                        <button 
+                            className="btn-cancelar-solicitacao" 
+                            onClick={() => handleCancelarSolicitacao(equipe.id)}
+                            style={{ 
+                                background: 'none', 
+                                border: 'none', 
+                                color: '#f43f5e', 
+                                fontSize: '0.75rem', 
+                                textDecoration: 'underline', 
+                                cursor: 'pointer',
+                                padding: '4px'
+                            }}
+                        >
+                            Desfazer Solicitação
+                        </button>
+                      </div>
                     ) : (
                       <Botao
                         onClick={() => handleSolicitar(equipe.id)}
-                        variant="secundario"
-                        style={{ width: '100%', justifyContent: 'center' }}
+                        disabled={processando === equipe.id}
+                        style={{ width: '100%', justifyContent: 'center', marginTop: 'auto' }}
                       >
-                        Solicitar Ingresso
+                        {processando === equipe.id ? 'Aguarde...' : 'Solicitar Ingresso'}
                       </Botao>
                     )}
                   </div>

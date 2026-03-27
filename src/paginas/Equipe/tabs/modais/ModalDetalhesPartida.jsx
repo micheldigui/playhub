@@ -9,7 +9,7 @@ import '../../../../componentes/Modal/Modal.css';
 const ModalDetalhesPartida = ({ isOpen, onClose, partida }) => {
     const { usuario } = usarAutenticacao();
     const { buscarPresencas, confirmarPresenca, cancelarPresenca, lancarFrequencia, removerInscricaoAdmin, adicionarInscricaoAdmin, alternarPagamentoAvulso, buscarPagamentosAvulsosPartida, registrarPagamentoAvulso, removerPagamentoAvulso } = usarPartidas();
-    const { equipeAtiva, carregarMembrosEquipe } = usarEquipe();
+    const { equipeAtiva, carregarMembrosEquipe, temPermissaoEquipe } = usarEquipe();
 
     const [presencas, setPresencas] = useState([]);
     const [membros, setMembros] = useState([]);
@@ -39,8 +39,8 @@ const ModalDetalhesPartida = ({ isOpen, onClose, partida }) => {
             if (respMembros) {
                 setMembros(respMembros);
             }
-            if (respPagamentos) {
-                setPagamentos(respPagamentos);
+            if (respPagamentos?.sucesso) {
+                setPagamentos(respPagamentos.pagamentos || []);
             }
         } catch (error) {
             console.error('Erro ao carregar detalhes da partida:', error);
@@ -87,7 +87,7 @@ const ModalDetalhesPartida = ({ isOpen, onClose, partida }) => {
     }
 
     // Regras de Tempo (Novo)
-    const isAdmin = equipeAtiva?.papel === 'admin' || equipeAtiva?.papel === 'sub_admin';
+    const isAdmin = equipeAtiva?.papel === 'admin' || temPermissaoEquipe('gerenciar_partidas');
     const regras = equipeAtiva?.regras || {};
     const openDays = regras.registrationOpenDays || 7;
     const closeHours = regras.registrationCloseHours || 1;

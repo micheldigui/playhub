@@ -1,17 +1,32 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, lazy, Suspense } from 'react'
 import Layout from './componentes/Layout/Layout'
 import PaginaAutenticacao from './paginas/Autenticacao/PaginaAutenticacao'
-import PaginaPerfil from './paginas/Perfil/PaginaPerfil'
-import PaginaPerfilEsportivo from './paginas/PerfilEsportivo/PaginaPerfilEsportivo'
-import PaginaEquipe from './paginas/Equipe/PaginaEquipe'
-import PaginaExplorar from './paginas/Explorar/PaginaExplorar'
-import PaginaConvite from './paginas/Equipe/PaginaConvite'
-import PaginaAdminSistema from './paginas/Admin/PaginaAdminSistema'
-import EquipeAdminDashboard from './paginas/Equipe/Admin/EquipeAdminDashboard'
-import PaginaAdminUsuarios from './paginas/Admin/PaginaAdminUsuarios'
-import PaginaNotificacoes from './paginas/Notificacoes/PaginaNotificacoes'
-import Dashboard from './paginas/Inicio/Dashboard'
 import { usarAutenticacao } from './contextos/AutenticacaoContexto'
+
+// Code splitting via lazy loading para melhorar performance inicial
+const PaginaPerfil = lazy(() => import('./paginas/Perfil/PaginaPerfil'))
+const PaginaPerfilEsportivo = lazy(() => import('./paginas/PerfilEsportivo/PaginaPerfilEsportivo'))
+const PaginaEquipe = lazy(() => import('./paginas/Equipe/PaginaEquipe'))
+const PaginaExplorar = lazy(() => import('./paginas/Explorar/PaginaExplorar'))
+const PaginaConvite = lazy(() => import('./paginas/Equipe/PaginaConvite'))
+const PaginaAdminSistema = lazy(() => import('./paginas/Admin/PaginaAdminSistema'))
+const EquipeAdminDashboard = lazy(() => import('./paginas/Equipe/Admin/EquipeAdminDashboard'))
+const PaginaAdminUsuarios = lazy(() => import('./paginas/Admin/PaginaAdminUsuarios'))
+const PaginaNotificacoes = lazy(() => import('./paginas/Notificacoes/PaginaNotificacoes'))
+const Dashboard = lazy(() => import('./paginas/Inicio/Dashboard'))
+
+const CarregandoTela = () => (
+  <div style={{ 
+    display: 'flex', alignItems: 'center', justifyContent: 'center', 
+    flex: 1, color: '#64748b', fontSize: '0.9rem', gap: '8px' 
+  }}>
+    <div style={{ 
+      width: '20px', height: '20px', border: '2px solid rgba(56,189,248,0.3)',
+      borderTopColor: '#38bdf8', borderRadius: '50%', animation: 'spin 0.8s linear infinite'
+    }} />
+    Carregando...
+  </div>
+)
 
 function App() {
   const { estaLogado } = usarAutenticacao()
@@ -32,13 +47,18 @@ function App() {
     const inicial = pathInicial();
     if (inicial === 'convite') return 'convite';
 
-    // 2. Tentar recuperar última tela salva
+    // 2. Persistência de navegação
     const salva = localStorage.getItem('playhub_tela_ativa');
-    if (salva && salva !== 'convite') return salva;
+    if (salva) return salva;
 
-    // 3. Padrão: início
+    // 3. Default
     return 'inicio';
   })
+
+  // Novo estado centralizado para saber qual seção da equipe o usuário está vendo
+  const [abaEquipe, setAbaEquipe] = useState(() => {
+    return localStorage.getItem('playhub_aba_equipe') || 'minha-equipe';
+  });
 
   const [equipeConviteId, setEquipeConviteId] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -50,19 +70,18 @@ function App() {
     return null;
   });
 
-  // Salva a tela ativa no localStorage e sincroniza a URL
+  // Sincroniza a URL sem persistir a tela no localStorage
   useEffect(() => {
-    // Salva para persistir após F5 (exceto convite, que depende da URL)
-    if (telaAtiva !== 'convite') {
-      localStorage.setItem('playhub_tela_ativa', telaAtiva);
-    }
-
     if (telaAtiva === 'convite' && equipeConviteId) {
       window.history.replaceState(null, '', `/convite/${equipeConviteId}`);
     } else if (telaAtiva === 'inicio' && window.location.pathname !== '/') {
       window.history.replaceState(null, '', '/');
     }
-  }, [telaAtiva, equipeConviteId]);
+
+    // Persistência da tela e aba
+    localStorage.setItem('playhub_tela_ativa', telaAtiva);
+    localStorage.setItem('playhub_aba_equipe', abaEquipe);
+  }, [telaAtiva, equipeConviteId, abaEquipe]);
 
   if (!estaLogado) {
     return <PaginaAutenticacao />
@@ -75,7 +94,14 @@ function App() {
       case 'perfil_esportivo':
         return <PaginaPerfilEsportivo aoVoltar={() => setTelaAtiva('inicio')} />
       case 'equipe':
-        return <PaginaEquipe aoVoltar={() => setTelaAtiva('inicio')} abrirGestao={() => setTelaAtiva('equipe_admin')} />
+        return (
+          <PaginaEquipe 
+            aoVoltar={() => setTelaAtiva('inicio')} 
+            abrirGestao={() => setAbaEquipe('gestao')} 
+            abaAtiva={abaEquipe}
+            setAbaAtiva={setAbaEquipe}
+          />
+        )
       case 'equipe_admin':
         return <EquipeAdminDashboard aoVoltar={() => setTelaAtiva('equipe')} />
       case 'sistema':
@@ -85,18 +111,34 @@ function App() {
       case 'explorar':
         return <PaginaExplorar aoVoltar={() => setTelaAtiva('inicio')} />
       case 'notificacoes':
-        return <PaginaNotificacoes aoVoltar={() => setTelaAtiva('inicio')} />
+        return <PaginaNotificacoes 
+          aoVoltar={() => setTelaAtiva('inicio')} 
+          abrirEquipeTab={(aba) => {
+            setTelaAtiva('equipe');
+            setAbaEquipe(aba);
+          }}
+        />
       case 'convite':
         return <PaginaConvite equipeId={equipeConviteId} aoVoltar={() => setTelaAtiva('inicio')} />
       case 'inicio':
       default:
-        return <Dashboard aoNavegar={setTelaAtiva} />
+        return <Dashboard 
+          aoNavegar={setTelaAtiva} 
+          setAbaEquipe={setAbaEquipe} 
+        />
     }
   }
 
   return (
-    <Layout telaAtiva={telaAtiva} setTelaAtiva={setTelaAtiva}>
-      {renderizarTela()}
+    <Layout 
+      telaAtiva={telaAtiva} 
+      setTelaAtiva={setTelaAtiva}
+      abaEquipe={abaEquipe}
+      setAbaEquipe={setAbaEquipe}
+    >
+      <Suspense fallback={<CarregandoTela />}>
+        {renderizarTela()}
+      </Suspense>
     </Layout>
   )
 }

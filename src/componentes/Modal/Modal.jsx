@@ -1,11 +1,19 @@
 import { X } from 'lucide-react';
 import './Modal.css';
 
-const Modal = ({ isOpen, onClose, title, children, footer, maxWidth }) => {
+const Modal = ({ 
+  isOpen, 
+  onClose, 
+  title, 
+  children, 
+  footer, 
+  maxWidth,
+  closeOnOverlayClick = false // Padrão agora é NÃO fechar ao clicar fora, para evitar perda de dados
+}) => {
   if (!isOpen) return null;
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div className="modal-overlay" onClick={() => closeOnOverlayClick && onClose()}>
       <div 
         className="modal-content" 
         onClick={e => e.stopPropagation()}

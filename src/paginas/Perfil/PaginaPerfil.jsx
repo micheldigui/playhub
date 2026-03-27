@@ -35,6 +35,7 @@ const PaginaPerfil = ({ aoVoltar }) => {
   const [adicionando, setAdicionando] = useState(false);
 
   const numeroRef = useRef(null);
+  const nomeRef = useRef(null);
 
   const [form, setForm] = useState({
     nome_completo: '', apelido: '', data_nascimento: '', genero: '',
@@ -63,6 +64,13 @@ const PaginaPerfil = ({ aoVoltar }) => {
         compartilhar_whatsapp_match: dadosUsuario.compartilhar_whatsapp_match ?? false
       });
       carregarModalidades(dadosUsuario.id);
+    }
+  }, [dadosUsuario]);
+
+  // Foca no campo de nome ao carregar o perfil
+  useEffect(() => {
+    if (dadosUsuario) {
+      setTimeout(() => nomeRef.current?.focus(), 200);
     }
   }, [dadosUsuario]);
 
@@ -340,7 +348,13 @@ const PaginaPerfil = ({ aoVoltar }) => {
               <label>Nome completo *</label>
               <div className="campo-input">
                 <span className="icone"><User size={16} /></span>
-                <input required value={form.nome_completo} onChange={set('nome_completo')} />
+                <input 
+                  ref={nomeRef}
+                  required 
+                  value={form.nome_completo} 
+                  onChange={set('nome_completo')} 
+                  placeholder="Seu nome completo"
+                />
               </div>
             </div>
             <div className="grupo-input">
