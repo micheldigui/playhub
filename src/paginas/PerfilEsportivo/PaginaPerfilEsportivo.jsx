@@ -10,7 +10,7 @@ const ESPORTES_DATA = {
   "Futebol Society / Suíço": ["Goleiro", "Zagueiro", "Fixo", "Ala", "Meio-Campo", "Pivô", "Atacante", "Qualquer Posição"],
   "Vôlei de Quadra": ["Levantador", "Líbero", "Central", "Ponteiro", "Oposto", "Qualquer Posição"],
   "Vôlei de Areia / Praia": ["Levantador", "Atacante", "Defensor", "Bloqueador", "Qualquer Posição"],
-  "Futevôlei": ["Atacante", "Levantador", "Qualquer Posição", "Qualquer Posição"],
+  "Futevôlei": ["Atacante", "Levantador", "Qualquer Posição"],
   "Basquete": ["Armador", "Ala", "Ala-Armador", "Ala-Pivô", "Pivô", "Qualquer Posição"],
   "Beach Tennis": ["Lado Direito", "Lado Esquerdo", "Ambos os Lados", "Qualquer Posição"],
   "Padel": ["Lado Direito", "Lado Esquerdo", "Ambos os Lados", "Qualquer Posição"],

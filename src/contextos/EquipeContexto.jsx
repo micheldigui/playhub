@@ -20,13 +20,15 @@ export const EquipeProvedor = ({ children }) => {
     const [convitesPendentesGlobais, setConvitesPendentesGlobais] = useState(0);
     const [solicitacoesPendentesGlobais, setSolicitacoesPendentesGlobais] = useState(0);
     const [minhasSolicitacoes, setMinhasSolicitacoes] = useState([]);
+    const [modalCriacaoAberto, setModalCriacaoAberto] = useState(false);
     
     // Limite de equipes que o usuário pode ser Administrador (Dono)
     const LIMITE_EQUIPES_AD_POR_CONTA = 3;
     
     // Filtramos apenas as equipes onde o usuário é o ADMIN (CRIADOR/PROPRIETÁRIO) principal
-    const equipesOndeAdmin = equipes.filter(e => e.papel === 'admin' && !membroGestaoGlobal(e.id));
-    const totalCriadas = equipesOndeAdmin.length;
+    // Usamos um Set de IDs para garantir que duplicatas no estado não afetem a contagem
+    const idsAdmin = new Set(equipes.filter(e => e.papel === 'admin' && !membroGestaoGlobal(e.id)).map(e => e.id));
+    const totalCriadas = idsAdmin.size;
     const podeCriarEquipe = totalCriadas < LIMITE_EQUIPES_AD_POR_CONTA;
 
     function membroGestaoGlobal(id) {
@@ -265,9 +267,23 @@ export const EquipeProvedor = ({ children }) => {
     };
 
     const criarEquipe = async (dadosDaEquipe, arquivoLogo) => {
-        if (!podeCriarEquipe) {
-            return { sucesso: false, erro: `Limite de ${LIMITE_EQUIPES_AD_POR_CONTA} equipes atingido. Exclua uma equipe para criar outra.` };
+        // Validação extra no lado do "servidor" (contexto) com consulta em tempo real
+        try {
+            const { count: totalAtual, error: errCount } = await supabase
+                .from('equipes')
+                .select('*', { count: 'exact', head: true })
+                .eq('admin_id', usuario.id);
+            
+            if (!errCount && totalAtual >= LIMITE_EQUIPES_AD_POR_CONTA) {
+                return { sucesso: false, erro: `Limite de ${LIMITE_EQUIPES_AD_POR_CONTA} equipes atingido. Você já possui ${totalAtual} equipes sob sua administração.` };
+            }
+        } catch (e) {
+            console.warn('Falha ao validar limite em tempo real, procedendo com estado local...');
+            if (!podeCriarEquipe) {
+                return { sucesso: false, erro: `Limite de ${LIMITE_EQUIPES_AD_POR_CONTA} equipes atingido. Exclua uma equipe para criar outra.` };
+            }
         }
+
         try {
             // 0. Obter coordenadas se houver CEP
             const coords = await getCoordenadasPorCEP(dadosDaEquipe.local_cep);
@@ -477,17 +493,20 @@ export const EquipeProvedor = ({ children }) => {
 
     const excluirEquipe = async (equipeId) => {
         try {
-            // 1. Verificar se a equipe tem membros (além do admin)
-            const { count, error: countError } = await supabase
+            // 1. Verificar se a equipe tem OUTROS membros (além do admin atual)
+            const { data: membros, error: countError } = await supabase
                 .from('membros_equipe')
-                .select('*', { count: 'exact', head: true })
+                .select('usuario_id')
                 .eq('equipe_id', equipeId)
                 .in('status', ['ativo', 'pendente']);
 
             if (countError) throw countError;
 
-            if (count > 1) {
-                throw new Error('Não é possível excluir uma equipe que ainda possui membros vinculados além de você.');
+            // Filtramos para ver se existe alguém que não seja o usuário logado
+            const outrosMembros = membros.filter(m => String(m.usuario_id) !== String(usuario.id));
+
+            if (outrosMembros.length > 0) {
+                throw new Error('Não é possível excluir uma equipe que ainda possui outros membros vinculados. Remova-os primeiro.');
             }
 
             // 2. Excluir membros (o admin)
@@ -510,6 +529,9 @@ export const EquipeProvedor = ({ children }) => {
             } else {
                 localStorage.removeItem('playhub_equipe_ativa');
             }
+
+            // Forçar recarregamento para limpar estados residuais e redirecionar ao Dashboard
+            window.location.reload();
 
             return { sucesso: true };
         } catch (error) {
@@ -1083,7 +1105,9 @@ export const EquipeProvedor = ({ children }) => {
         sairDaEquipe,
         podeCriarEquipe,
         totalCriadas,
-        limiteEquipes: LIMITE_EQUIPES_AD_POR_CONTA
+        limiteEquipes: LIMITE_EQUIPES_AD_POR_CONTA,
+        modalCriacaoAberto,
+        setModalCriacaoAberto
     };
 
 

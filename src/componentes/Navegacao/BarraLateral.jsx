@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { 
   LayoutDashboard, Users, Settings, LogOut, Menu, X, 
   ChevronRight, UserCircle, Trophy, Globe, Building2, Shield, Bell,
-  Calendar, DollarSign, ChevronDown, ShieldCheck, Wallet, BarChart2
+  Calendar, DollarSign, ChevronDown, ShieldCheck, Wallet, BarChart2,
+  Plus, SquarePlus, CircleHelp
 } from 'lucide-react';
 import './BarraLateral.css';
 import { supabase } from '../../servicos/supabase';
@@ -10,17 +11,21 @@ import { usarEquipe } from '../../contextos/EquipeContexto';
 import { usarAutenticacao } from '../../contextos/AutenticacaoContexto';
 import { usarNotificacoes } from '../../contextos/NotificacoesContexto';
 import BannerInstalacaoApp from '../../componentes/Pwa/BannerInstalacaoApp';
+import ModalTutorial from '../Ajuda/ModalTutorial';
 
 const BarraLateral = ({ ativo, setAtivo, abaEquipe, setAbaEquipe }) => {
   const [aberta, setAberta] = useState(false);
   const [menuEquipeExpandido, setMenuEquipeExpandido] = useState(true);
+  const [modalTutorialAberto, setModalTutorialAberto] = useState(false);
   const { 
     equipeAtiva, 
     equipes,
     selecionarEquipe,
     convitesPendentesGlobais, 
     transferenciasPendentesGlobais, 
-    solicitacoesPendentesGlobais 
+    solicitacoesPendentesGlobais,
+    podeCriarEquipe,
+    setModalCriacaoAberto
   } = usarEquipe();
   const { contagemNaoLidas: bolasRecebidas } = usarNotificacoes();
   const { ehSuperAdmin, dadosUsuario } = usarAutenticacao();
@@ -165,6 +170,20 @@ const BarraLateral = ({ ativo, setAtivo, abaEquipe, setAbaEquipe }) => {
                       {eq.id === equipeAtiva?.id && <div className="ponto-ativo"></div>}
                     </button>
                   ))}
+                  {podeCriarEquipe && (
+                    <button 
+                        className="btn-troca-equipe btn-add-equipe-sidebar" 
+                        onClick={() => {
+                            setModalCriacaoAberto(true);
+                            setAberta(false);
+                        }}
+                    >
+                        <div className="avatar-troca add-icon">
+                            <SquarePlus size={14} />
+                        </div>
+                        <span className="nome-troca">Criar Novo Time</span>
+                    </button>
+                  )}
                 </div>
                 <div className="divisor-submenu"></div>
               </div>
@@ -199,6 +218,18 @@ const BarraLateral = ({ ativo, setAtivo, abaEquipe, setAbaEquipe }) => {
         </nav>
 
         <div className="barra-rodape">
+          <button 
+            className="item-nav btn-ajuda-sidebar" 
+            onClick={() => {
+              setModalTutorialAberto(true);
+              setAberta(false);
+            }}
+            style={{ width: '100%', marginBottom: '10px' }}
+          >
+            <span className="item-nav-icone"><CircleHelp size={19} /></span>
+            <span className="item-nav-label">Guia do App</span>
+          </button>
+
           {dadosUsuario && (
             <div className="usuario-logado">
               <div className="usuario-foto-container">
@@ -220,6 +251,10 @@ const BarraLateral = ({ ativo, setAtivo, abaEquipe, setAbaEquipe }) => {
           </button>
         </div>
       </aside>
+      <ModalTutorial 
+        isOpen={modalTutorialAberto} 
+        onClose={() => setModalTutorialAberto(false)} 
+      />
     </>
   );
 };

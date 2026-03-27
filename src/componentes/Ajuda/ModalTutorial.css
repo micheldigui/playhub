@@ -1,0 +1,119 @@
+.tutorial-container {
+  padding: 0.5rem;
+}
+
+.tutorial-abas {
+  display: flex;
+  gap: 8px;
+  background: rgba(15, 23, 42, 0.5);
+  padding: 6px;
+  border-radius: 12px;
+  margin-bottom: 2rem;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.aba-tutorial {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px;
+  background: transparent;
+  border: none;
+  color: #64748b;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: all 0.2s;
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.aba-tutorial:hover {
+  color: #f1f5f9;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.aba-tutorial.ativa {
+  background: rgba(56, 189, 248, 0.1);
+  color: #38bdf8;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.tutorial-janela {
+  min-height: 320px;
+}
+
+.tutorial-conteudo {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.tutorial-item {
+  display: flex;
+  gap: 1.25rem;
+  padding: 1.25rem;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  transition: transform 0.2s;
+}
+
+.tutorial-item:hover {
+  transform: translateX(4px);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.tutorial-icone {
+  width: 48px;
+  height: 48px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #94a3b8;
+  flex-shrink: 0;
+}
+
+.tutorial-icone.red-glow {
+  color: #f43f5e;
+  background: rgba(244, 63, 94, 0.1);
+}
+
+.tutorial-icone.blue-glow {
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.1);
+}
+
+.tutorial-texto h4 {
+  font-size: 1rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  color: #f8fafc;
+}
+
+.tutorial-texto p {
+  font-size: 0.875rem;
+  color: #94a3b8;
+  line-height: 1.6;
+}
+
+.tutorial-footer {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  text-align: center;
+}
+
+.tutorial-footer p {
+  font-size: 0.8rem;
+  color: #475569;
+}
+
+@media (max-width: 480px) {
+  .aba-tutorial span {
+    display: none;
+  }
+}

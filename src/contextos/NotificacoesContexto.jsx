@@ -88,7 +88,6 @@ export const NotificacoesProvedor = ({ children }) => {
 
         // Inscrição em tempo real para novas notificações e convites
         if (usuario) {
-            console.log("🔔 Iniciando Realtime para: ", usuario.id);
             const canal = supabase
                 .channel(`realtime_notificacoes_${usuario.id}`)
                 .on('postgres_changes', { 
@@ -97,7 +96,6 @@ export const NotificacoesProvedor = ({ children }) => {
                     table: 'interacoes',
                     filter: `destinatario_id=eq.${usuario.id}`
                 }, (payload) => {
-                    console.log("⚡ Nova Interação (Passar a Bola):", payload);
                     carregarNotificacoes();
                 })
                 .on('postgres_changes', { 
@@ -106,12 +104,9 @@ export const NotificacoesProvedor = ({ children }) => {
                     table: 'convites_equipe',
                     filter: `jogador_id=eq.${usuario.id}`
                 }, (payload) => {
-                    console.log("⚡ Novo Convite/Mudança de Equipe:", payload);
                     carregarNotificacoes();
                 })
-                .subscribe((status) => {
-                    console.log(`🔌 Status do Canal Realtime (${usuario.id}):`, status);
-                });
+                .subscribe();
 
             return () => {
                 supabase.removeChannel(canal);

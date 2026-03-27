@@ -25,11 +25,11 @@ const PaginaEquipe = ({ abaAtiva, setAbaAtiva, aoVoltar }) => {
     const { 
         equipeAtiva, excluirEquipe, sairDaEquipe, 
         aceitarTransferenciaPosse, recusarTransferenciaPosse,
-        podeCriarEquipe, carregarMembrosEquipe, temPermissaoEquipe
+        podeCriarEquipe, carregarMembrosEquipe, temPermissaoEquipe,
+        modalCriacaoAberto, setModalCriacaoAberto
     } = usarEquipe();
     const { ehSuperAdmin, usuario } = usarAutenticacao();
     
-    const [modalCriacaoAberto, setModalCriacaoAberto] = useState(false);
     const [modalEditarAberto, setModalEditarAberto] = useState(false);
     const [copiado, setCopiado] = useState(false);
     const [confirmandoSair, setConfirmandoSair] = useState(false);
@@ -97,7 +97,6 @@ const PaginaEquipe = ({ abaAtiva, setAbaAtiva, aoVoltar }) => {
                 <Botao onClick={() => setModalCriacaoAberto(true)} disabled={!podeCriarEquipe} style={{ padding: '1rem 2.5rem', fontSize: '1.1rem' }}>
                    <PlusSquare size={22} /> Criar Minha Equipe
                 </Botao>
-                <ModalCriacaoEquipe aberta={modalCriacaoAberto} aoFechar={() => setModalCriacaoAberto(false)} />
             </div>
         );
     }
@@ -172,6 +171,11 @@ const PaginaEquipe = ({ abaAtiva, setAbaAtiva, aoVoltar }) => {
                                             await sairDaEquipe(equipeAtiva.id);
                                         }}>
                                             <LogOut size={16} /> {confirmandoSair ? 'Confirmar Saída?' : 'Sair da Equipe'}
+                                        </button>
+                                    )}
+                                    {podeCriarEquipe && (
+                                        <button className="btn-criar-outra-equipe" onClick={() => setModalCriacaoAberto(true)}>
+                                            <Plus size={16} /> Criar Outra Equipe
                                         </button>
                                     )}
                                 </div>
@@ -273,10 +277,6 @@ const PaginaEquipe = ({ abaAtiva, setAbaAtiva, aoVoltar }) => {
 
             {/* MODAIS GLOBAIS */}
             <ModalCriacaoEquipe 
-                isOpen={modalCriacaoAberto} 
-                onClose={() => setModalCriacaoAberto(false)} 
-            />
-            <ModalCriacaoEquipe 
                 isOpen={modalEditarAberto} 
                 onClose={() => setModalEditarAberto(false)} 
                 equipeParaEditar={equipeAtiva} 
@@ -296,6 +296,14 @@ const PaginaEquipe = ({ abaAtiva, setAbaAtiva, aoVoltar }) => {
                 
                 .btn-sair-equipe { background: none; border: 1px solid rgba(244, 63, 94, 0.3); color: #f43f5e; padding: 8px 16px; border-radius: 8px; cursor: pointer; transition: all 0.2s; font-size: 0.85rem; }
                 .btn-sair-equipe.confirmando { background: #f43f5e; color: white; border-color: #f43f5e; font-weight: bold; }
+                
+                .btn-criar-outra-equipe {
+                    display: flex; align-items: center; gap: 8px;
+                    background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+                    color: #94a3b8; padding: 8px 14px; border-radius: 8px; cursor: pointer;
+                    transition: all 0.2s; font-size: 0.85rem; font-weight: 500;
+                }
+                .btn-criar-outra-equipe:hover { background: rgba(255,255,255,0.1); color: #f8fafc; border-color: rgba(255,255,255,0.2); }
                 
                 .badge-capitao { background: rgba(251, 191, 36, 0.1) !important; color: #fbbf24 !important; border-color: rgba(251, 191, 36, 0.2) !important; }
                 .badge-vice { background: rgba(56, 189, 248, 0.1) !important; color: #38bdf8 !important; border-color: rgba(56, 189, 248, 0.2) !important; }

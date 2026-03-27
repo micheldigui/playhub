@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Download, X, Monitor } from 'lucide-react';
 import { usePwaInstall } from '../../hooks/usePwaInstall';
-import ModalInstalacaoApp from './ModalInstalacaoApp';
+import { usarPwa } from '../../contextos/PwaContexto';
 import './BannerInstalacaoApp.css';
 
 const IconeAndroid = () => (
@@ -25,9 +25,9 @@ const IconeApple = () => (
 );
 
 const BannerInstalacaoApp = ({ local = 'dashboard', aoClicarMenu }) => {
-    const { isInstalled, isIOS, isAndroid, isDesktop } = usePwaInstall();
+    const { isIOS, isAndroid, isDesktop } = usePwaInstall();
+    const { abrirModalInstalacao, isInstalled } = usarPwa();
     const [fechado, setFechado] = useState(false);
-    const [modalAberto, setModalAberto] = useState(false);
 
     const fecharBanner = (e) => {
         e.stopPropagation();
@@ -35,7 +35,7 @@ const BannerInstalacaoApp = ({ local = 'dashboard', aoClicarMenu }) => {
     };
 
     const handleInstalar = () => {
-        setModalAberto(true);
+        abrirModalInstalacao();
     };
 
     // Não renderizar se já estiver instalado (Standalone mode)
@@ -43,24 +43,18 @@ const BannerInstalacaoApp = ({ local = 'dashboard', aoClicarMenu }) => {
 
     if (local === 'menu') {
         return (
-            <>
-                <button 
-                  className="item-nav-pwa" 
-                  onClick={() => {
-                      handleInstalar();
-                      if (aoClicarMenu) aoClicarMenu();
-                  }}
-                >
-                    <span className="item-nav-icone" style={{ color: 'var(--primaria)' }}>
-                       {isAndroid ? <IconeAndroid /> : isIOS ? <IconeApple /> : isDesktop ? <Monitor size={19} /> : <Download size={19} />}
-                    </span>
-                    <span className="item-nav-label" style={{ fontWeight: 600 }}>Instalar App</span>
-                </button>
-
-                {modalAberto && (
-                    <ModalInstalacaoApp aoFechar={() => setModalAberto(false)} />
-                )}
-            </>
+            <button 
+              className="item-nav-pwa" 
+              onClick={() => {
+                  handleInstalar();
+                  if (aoClicarMenu) aoClicarMenu();
+              }}
+            >
+                <span className="item-nav-icone" style={{ color: 'var(--primaria)' }}>
+                   {isAndroid ? <IconeAndroid /> : isIOS ? <IconeApple /> : isDesktop ? <Monitor size={19} /> : <Download size={19} />}
+                </span>
+                <span className="item-nav-label" style={{ fontWeight: 600 }}>Instalar App</span>
+            </button>
         );
     }
 
@@ -68,24 +62,18 @@ const BannerInstalacaoApp = ({ local = 'dashboard', aoClicarMenu }) => {
         if (fechado) return null;
 
         return (
-            <>
-                <div className="pwa-banner-dash" onClick={handleInstalar}>
-                    <div className="pwa-banner-icone">
-                        {isAndroid ? <IconeAndroid /> : isIOS ? <IconeApple /> : isDesktop ? <Monitor size={24} /> : <Download size={24} />}
-                    </div>
-                    <div className="pwa-banner-texto">
-                        <h3>Instalar Aplicativo</h3>
-                        <p>Tenha acesso rápido na tela inicial do seu dispositivo.</p>
-                    </div>
-                    <button className="pwa-banner-fechar" onClick={fecharBanner} aria-label="Fechar banner">
-                        <X size={18} />
-                    </button>
+            <div className="pwa-banner-dash" onClick={handleInstalar}>
+                <div className="pwa-banner-icone">
+                    {isAndroid ? <IconeAndroid /> : isIOS ? <IconeApple /> : isDesktop ? <Monitor size={24} /> : <Download size={24} />}
                 </div>
-
-                {modalAberto && (
-                    <ModalInstalacaoApp aoFechar={() => setModalAberto(false)} />
-                )}
-            </>
+                <div className="pwa-banner-texto">
+                    <h3>Instalar Aplicativo</h3>
+                    <p>Tenha acesso rápido na tela inicial do seu dispositivo.</p>
+                </div>
+                <button className="pwa-banner-fechar" onClick={fecharBanner} aria-label="Fechar banner">
+                    <X size={18} />
+                </button>
+            </div>
         );
     }
 

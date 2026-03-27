@@ -2,6 +2,7 @@ import { useState, useEffect, lazy, Suspense } from 'react'
 import Layout from './componentes/Layout/Layout'
 import PaginaAutenticacao from './paginas/Autenticacao/PaginaAutenticacao'
 import { usarAutenticacao } from './contextos/AutenticacaoContexto'
+import { PwaProvedor } from './contextos/PwaContexto'
 
 // Code splitting via lazy loading para melhorar performance inicial
 const PaginaPerfil = lazy(() => import('./paginas/Perfil/PaginaPerfil'))
@@ -14,6 +15,7 @@ const EquipeAdminDashboard = lazy(() => import('./paginas/Equipe/Admin/EquipeAdm
 const PaginaAdminUsuarios = lazy(() => import('./paginas/Admin/PaginaAdminUsuarios'))
 const PaginaNotificacoes = lazy(() => import('./paginas/Notificacoes/PaginaNotificacoes'))
 const Dashboard = lazy(() => import('./paginas/Inicio/Dashboard'))
+const LandingPage = lazy(() => import('./paginas/Landing/LandingPage'))
 
 const CarregandoTela = () => (
   <div style={{ 
@@ -69,6 +71,8 @@ function App() {
     }
     return null;
   });
+  
+  const [querFazerLogin, setQuerFazerLogin] = useState(false);
 
   // Sincroniza a URL sem persistir a tela no localStorage
   useEffect(() => {
@@ -84,7 +88,28 @@ function App() {
   }, [telaAtiva, equipeConviteId, abaEquipe]);
 
   if (!estaLogado) {
-    return <PaginaAutenticacao />
+    if (telaAtiva === 'convite') {
+      return (
+        <Suspense fallback={<CarregandoTela />}>
+          <PaginaConvite equipeId={equipeConviteId} aoVoltar={() => setQuerFazerLogin(true)} />
+        </Suspense>
+      );
+    }
+    
+    if (querFazerLogin) {
+      return (
+        <Suspense fallback={<CarregandoTela />}>
+          <PaginaAutenticacao aoVoltar={() => setQuerFazerLogin(false)} />
+        </Suspense>
+      );
+    }
+
+    // Default: Landing Page para todos os acessos deslogados
+    return (
+      <Suspense fallback={<CarregandoTela />}>
+        <LandingPage aoLogin={() => setQuerFazerLogin(true)} />
+      </Suspense>
+    );
   }
 
   const renderizarTela = () => {
@@ -130,16 +155,18 @@ function App() {
   }
 
   return (
-    <Layout 
-      telaAtiva={telaAtiva} 
-      setTelaAtiva={setTelaAtiva}
-      abaEquipe={abaEquipe}
-      setAbaEquipe={setAbaEquipe}
-    >
-      <Suspense fallback={<CarregandoTela />}>
-        {renderizarTela()}
-      </Suspense>
-    </Layout>
+    <PwaProvedor>
+      <Layout 
+        telaAtiva={telaAtiva} 
+        setTelaAtiva={setTelaAtiva}
+        abaEquipe={abaEquipe}
+        setAbaEquipe={setAbaEquipe}
+      >
+        <Suspense fallback={<CarregandoTela />}>
+          {renderizarTela()}
+        </Suspense>
+      </Layout>
+    </PwaProvedor>
   )
 }
 

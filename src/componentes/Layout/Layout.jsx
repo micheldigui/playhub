@@ -1,6 +1,10 @@
 import './Layout.css';
 import BarraLateral from '../Navegacao/BarraLateral';
 import { ArrowLeft } from 'lucide-react';
+import ModalCriacaoEquipe from '../Equipe/ModalCriacaoEquipe';
+import ModalInstalacaoApp from '../Pwa/ModalInstalacaoApp';
+import { usarEquipe } from '../../contextos/EquipeContexto';
+import { usarPwa } from '../../contextos/PwaContexto';
 
 const TITULOS_CABECALHO = {
   inicio:           'Dashboard',
@@ -15,6 +19,9 @@ const TITULOS_CABECALHO = {
 };
 
 const Layout = ({ children, telaAtiva, setTelaAtiva, abaEquipe, setAbaEquipe }) => {
+  const { modalCriacaoAberto, setModalCriacaoAberto } = usarEquipe();
+  const { modalInstalacaoAberto, fecharModalInstalacao } = usarPwa();
+
   return (
     <div className="layout-raiz">
       <BarraLateral 
@@ -43,6 +50,16 @@ const Layout = ({ children, telaAtiva, setTelaAtiva, abaEquipe, setAbaEquipe }) 
           {children}
         </section>
       </main>
+
+      <ModalCriacaoEquipe 
+        isOpen={modalCriacaoAberto} 
+        onClose={() => setModalCriacaoAberto(false)} 
+      />
+
+      {/* Modal Global de Instalação PWA */}
+      {modalInstalacaoAberto && (
+        <ModalInstalacaoApp aoFechar={fecharModalInstalacao} />
+      )}
     </div>
   );
 };

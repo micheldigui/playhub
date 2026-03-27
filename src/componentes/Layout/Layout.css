@@ -18,7 +18,7 @@
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   display: flex;
   align-items: center;
-  padding: 0 1.5rem 0 5rem; /* 5rem para compensar o hamburguer global */
+  padding: 0 1rem 0 4.5rem; /* Reduzido padding lateral */
   position: sticky;
   top: 0;
   z-index: 100;
@@ -32,10 +32,24 @@
 
 @media (max-width: 768px) {
   .layout-cabecalho {
-    padding-left: 4.5rem;
+    padding-left: 4rem;
+    height: 56px;
+  }
+  .layout-cabecalho h2 {
+    font-size: 1rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 180px;
+  }
+  .btn-voltar-dashboard span {
+    display: none; /* Oculta texto 'Dashboard' no mobile */
+  }
+  .btn-voltar-dashboard {
+    padding: 6px;
   }
   .layout-secao {
-    padding: 1.25rem;
+    padding: 1rem;
   }
 }
 
