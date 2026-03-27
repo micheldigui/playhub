@@ -32,7 +32,7 @@ const ModalTutorial = ({ isOpen, onClose }) => {
               <div className="tutorial-icone red-glow"><Zap size={24} /></div>
               <div className="tutorial-texto">
                 <h4>Passar a Bola</h4>
-                <p>Na lista de atletas, "toque a bola" para alguém. Se a pessoa retribuir, o WhatsApp de ambos é liberado para vocês combinarem o jogo!</p>
+                <p><strong>Passe a bola e entre no jogo!</strong> Demonstre interesse em novos parceiros ou equipes. Se o toque for retribuído, é match e o WhatsApp é liberado na hora!</p>
               </div>
             </div>
             <div className="tutorial-item">

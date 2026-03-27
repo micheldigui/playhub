@@ -84,7 +84,7 @@ const LandingPage = ({ aoLogin }) => {
               <Zap size={32} />
             </div>
             <h3>Passar a Bola</h3>
-            <p>A funcionalidade que gera engajamento! Dê um toque na bola de outro atleta: se ele retribuir, é <strong>Match</strong> e vocês trocam WhatsApp na hora.</p>
+            <p><strong>Passe a bola e entre no jogo!</strong> Demonstre interesse em novos parceiros de equipe. Se eles aceitarem o passe, é match e o contato do WhatsApp aparece na hora.</p>
           </div>
 
           <div className="feature-card">
