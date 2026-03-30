@@ -50,7 +50,7 @@ const DEFAULTS_EQUIPE  = ['partidas','var_atleta','solicitacoes_eq','meus_pagame
 
 const Dashboard = ({ aoNavegar, setAbaEquipe }) => {
     const { dadosUsuario, alternarVisibilidadePerfil, alternarWhatsAppMatch } = usarAutenticacao();
-    const { equipes, getLabelVinculo, selecionarEquipe, equipeAtiva } = usarEquipe();
+    const { equipes, getLabelVinculo, selecionarEquipe, equipeAtiva, carregando: carregandoEquipes } = usarEquipe();
     const { isInstalled } = usePwaInstall();
 
     const [proximasPartidas, setProximasPartidas] = useState([]);
@@ -123,11 +123,18 @@ const Dashboard = ({ aoNavegar, setAbaEquipe }) => {
 
     // Efeito unificado para carregar tudo que depende da equipe selecionada
     useEffect(() => {
-        if (equipeFinSelecionada && dadosUsuario) {
+        if (!dadosUsuario || carregandoEquipes) return;
+
+        if (equipes && equipes.length === 0) {
+            setCarregando(false);
+            return;
+        }
+
+        if (equipeFinSelecionada) {
             carregarPartidas();
             carregarFinanceiroPorEquipe(equipeFinSelecionada);
         }
-    }, [equipeFinSelecionada, dadosUsuario]);
+    }, [equipeFinSelecionada, dadosUsuario, equipes, carregandoEquipes]);
 
     // Sincronia reversa: se o time mudar na barra lateral, o Dashboard foca nele também
     useEffect(() => {

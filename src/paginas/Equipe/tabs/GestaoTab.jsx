@@ -158,7 +158,7 @@ const GestaoTab = ({ abrirEdicao, aoExcluir }) => {
                                     <td>{new Date(m.entrou_em).toLocaleDateString('pt-BR')}</td>
                                     <td>
                                         <div className="membro-acoes">
-                                            {m.papel !== 'admin' && m.usuario_id !== usuario?.id && (
+                                            {(m.usuario_id !== usuario?.id || ehSuperAdmin) && m.papel !== 'admin' && (
                                                 <>
                                                     {m.papel === 'jogador' ? (
                                                         <button 

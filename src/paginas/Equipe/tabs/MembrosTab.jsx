@@ -9,8 +9,8 @@ import { usarAutenticacao } from '../../../contextos/AutenticacaoContexto';
 import InfoTooltip from '../../../componentes/Tooltip/InfoTooltip';
 
 const MembrosTab = ({ membrosIniciais = [], recarregar }) => {
-    const { equipeAtiva, atualizarMembro, removerMembro, temPermissaoEquipe, getLabelVinculo, getAcaoVinculo } = usarEquipe();
-    const { usuario } = usarAutenticacao();
+    const { equipeAtiva, atualizarMembro, removerMembro, temPermissaoEquipe, getLabelVinculo, getAcaoVinculo, transferirTitularidade } = usarEquipe();
+    const { usuario, ehSuperAdmin } = usarAutenticacao();
     
     const [membros, setMembros] = useState(membrosIniciais);
     const [carregando, setCarregando] = useState(!membrosIniciais.length);
@@ -191,10 +191,24 @@ const MembrosTab = ({ membrosIniciais = [], recarregar }) => {
                                     </td>
                                     <td style={{ padding: '16px', textAlign: 'right' }}>
                                         <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-                                            {m.usuario_id !== usuario?.id && (
+                                            {(m.usuario_id !== usuario?.id || ehSuperAdmin) && m.papel !== 'admin' && (
                                                 <>
                                                     {equipeAtiva.papel === 'admin' && (
                                                         <>
+                                                            <button 
+                                                                className="btn-membro-acao" 
+                                                                title="Passar a bola (Tornar Capitão)"
+                                                                onClick={async () => {
+                                                                    if(window.confirm(`Tem certeza que deseja passar a bola para ${m.usuarios.nome_completo}? Você deixará de ser o Capitão.`)) {
+                                                                        const res = await transferirTitularidade(equipeAtiva.id, m.id);
+                                                                        if(res.sucesso) window.location.reload();
+                                                                        else alert(res.erro);
+                                                                    }
+                                                                }}
+                                                                style={{ color: '#fbbf24' }}
+                                                            >
+                                                                <Crown size={18} />
+                                                            </button>
                                                             {m.papel === 'jogador' ? (
                                                                 <button 
                                                                     onClick={() => handleAlterarPapel(m.id, 'sub_admin')}
