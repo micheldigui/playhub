@@ -3,7 +3,7 @@ import { usarEquipe } from '../../contextos/EquipeContexto';
 import { usarAutenticacao } from '../../contextos/AutenticacaoContexto';
 import { usarNotificacoes } from '../../contextos/NotificacoesContexto';
 import { supabase } from '../../servicos/supabase';
-import { Globe, MapPin, Trophy, Users, Search, ArrowLeft, Crown, User, Phone, MessageCircle } from 'lucide-react';
+import { Globe, MapPin, Trophy, Users, Search, ArrowLeft, Crown, User, Phone, MessageCircle, Ban } from 'lucide-react';
 import Botao from '../../componentes/Botao/Botao';
 import PerfilAtletaModal from '../../componentes/Modais/PerfilAtletaModal';
 import './PaginaExplorar.css';
