@@ -288,14 +288,6 @@ const PaginaPerfil = ({ aoVoltar }) => {
 
   return (
     <div className="perfil-container animacao-entrada">
-      <div className="perfil-cabecalho-acoes">
-        {aoVoltar && (
-          <button onClick={aoVoltar} className="btn-voltar-perfil">
-            <ArrowLeft size={16} />
-            <span>Voltar para Dashboard</span>
-          </button>
-        )}
-      </div>
 
       <div className="perfil-cabecalho">
         <h2>Meu Perfil</h2>

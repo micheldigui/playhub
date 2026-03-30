@@ -6,7 +6,12 @@ import { usarAutenticacao } from '../../../contextos/AutenticacaoContexto';
 import Botao from '../../../componentes/Botao/Botao';
 
 const RegrasTab = ({ abrirEdicao, aoExcluir }) => {
-    const { equipeAtiva, atualizarRegrasEquipe, temPermissaoEquipe } = usarEquipe();
+    const { 
+        equipeAtiva, 
+        atualizarRegrasEquipe, 
+        atualizarConfiguracoesEquipe,
+        temPermissaoEquipe 
+    } = usarEquipe();
     const { carregarConfiguracao, salvarConfiguracao } = usarFinanceiro();
     const { ehSuperAdmin, usuario } = usarAutenticacao();
 
@@ -17,7 +22,12 @@ const RegrasTab = ({ abrirEdicao, aoExcluir }) => {
         dia_tolerancia: 15,
         custo_quadra: 0,
         limite_vencimento_horas: 24,
-        chave_pix: ''
+        chave_pix: '',
+        suspenso_amarelos: 3,
+        horas_limite_cancelamento: 24,
+        horas_limite_inscricao: 2,
+        dias_abertura_inscricao: 7,
+        prioridade_mensalista: true
     });
 
     useEffect(() => {
@@ -31,7 +41,12 @@ const RegrasTab = ({ abrirEdicao, aoExcluir }) => {
                         dia_tolerancia: cfg.dia_tolerancia || 15,
                         custo_quadra: cfg.custo_quadra || 0,
                         limite_vencimento_horas: cfg.limite_vencimento_horas || 24,
-                        chave_pix: cfg.chave_pix || ''
+                        chave_pix: cfg.chave_pix || '',
+                        suspenso_amarelos: equipeAtiva.regras?.suspenso_amarelos || 3,
+                        horas_limite_cancelamento: equipeAtiva.regras?.horas_limite_cancelamento || 24,
+                        horas_limite_inscricao: equipeAtiva.regras?.horas_limite_inscricao || 2,
+                        dias_abertura_inscricao: equipeAtiva.regras?.dias_abertura_inscricao || 7,
+                        prioridade_mensalista: equipeAtiva.regras?.prioridade_mensalista !== undefined ? equipeAtiva.regras.prioridade_mensalista : true
                     });
                 }
             };
@@ -56,7 +71,12 @@ const RegrasTab = ({ abrirEdicao, aoExcluir }) => {
                 vencimento_dia: Number(configLocal.dia_vencimento),
                 horas_limite_pagamento: Number(configLocal.limite_vencimento_horas),
                 custo_quadra: Number(configLocal.custo_quadra),
-                chave_pix: configLocal.chave_pix
+                chave_pix: configLocal.chave_pix,
+                suspenso_amarelos: Number(configLocal.suspenso_amarelos),
+                horas_limite_cancelamento: Number(configLocal.horas_limite_cancelamento),
+                horas_limite_inscricao: Number(configLocal.horas_limite_inscricao),
+                dias_abertura_inscricao: Number(configLocal.dias_abertura_inscricao),
+                prioridade_mensalista: configLocal.prioridade_mensalista
             });
 
             alert('Regras e configurações salvas com sucesso!');
@@ -91,6 +111,92 @@ const RegrasTab = ({ abrirEdicao, aoExcluir }) => {
                     {podeEditar && (
                         <Botao onClick={abrirEdicao} style={{ width: '100%' }}>Editar Dados da Equipe</Botao>
                     )}
+                </section>
+
+                {/* ── CARD: CONFIGURAÇÕES DE MÓDULOS ── */}
+                <section style={{ background: 'rgba(15, 23, 42, 0.6)', border: '1px solid rgba(255, 255, 255, 0.05)', borderRadius: '16px', padding: '24px' }}>
+                    <h3 style={{ fontSize: '1.1rem', color: '#f1f5f9', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+                        <Settings size={18} color="var(--primaria)" /> Módulos & Recrutamento
+                    </h3>
+                    
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                        <div className="item-toggle-regras" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', paddingBottom: '12px', borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
+                            <div style={{ flex: 1 }}>
+                                <strong style={{ color: '#f1f5f9', fontSize: '0.9rem', display: 'block', marginBottom: '4px' }}>Módulo Financeiro</strong>
+                                <p style={{ color: '#94a3b8', fontSize: '0.75rem', lineHeight: '1.3' }}>Habilita Mensalidades, Rateio e Caixa na barra lateral.</p>
+                            </div>
+                            <label className="switch-regras">
+                                <input 
+                                    type="checkbox" 
+                                    checked={equipeAtiva.gestao_financeira} 
+                                    onChange={(e) => atualizarConfiguracoesEquipe(equipeAtiva.id, { gestao_financeira: e.target.checked })}
+                                    disabled={!podeEditar}
+                                />
+                                <span className="slider-regras"></span>
+                            </label>
+                        </div>
+
+                        <div className="item-toggle-regras" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem' }}>
+                            <div style={{ flex: 1 }}>
+                                <strong style={{ color: '#f1f5f9', fontSize: '0.9rem', display: 'block', marginBottom: '4px' }}>Aceitando Membros</strong>
+                                <p style={{ color: '#94a3b8', fontSize: '0.75rem', lineHeight: '1.3' }}>Permite que novos atletas solicitem ingresso no time.</p>
+                            </div>
+                            <label className="switch-regras">
+                                <input 
+                                    type="checkbox" 
+                                    checked={equipeAtiva.aceitando_membros} 
+                                    onChange={(e) => atualizarConfiguracoesEquipe(equipeAtiva.id, { aceitando_membros: e.target.checked })}
+                                    disabled={!podeEditar}
+                                />
+                                <span className="slider-regras"></span>
+                            </label>
+                        </div>
+                    </div>
+                </section>
+                
+                {/* ── CARD: REGRAS DE JOGO ── */}
+                <section style={{ background: 'rgba(15, 23, 42, 0.6)', border: '1px solid rgba(255, 255, 255, 0.05)', borderRadius: '16px', padding: '24px' }}>
+                    <h3 style={{ fontSize: '1.1rem', color: '#f1f5f9', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+                        <ShieldAlert size={18} color="#f43f5e" /> Regras de Jogo & Puncionamento
+                    </h3>
+                    
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                        <div className="input-regras">
+                            <label>Suspensão por Amarelos (Qtd)</label>
+                            <input disabled={!podeEditar} type="number" value={configLocal.suspenso_amarelos} onChange={e => setConfigLocal({...configLocal, suspenso_amarelos: e.target.value})} />
+                        </div>
+
+                        <div className="item-toggle-regras" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem' }}>
+                            <div style={{ flex: 1 }}>
+                                <strong style={{ color: '#f1f5f9', fontSize: '0.9rem', display: 'block', marginBottom: '4px' }}>Prioridade Mensalista</strong>
+                                <p style={{ color: '#94a3b8', fontSize: '0.75rem', lineHeight: '1.3' }}>Dá prioridade na lista de confirmados para quem paga mensalidade.</p>
+                            </div>
+                            <label className="switch-regras">
+                                <input 
+                                    type="checkbox" 
+                                    checked={configLocal.prioridade_mensalista} 
+                                    onChange={(e) => setConfigLocal({...configLocal, prioridade_mensalista: e.target.checked})}
+                                    disabled={!podeEditar}
+                                />
+                                <span className="slider-regras"></span>
+                            </label>
+                        </div>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                            <div className="input-regras">
+                                <label><Clock size={14} /> Limite Cancelar (h)</label>
+                                <input disabled={!podeEditar} type="number" value={configLocal.horas_limite_cancelamento} onChange={e => setConfigLocal({...configLocal, horas_limite_cancelamento: e.target.value})} />
+                            </div>
+                            <div className="input-regras">
+                                <label><Clock size={14} /> Fecha Inscrição (h)</label>
+                                <input disabled={!podeEditar} type="number" value={configLocal.horas_limite_inscricao} onChange={e => setConfigLocal({...configLocal, horas_limite_inscricao: e.target.value})} />
+                            </div>
+                        </div>
+                        <div className="input-regras">
+                            <label><Calendar size={14} /> Abre Inscrição (Dias antes do jogo)</label>
+                            <input disabled={!podeEditar} type="number" value={configLocal.dias_abertura_inscricao} onChange={e => setConfigLocal({...configLocal, dias_abertura_inscricao: e.target.value})} />
+                        </div>
+                    </div>
                 </section>
 
                 {/* ── CARD: REGRAS FINANCEIRAS ── */}
@@ -156,6 +262,15 @@ const RegrasTab = ({ abrirEdicao, aoExcluir }) => {
                 .input-regras label { font-size: 0.8rem; color: #94a3b8; display: flex; align-items: center; gap: 6px; }
                 .input-regras input { background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 10px; color: white; outline: none; transition: border-color 0.2s; }
                 .input-regras input:focus { border-color: #38bdf8; }
+
+                /* Switch Estilo iPhone/Moderno para RegrasTab */
+                .switch-regras { position: relative; display: inline-block; width: 44px; height: 22px; flex-shrink: 0; }
+                .switch-regras input { opacity: 0; width: 0; height: 0; }
+                .slider-regras { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #334155; transition: .4s; border-radius: 34px; }
+                .slider-regras:before { position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+                input:checked + .slider-regras { background-color: #38bdf8; }
+                input:checked + .slider-regras:before { transform: translateX(22px); }
+                input:disabled + .slider-regras { opacity: 0.5; cursor: not-allowed; }
             `}</style>
         </div>
     );

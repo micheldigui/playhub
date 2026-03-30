@@ -72,14 +72,40 @@ export const AutenticacaoProvedor = ({ children }) => {
         }
     };
 
+    const alternarWhatsAppMatch = async () => {
+        if (!dadosUsuario) return { sucesso: false, erro: 'Sem dados' };
+        
+        const novoStatus = !dadosUsuario.compartilhar_whatsapp_match;
+        try {
+            const { error } = await supabase
+                .from('usuarios')
+                .update({ compartilhar_whatsapp_match: novoStatus })
+                .eq('id', dadosUsuario.id);
+
+            if (error) throw error;
+            setDadosUsuario(prev => ({ ...prev, compartilhar_whatsapp_match: novoStatus }));
+            return { sucesso: true };
+        } catch (error) {
+            console.error('Erro alternar whatsapp:', error.message);
+            return { sucesso: false, erro: error.message };
+        }
+    };
+
+    const logout = async () => {
+        const { error } = await supabase.auth.signOut();
+        if (error) console.error('Erro ao encerrar sessão:', error.message);
+    };
+
     const valor = {
         usuario,
         dadosUsuario,
         carregando,
         ehSuperAdmin: dadosUsuario?.eh_super_admin === true,
         estaLogado: !!usuario,
+        logout,
         recarregarUsuario: () => usuario && carregarDadosUsuario(usuario.id),
-        alternarVisibilidadePerfil
+        alternarVisibilidadePerfil,
+        alternarWhatsAppMatch
     };
 
     return (

@@ -3,6 +3,7 @@ import {
   Trophy, Users, Calendar, Shield,
   ArrowRight, CheckCircle2, Star, Zap
 } from 'lucide-react';
+import InfoTooltip from '../../componentes/Tooltip/InfoTooltip';
 import './LandingPage.css';
 
 const LandingPage = ({ aoLogin }) => {
@@ -11,7 +12,7 @@ const LandingPage = ({ aoLogin }) => {
       {/* ── Navbar ── */}
       <nav className="landing-nav">
         <div className="landing-logo">
-          <img src="/icon.svg" alt="PlayHub Logo" />
+          <img src="/icon_ph_oficial.png" alt="PlayHub Logo" style={{ borderRadius: '4px' }} />
           <span>PlayHub</span>
         </div>
         <button className="btn-hero-secondary" style={{ padding: '0.6rem 1.5rem', fontSize: '0.9rem' }} onClick={aoLogin}>
@@ -51,8 +52,11 @@ const LandingPage = ({ aoLogin }) => {
             <div className="feature-icon-box">
               <Users size={32} />
             </div>
-            <h3>Gestão de Elenco</h3>
-            <p>Controle membros, cargos e convites de forma simples e intuitiva. Tenha o controle total da sua equipe.</p>
+            <h3>
+              Gestão de Elenco
+              <InfoTooltip texto="Defina quem é Capitão (manda em tudo), Vice-Capitão (ajuda na gestão) ou Jogador. Tudo simples e organizado." />
+            </h3>
+            <p>Controle membros, cargos e convites de forma simples. Saiba exatamente quem faz parte da sua equipe e qual a função de cada um.</p>
           </div>
 
           <div className="feature-card">
@@ -67,8 +71,11 @@ const LandingPage = ({ aoLogin }) => {
             <div className="feature-icon-box">
               <Shield size={32} />
             </div>
-            <h3>Controle Financeiro</h3>
-            <p>Gerencie mensalidades de atletas e pagamentos de avulsos com relatórios claros e automáticos.</p>
+            <h3>
+              Controle Financeiro
+              <InfoTooltip texto="Separe quem paga por mês (Mensalista) de quem paga por jogo (Avulso). O app avisa quem está devendo!" />
+            </h3>
+            <p>Gerencie mensalidades e pagamentos de avulsos com relatórios automáticos. Chega de cobranças chatas no grupo do WhatsApp.</p>
           </div>
 
           <div className="feature-card">
@@ -83,8 +90,11 @@ const LandingPage = ({ aoLogin }) => {
             <div className="feature-icon-box" style={{ color: '#f43f5e', background: 'rgba(244, 63, 94, 0.1)' }}>
               <Zap size={32} />
             </div>
-            <h3>Passar a Bola</h3>
-            <p><strong>Passe a bola e entre no jogo!</strong> Demonstre interesse em novos parceiros de equipe. Se eles aceitarem o passe, é match e o contato do WhatsApp aparece na hora.</p>
+            <h3>
+              Passar a Bola
+              <InfoTooltip texto="Encontrou alguém legal para jogar? 'Passe a bola'. Se a pessoa aceitar, vocês dão match e o WhatsApp é liberado!" />
+            </h3>
+            <p><strong>Passe a bola e entre no jogo!</strong> Demonstre interesse em novos atletas. Se o interesse for mútuo, o contato é liberado na hora.</p>
           </div>
 
           <div className="feature-card">
@@ -112,7 +122,7 @@ const LandingPage = ({ aoLogin }) => {
       <footer className="landing-footer">
         <div className="footer-content">
           <div className="landing-logo" style={{ justifyContent: 'center', marginBottom: '1.5rem', opacity: 0.8 }}>
-            <img src="/icon.svg" alt="PlayHub Logo" />
+            <img src="/icon_ph_oficial.png" alt="PlayHub Logo" style={{ borderRadius: '4px' }} />
             <span>PlayHub</span>
           </div>
           <p>© {new Date().getFullYear()} PlayHub - Todos os direitos reservados.</p>

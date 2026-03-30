@@ -136,6 +136,76 @@ export const PartidasProvider = ({ children }) => {
     const confirmarPresenca = async (partida, status = 'confirmado', vinculo = 'avulso') => {
         if (!usuario) return { sucesso: false, erro: 'Usuário não autenticado' };
         
+        // 0. Verificação de Suspensão com Auto-Reset (Lógica de 1 Jogo de Gancho)
+        try {
+            const { data: suspensoesAtivas, error: errSusp } = await supabase
+                .from('punicoes_equipe')
+                .select('id, motivo, criado_em, partida_id')
+                .eq('equipe_id', partida.equipe_id)
+                .eq('usuario_id', usuario.id)
+                .eq('tipo_cartao', 'vermelho')
+                .eq('ativa', true); // Coluna 'ativa' booleana é melhor que status string para performance
+            
+            if (!errSusp && suspensoesAtivas && suspensoesAtivas.length > 0) {
+                for (const sup of suspensoesAtivas) {
+                    // Refinamento do Auto-Reset: 
+                    // Se existiu qualquer partida da equipe cujo (data) seja MAIOR que a data da partida que gerou o cartão,
+                    // e MENOR que a data da partida atual, significa que o jogador já "cumpriu" o seu jogo de fora.
+                    
+                    // Primeiro, buscamos a data da partida que gerou a punição
+                    const { data: partidaCard } = await supabase
+                        .from('partidas')
+                        .select('data, hora')
+                        .eq('id', sup.partida_id)
+                        .single();
+
+                    if (partidaCard) {
+                        const dataCardStr = partidaCard.data;
+                        
+                        // Buscamos se houve alguma partida realizada entre o cartão e o jogo atual
+                        const { count, error: errCount } = await supabase
+                            .from('partidas')
+                            .select('id', { count: 'exact', head: true })
+                            .eq('equipe_id', partida.equipe_id)
+                            .gt('data', dataCardStr)
+                            .lt('data', partida.data);
+
+                        if (!errCount && count > 0) {
+                            // O jogador já cumpriu o gancho (teve jogo no meio)
+                            await supabase.from('punicoes_equipe').update({ ativa: false }).eq('id', sup.id);
+                        } else {
+                            // Se não houve jogo no meio, mas ele está tentando se inscrever em um jogo 
+                            // que é DIFERENTE do que ele levou o cartão (obviamente), e é o PRÓXIMO jogo,
+                            // ele ainda deve estar bloqueado.
+                            
+                            // Caso especial: Se a partida que ele levou vermelho ainda é a última partida realizada, 
+                            // ele continua suspenso para a próxima (que é esta que ele tenta entrar).
+                            return { 
+                                sucesso: false, 
+                                erro: `❌ Inscrição Negada: Você está cumprindo suspensão. Motivo: ${sup.motivo}` 
+                            };
+                        }
+                    } else {
+                        // Backup caso a partida original tenha sido excluída: usa a data de criação da punição
+                        const { count } = await supabase
+                            .from('partidas')
+                            .select('id', { count: 'exact', head: true })
+                            .eq('equipe_id', partida.equipe_id)
+                            .gt('created_at', sup.criado_em)
+                            .lt('data', partida.data);
+                            
+                        if (count > 0) {
+                            await supabase.from('punicoes_equipe').update({ ativa: false }).eq('id', sup.id);
+                        } else {
+                            return { sucesso: false, erro: `❌ Inscrição Negada: Você está cumprindo suspensão.` };
+                        }
+                    }
+                }
+            }
+        } catch (err) {
+            console.error('Erro ao validar suspensao:', err);
+        }
+
         // Regra atualizada: Todo mundo ganha 'P' automaticamente ao se inscrever (Self-Service)
         const frequenciaAutomatica = 'P';
 
@@ -187,7 +257,7 @@ export const PartidasProvider = ({ children }) => {
     };
 
     // ====== GESTÃO DE FREQUÊNCIA E PUNIÇÕES (ADMIN) ======
-    const lancarFrequencia = async (partida, targetUserId, frequencia, vinculo) => {
+    const lancarFrequencia = async (partida, targetUserId, frequencia, vinculo, tipoCartao = 'vermelho') => {
         try {
             // 1. Grava a marcação da prancheta
             const { error } = await supabase
@@ -198,19 +268,56 @@ export const PartidasProvider = ({ children }) => {
                 
             if (error) throw error;
             
-            // 2. Fluxo PUNITIVO p/ Faltosos
+            // 2. Fluxo de FAIR PLAY (Cartões) p/ Faltosos
             if (frequencia === 'F') {
-                // Prevê cliques duplos deletando rastro anterior antes de inserir
+                // Remove rastro anterior antes de inserir novo (importante para troca de cartão)
                 await supabase.from('punicoes_equipe').delete()
                     .eq('partida_id', partida.id).eq('usuario_id', targetUserId);
 
                 const dataPart = new Date(partida.data + 'T' + partida.hora);
+                
+                // Define se a punição nasce ativa (bloqueante)
+                // Cartão AZUL (Justificado) NÃO suspende. Amarelo e Vermelho sim.
+                const isAtiva = tipoCartao === 'amarelo' || tipoCartao === 'vermelho';
+                const emoji = tipoCartao === 'amarelo' ? '🟨' : tipoCartao === 'vermelho' ? '🟥' : '🟦';
+                const label = tipoCartao === 'justificado' ? 'Falta Justificada' : `Cartão ${tipoCartao === 'amarelo' ? 'Amarelo' : 'Vermelho'}`;
+
+                // Inserir a punição com o tipo de cartão
                 await supabase.from('punicoes_equipe').insert({
                     equipe_id: partida.equipe_id,
                     usuario_id: targetUserId,
                     partida_id: partida.id,
-                    motivo: `Falta marcada na partida do dia ${dataPart.toLocaleDateString('pt-BR')}`
+                    tipo_cartao: tipoCartao,
+                    ativa: isAtiva,
+                    motivo: `${label} ${emoji} aplicado na partida do dia ${dataPart.toLocaleDateString('pt-BR')}`
                 });
+
+                // Lógica de Acúmulo Automático (3 Amarelos = 1 Vermelho)
+                if (tipoCartao === 'amarelo') {
+                    const { data: amarelos, error: errCount } = await supabase
+                        .from('punicoes_equipe')
+                        .select('id')
+                        .eq('equipe_id', partida.equipe_id)
+                        .eq('usuario_id', targetUserId)
+                        .eq('tipo_cartao', 'amarelo')
+                        .eq('ativa', true); 
+
+                    if (!errCount && amarelos.length >= 3) {
+                        // Desativa os 3 amarelos (ciclo cumprido)
+                        const ids = amarelos.map(a => a.id);
+                        await supabase.from('punicoes_equipe').update({ ativa: false }).in('id', ids);
+
+                        // Gera um vermelho automático por acúmulo
+                        await supabase.from('punicoes_equipe').insert({
+                            equipe_id: partida.equipe_id,
+                            usuario_id: targetUserId,
+                            partida_id: partida.id,
+                            tipo_cartao: 'vermelho',
+                            ativa: true,
+                            motivo: `Cartão Vermelho Automático 🟥 (Acúmulo de 3 Amarelos)`
+                        });
+                    }
+                }
                 
                 // Remove qualquer pagamento cobrado indevidamente
                 await supabase.from('pagamentos_avulsos').delete()
@@ -345,6 +452,20 @@ export const PartidasProvider = ({ children }) => {
         }
     };
 
+    const buscarPunicoesPartida = async (partidaId) => {
+        try {
+            const { data, error } = await supabase
+                .from('punicoes_equipe')
+                .select('usuario_id, tipo_cartao, partida_id')
+                .eq('partida_id', partidaId);
+            if (error) throw error;
+            return { sucesso: true, punicoes: data || [] };
+        } catch (error) {
+            console.error('Erro ao buscar punições da partida:', error);
+            return { sucesso: false, punicoes: [] };
+        }
+    };
+
     return (
         <PartidasContexto.Provider value={{
             partidasCarregadas,
@@ -361,7 +482,8 @@ export const PartidasProvider = ({ children }) => {
             lancarFrequencia,
             removerInscricaoAdmin,
             adicionarInscricaoAdmin,
-            alternarPagamentoAvulso
+            alternarPagamentoAvulso,
+            buscarPunicoesPartida
         }}>
             {children}
         </PartidasContexto.Provider>

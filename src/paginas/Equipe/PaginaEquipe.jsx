@@ -2,8 +2,11 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { 
   Trophy, MapPin, Globe, Lock, Crown, MessageCircle, 
   Clipboard, CheckCircle2, Link, Users, PlusSquare, 
-  LogOut, Shield, Mail, Share2, Plus, Phone, ArrowLeft
+  LogOut, Shield, Mail, Share2, Plus, Phone, ArrowLeft,
+  BookOpen
 } from 'lucide-react';
+import ModalRegrasEquipe from './componentes/ModalRegrasEquipe';
+import CardsDadosAtleta from './componentes/CardsDadosAtleta';
 import { usarEquipe } from '../../contextos/EquipeContexto';
 import { usarAutenticacao } from '../../contextos/AutenticacaoContexto';
 import Botao from '../../componentes/Botao/Botao';
@@ -26,13 +29,14 @@ const PaginaEquipe = ({ abaAtiva, setAbaAtiva, aoVoltar }) => {
         equipeAtiva, excluirEquipe, sairDaEquipe, 
         aceitarTransferenciaPosse, recusarTransferenciaPosse,
         podeCriarEquipe, carregarMembrosEquipe, temPermissaoEquipe,
-        modalCriacaoAberto, setModalCriacaoAberto
+        modalCriacaoAberto, setModalCriacaoAberto, getLabelVinculo
     } = usarEquipe();
     const { ehSuperAdmin, usuario } = usarAutenticacao();
     
     const [modalEditarAberto, setModalEditarAberto] = useState(false);
     const [copiado, setCopiado] = useState(false);
     const [confirmandoSair, setConfirmandoSair] = useState(false);
+    const [modalRegrasAberto, setModalRegrasAberto] = useState(false);
     
     // Novas estatísticas
     const [membros, setMembros] = useState([]);
@@ -160,6 +164,24 @@ const PaginaEquipe = ({ abaAtiva, setAbaAtiva, aoVoltar }) => {
                                     )}
                                 </div>
                                 <div className="acoes-equipe">
+                                    <button 
+                                        className="btn-regras-equipe" 
+                                        onClick={() => setModalRegrasAberto(true)}
+                                        title="Ver Regras e Valores do Grupo"
+                                        style={{
+                                            background: 'rgba(56, 189, 248, 0.1)',
+                                            border: '1px solid rgba(56, 189, 248, 0.2)',
+                                            color: '#38bdf8',
+                                            padding: '10px',
+                                            borderRadius: '12px',
+                                            cursor: 'pointer',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center'
+                                        }}
+                                    >
+                                        <BookOpen size={20} />
+                                    </button>
                                     <button className="btn-whatsapp" onClick={convidarWhatsApp}><Phone size={18} fill="white" /> Convidar WhatsApp</button>
                                     <Botao variant="secundario" onClick={copiarLink} style={{ gap: '0.75rem' }}>
                                         {copiado ? <CheckCircle2 size={18} color="#10b981" /> : <Clipboard size={18} />}
@@ -173,14 +195,11 @@ const PaginaEquipe = ({ abaAtiva, setAbaAtiva, aoVoltar }) => {
                                             <LogOut size={16} /> {confirmandoSair ? 'Confirmar Saída?' : 'Sair da Equipe'}
                                         </button>
                                     )}
-                                    {podeCriarEquipe && (
-                                        <button className="btn-criar-outra-equipe" onClick={() => setModalCriacaoAberto(true)}>
-                                            <Plus size={16} /> Criar Outra Equipe
-                                        </button>
-                                    )}
                                 </div>
                             </div>
                         </header>
+
+                        <CardsDadosAtleta />
 
                         <div className="grade-detalhes-eq">
                             <div className="card-eq">
@@ -192,11 +211,11 @@ const PaginaEquipe = ({ abaAtiva, setAbaAtiva, aoVoltar }) => {
                                     </div>
                                     <div className="stat-item">
                                         <span className="stat-valor">{stats.mensalistas}</span>
-                                        <span className="stat-label">Mensalistas</span>
+                                        <span className="stat-label">{getLabelVinculo('mensalista')}</span>
                                     </div>
                                     <div className="stat-item">
                                         <span className="stat-valor">{stats.avulsos}</span>
-                                        <span className="stat-label">Avulsos</span>
+                                        <span className="stat-label">{getLabelVinculo('avulso')}</span>
                                     </div>
                                 </div>
                                 <p style={{ marginTop: '12px', opacity: 0.7 }}>Nível Médio: <strong>{equipeAtiva.nivel || 'Lazer'}</strong></p>
@@ -282,6 +301,11 @@ const PaginaEquipe = ({ abaAtiva, setAbaAtiva, aoVoltar }) => {
                 equipeParaEditar={equipeAtiva} 
             />
 
+            <ModalRegrasEquipe 
+                isOpen={modalRegrasAberto} 
+                onClose={() => setModalRegrasAberto(false)} 
+            />
+            
             <style>{`
                 .banner-aviso { display: flex; align-items: center; gap: 16px; padding: 1.25rem; border-radius: 12px; margin-bottom: 1.5rem; }
                 .banner-sucesso { background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.2); color: #10b981; }
@@ -297,13 +321,6 @@ const PaginaEquipe = ({ abaAtiva, setAbaAtiva, aoVoltar }) => {
                 .btn-sair-equipe { background: none; border: 1px solid rgba(244, 63, 94, 0.3); color: #f43f5e; padding: 8px 16px; border-radius: 8px; cursor: pointer; transition: all 0.2s; font-size: 0.85rem; }
                 .btn-sair-equipe.confirmando { background: #f43f5e; color: white; border-color: #f43f5e; font-weight: bold; }
                 
-                .btn-criar-outra-equipe {
-                    display: flex; align-items: center; gap: 8px;
-                    background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
-                    color: #94a3b8; padding: 8px 14px; border-radius: 8px; cursor: pointer;
-                    transition: all 0.2s; font-size: 0.85rem; font-weight: 500;
-                }
-                .btn-criar-outra-equipe:hover { background: rgba(255,255,255,0.1); color: #f8fafc; border-color: rgba(255,255,255,0.2); }
                 
                 .badge-capitao { background: rgba(251, 191, 36, 0.1) !important; color: #fbbf24 !important; border-color: rgba(251, 191, 36, 0.2) !important; }
                 .badge-vice { background: rgba(56, 189, 248, 0.1) !important; color: #38bdf8 !important; border-color: rgba(56, 189, 248, 0.2) !important; }

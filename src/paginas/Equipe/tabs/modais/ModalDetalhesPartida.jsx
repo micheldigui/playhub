@@ -8,14 +8,16 @@ import '../../../../componentes/Modal/Modal.css';
 
 const ModalDetalhesPartida = ({ isOpen, onClose, partida }) => {
     const { usuario } = usarAutenticacao();
-    const { buscarPresencas, confirmarPresenca, cancelarPresenca, lancarFrequencia, removerInscricaoAdmin, adicionarInscricaoAdmin, alternarPagamentoAvulso, buscarPagamentosAvulsosPartida, registrarPagamentoAvulso, removerPagamentoAvulso } = usarPartidas();
-    const { equipeAtiva, carregarMembrosEquipe, temPermissaoEquipe } = usarEquipe();
+    const { buscarPresencas, confirmarPresenca, cancelarPresenca, lancarFrequencia, removerInscricaoAdmin, adicionarInscricaoAdmin, alternarPagamentoAvulso, buscarPagamentosAvulsosPartida, registrarPagamentoAvulso, removerPagamentoAvulso, buscarPunicoesPartida } = usarPartidas();
+    const { equipeAtiva, carregarMembrosEquipe, temPermissaoEquipe, getLabelVinculo } = usarEquipe();
 
     const [presencas, setPresencas] = useState([]);
     const [membros, setMembros] = useState([]);
     const [pagamentos, setPagamentos] = useState([]);
+    const [punicoes, setPunicoes] = useState([]);
     const [carregando, setCarregando] = useState(true);
     const [processandoAcao, setProcessandoAcao] = useState(false);
+    const [pickerAberto, setPickerAberto] = useState(null); // id do usuário com o seletor de cartão aberto
 
     useEffect(() => {
         if (isOpen && partida) {
@@ -27,10 +29,11 @@ const ModalDetalhesPartida = ({ isOpen, onClose, partida }) => {
         setCarregando(true);
         try {
             // Busca presencas do banco e os membros da equipe para pegar os vínculos
-            const [respPresencas, respMembros, respPagamentos] = await Promise.all([
+            const [respPresencas, respMembros, respPagamentos, respPunicoes] = await Promise.all([
                 buscarPresencas(partida.id),
                 carregarMembrosEquipe(equipeAtiva.id),
-                buscarPagamentosAvulsosPartida(partida.id)
+                buscarPagamentosAvulsosPartida(partida.id),
+                buscarPunicoesPartida(partida.id)
             ]);
 
             if (respPresencas.sucesso) {
@@ -41,6 +44,9 @@ const ModalDetalhesPartida = ({ isOpen, onClose, partida }) => {
             }
             if (respPagamentos?.sucesso) {
                 setPagamentos(respPagamentos.pagamentos || []);
+            }
+            if (respPunicoes?.sucesso) {
+                setPunicoes(respPunicoes.punicoes || []);
             }
         } catch (error) {
             console.error('Erro ao carregar detalhes da partida:', error);
@@ -182,13 +188,15 @@ const ModalDetalhesPartida = ({ isOpen, onClose, partida }) => {
         setProcessandoAcao(false);
     };
 
-    const handleClickFrequencia = async (targetUserId, freqClicada, freqAtual, vinculo) => {
+    const handleClickFrequencia = async (targetUserId, freqClicada, freqAtual, vinculo, tipoCartao = 'vermelho') => {
         if (!isAdmin) return;
         setProcessandoAcao(true);
-        // Regra do toggle: P ou F ativados viram cinza se clicados de novo
-        const novaFrequencia = freqClicada === freqAtual ? 'pendente' : freqClicada;
-        await lancarFrequencia(partida, targetUserId, novaFrequencia, vinculo);
+        // Regra do toggle: clicar em P enquanto já está P não faz nada (mas nunca chega aqui)
+        // Clicar em F enquanto está F → vai para P (desmarca)
+        // Clicar em P enquanto está F → vai para P (vindo do botão colorido)
+        await lancarFrequencia(partida, targetUserId, freqClicada, vinculo, tipoCartao);
         await carregarDados();
+        setPickerAberto(null);
         setProcessandoAcao(false);
     };
 
@@ -295,7 +303,11 @@ const ModalDetalhesPartida = ({ isOpen, onClose, partida }) => {
                                         Confirmados 
                                         <span style={{ fontSize: '0.9rem', color: '#38bdf8' }}>{listaConfirmados.length} / {limite === 999 ? '∞' : limite}</span>
                                     </div>
-                                    {isAdmin && <span style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: 'normal', textTransform: 'uppercase' }}>Gestão de Presença</span>}
+                                    {isAdmin && (
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                            <span style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: 'normal', textTransform: 'uppercase' }}>Gestão</span>
+                                        </div>
+                                    )}
                                 </h3>
                                 
                                 {listaConfirmados.length === 0 ? (
@@ -312,101 +324,143 @@ const ModalDetalhesPartida = ({ isOpen, onClose, partida }) => {
                                                         {u?.foto_url ? <img src={u.foto_url} alt="avatar" style={{width:'100%', height:'100%', objectFit:'cover'}}/> : <Users size={16} style={{margin:'8px'}}/>}
                                                     </div>
                                                     <div style={{ flex: 1, color: '#f8fafc', fontWeight: '500', display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'space-between' }}>
-                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                            {u?.nome_completo || 'Desconhecido'}
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden' }}>
+                                                            <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{u?.nome_completo || 'Desconhecido'}</span>
                                                             {vinculo === 'mensalista' ? (
                                                                 <Star size={14} fill="#fbbf24" color="#fbbf24" title="Mensalista" />
                                                             ) : (
-                                                                <span style={{ fontSize: '0.7rem', background: 'rgba(255,255,255,0.05)', padding: '2px 6px', borderRadius: '4px', color: '#94a3b8' }}>Avulso</span>
+                                                                <Star size={14} fill="#94a3b8" color="#94a3b8" title="Avulso" />
                                                             )}
                                                         </div>
 
-                                                        {/* ÁREA ADMINISTRATIVA DO JOGADOR NA PARTIDA */}
-                                                        {isAdmin && (
-                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                        {/* ÁREA DE FREQUÊNCIA (Visível para todos, editável apenas p/ Admin) */}
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                                                                 
-                                                                {/* BOTÃO [P] */}
-                                                                <button 
-                                                                    onClick={() => handleClickFrequencia(u.id, 'P', p.frequencia, vinculo)}
-                                                                    disabled={processandoAcao}
-                                                                    title="Marcar/Desmarcar Presença (P)"
-                                                                    style={{ 
-                                                                        background: p.frequencia === 'P' ? '#10b981' : 'transparent', 
-                                                                        color: p.frequencia === 'P' ? '#fff' : '#10b981',
-                                                                        border: p.frequencia === 'P' ? '1px solid #10b981' : '1px solid rgba(16, 185, 129, 0.3)', 
-                                                                        cursor: 'pointer',
-                                                                        padding: '4px 8px',
-                                                                        borderRadius: '4px',
-                                                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                                        fontWeight: 'bold', fontSize: '0.8rem', opacity: processandoAcao ? 0.5 : 1
-                                                                    }}
-                                                                >
-                                                                    P
-                                                                </button>
-                                                                
-                                                                {/* BOTÃO [F] */}
-                                                                <button 
-                                                                    onClick={() => handleClickFrequencia(u.id, 'F', p.frequencia, vinculo)}
-                                                                    disabled={processandoAcao}
-                                                                    title="Marcar/Desmarcar Falta (F) - Gera Punição"
-                                                                    style={{ 
-                                                                        background: p.frequencia === 'F' ? '#ef4444' : 'transparent', 
-                                                                        color: p.frequencia === 'F' ? '#fff' : '#ef4444',
-                                                                        border: p.frequencia === 'F' ? '1px solid #ef4444' : '1px solid rgba(239, 68, 68, 0.3)', 
-                                                                        cursor: 'pointer',
-                                                                        padding: '4px 8px',
-                                                                        borderRadius: '4px',
-                                                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                                        fontWeight: 'bold', fontSize: '0.8rem', opacity: processandoAcao ? 0.5 : 1
-                                                                    }}
-                                                                >
-                                                                    F
-                                                                </button>
-
-                                                                {/* BOTÃO REMOVER DO JOGO */}
-                                                                <button 
-                                                                    onClick={() => handleRemoverJogadorAdmin(u.id, u?.nome_completo)}
-                                                                    disabled={processandoAcao}
-                                                                    title="Remover Jogador da Súmula sem punir"
-                                                                    style={{ 
-                                                                        background: 'transparent', border: 'none', cursor: 'pointer',
-                                                                        padding: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                                        color: '#f43f5e', marginLeft: '4px', opacity: processandoAcao ? 0.5 : 1
-                                                                    }}
-                                                                >
-                                                                    <X size={16} strokeWidth={3} />
-                                                                </button>
-
-                                                                <div style={{ width: '1px', height: '16px', background: 'rgba(255,255,255,0.1)', margin: '0 4px' }} />
-
-                                                                {vinculo === 'avulso' && (() => {
-                                                                    const pagDoc = pagamentos.find(pg => pg.usuario_id === u.id);
-                                                                    const pago = pagDoc && pagDoc.status === 'pago';
-                                                                    const temDocPendencia = pagDoc !== undefined; // Pode ser pago ou pendente
+                                                            {isAdmin ? (
+                                                                <>
+                                                                    {/* BOTÃO [P] - ADMIN */}
+                                                                    <button 
+                                                                        onClick={() => handleClickFrequencia(u.id, 'P', p.frequencia, vinculo)}
+                                                                        disabled={processandoAcao}
+                                                                        title="Marcar/Desmarcar Presença (P)"
+                                                                        style={{ 
+                                                                            background: p.frequencia === 'P' ? '#10b981' : 'transparent', 
+                                                                            color: p.frequencia === 'P' ? '#fff' : '#10b981',
+                                                                            border: p.frequencia === 'P' ? '1px solid #10b981' : '1px solid rgba(16, 185, 129, 0.3)', 
+                                                                            cursor: 'pointer',
+                                                                            padding: '4px 8px',
+                                                                            borderRadius: '4px',
+                                                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                                            fontWeight: 'bold', fontSize: '0.8rem', opacity: processandoAcao ? 0.5 : 1
+                                                                        }}
+                                                                    >
+                                                                        P
+                                                                    </button>
                                                                     
-                                                                    return (
+                                                                    {/* BOTÃO [F] - ADMIN COM SELETOR */}
+                                                                    <div style={{ position: 'relative' }}>
                                                                         <button 
-                                                                            onClick={() => handleTogglePagamentoAvulso(u.id)}
-                                                                            title={!temDocPendencia ? "Fixar Pagamento (Registrar Comanda Manual)" : pago ? "Comanda Quitada (Clique para estornar P/ Pendente)" : "Aviso de Dívida Avulsa (Clique p/ Dar Baixa $)"}
+                                                                            onClick={() => {
+                                                                                if (p.frequencia === 'F') {
+                                                                                    handleClickFrequencia(u.id, 'P', p.frequencia, vinculo);
+                                                                                } else {
+                                                                                    setPickerAberto(pickerAberto === u.id ? null : u.id);
+                                                                                }
+                                                                            }}
                                                                             disabled={processandoAcao}
+                                                                            title={p.frequencia === 'F' ? "Remover Falta/Cartão" : "Lançar Falta com Cartão"}
                                                                             style={{ 
-                                                                                background: pago ? 'rgba(16, 185, 129, 0.2)' : 'transparent', 
-                                                                                border: 'none', cursor: 'pointer',
-                                                                                padding: '4px 8px', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                                                borderRadius: '6px',
-                                                                                opacity: processandoAcao ? 0.3 : 1
+                                                                                background: (() => {
+                                                                                    if (p.frequencia !== 'F') return 'transparent';
+                                                                                    const card = punicoes.find(pun => pun.usuario_id === u.id && pun.partida_id === partida.id);
+                                                                                    if (card?.tipo_cartao === 'amarelo') return '#eab308';
+                                                                                    if (card?.tipo_cartao === 'justificado') return '#3b82f6';
+                                                                                    return '#ef4444';
+                                                                                })(), 
+                                                                                color: p.frequencia === 'F' ? '#fff' : '#ef4444',
+                                                                                border: p.frequencia === 'F' ? 'none' : '1px solid rgba(239, 68, 68, 0.3)', 
+                                                                                cursor: 'pointer',
+                                                                                padding: '4px 8px',
+                                                                                borderRadius: '4px',
+                                                                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                                                fontWeight: 'bold', fontSize: '0.8rem', opacity: processandoAcao ? 0.5 : 1
                                                                             }}
                                                                         >
-                                                                            <DollarSign 
-                                                                                size={16} 
-                                                                                strokeWidth={3}
-                                                                                color={pago ? '#10b981' : (temDocPendencia ? '#f43f5e' : '#64748b')} 
-                                                                            />
+                                                                            F
                                                                         </button>
-                                                                    );
-                                                                })()}
-                                                            </div>
-                                                        )}
+
+                                                                        {pickerAberto === u.id && (
+                                                                            <div className="animate-pop-in" style={{ 
+                                                                                position: 'absolute', bottom: '100%', right: 0, marginBottom: '8px',
+                                                                                background: '#1e293b', border: '1px solid rgba(255,255,255,0.1)',
+                                                                                borderRadius: '8px', padding: '6px', display: 'flex', gap: '6px',
+                                                                                boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.4)', zIndex: 100
+                                                                            }}>
+                                                                                <button onClick={() => handleClickFrequencia(u.id, 'F', p.frequencia, vinculo, 'amarelo')} style={{ width: '28px', height: '36px', background: '#eab308', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>🟨</button>
+                                                                                <button onClick={() => handleClickFrequencia(u.id, 'F', p.frequencia, vinculo, 'vermelho')} style={{ width: '28px', height: '36px', background: '#ef4444', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>🟥</button>
+                                                                                <button onClick={() => handleClickFrequencia(u.id, 'F', p.frequencia, vinculo, 'justificado')} style={{ width: '28px', height: '36px', background: '#3b82f6', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>🟦</button>
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+                                                                    
+                                                                    <button 
+                                                                        onClick={() => handleRemoverJogadorAdmin(u.id, u?.nome_completo)}
+                                                                        disabled={processandoAcao}
+                                                                        title="Remover Jogador"
+                                                                        style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#f43f5e', padding: '4px' }}
+                                                                    >
+                                                                        <X size={16} strokeWidth={3} />
+                                                                    </button>
+                                                                </>
+                                                            ) : (
+                                                                <>
+                                                                    {/* INDICADORES VISUAIS - ATLETA COMUM */}
+                                                                    {p.frequencia === 'P' && (
+                                                                        <span title="Presente" style={{ background: '#10b981', color: '#fff', padding: '2px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 'bold' }}>P</span>
+                                                                    )}
+                                                                    {p.frequencia === 'F' && (
+                                                                        <span 
+                                                                            title={(() => {
+                                                                                const card = punicoes.find(pun => pun.usuario_id === u.id && pun.partida_id === partida.id);
+                                                                                return card?.tipo_cartao === 'amarelo' ? "Falta (Amarelo)" : card?.tipo_cartao === 'justificado' ? "Falta Justificada" : "Falta (Vermelho)";
+                                                                            })()} 
+                                                                            style={{ 
+                                                                                background: (() => {
+                                                                                    const card = punicoes.find(pun => pun.usuario_id === u.id && pun.partida_id === partida.id);
+                                                                                    if (card?.tipo_cartao === 'amarelo') return '#eab308';
+                                                                                    if (card?.tipo_cartao === 'justificado') return '#3b82f6';
+                                                                                    return '#ef4444';
+                                                                                })(), 
+                                                                                color: '#fff', padding: '2px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 'bold' 
+                                                                            }}
+                                                                        >F</span>
+                                                                    )}
+                                                                </>
+                                                            )}
+
+                                                            {/* GESTÃO FINANCEIRA AVULSO (ADMIN APENAS) */}
+                                                            {isAdmin && equipeAtiva?.gestao_financeira && vinculo === 'avulso' && (
+                                                                <>
+                                                                    <div style={{ width: '1px', height: '16px', background: 'rgba(255,255,255,0.1)', margin: '0 4px' }} />
+                                                                    {(() => {
+                                                                        const pagDoc = pagamentos.find(pg => pg.usuario_id === u.id);
+                                                                        const pago = pagDoc && pagDoc.status === 'pago';
+                                                                        const temDocPendencia = pagDoc !== undefined;
+                                                                        
+                                                                        return (
+                                                                            <button 
+                                                                                onClick={() => handleTogglePagamentoAvulso(u.id)}
+                                                                                title={!temDocPendencia ? "Fixar Pagamento" : pago ? "Estornar" : "Dar Baixa $"}
+                                                                                disabled={processandoAcao}
+                                                                                style={{ background: pago ? 'rgba(16, 185, 129, 0.2)' : 'transparent', border: 'none', cursor: 'pointer', padding: '4px 8px', borderRadius: '6px', opacity: processandoAcao ? 0.3 : 1 }}
+                                                                            >
+                                                                                <DollarSign size={16} strokeWidth={3} color={pago ? '#10b981' : (temDocPendencia ? '#f43f5e' : '#64748b')} />
+                                                                            </button>
+                                                                        );
+                                                                    })()}
+                                                                </>
+                                                            )}
+                                                        </div>
                                                     </div>
                                                 </div>
                                             );
@@ -430,7 +484,7 @@ const ModalDetalhesPartida = ({ isOpen, onClose, partida }) => {
                                                 <option value="" disabled>-- Selecione um membro da equipe --</option>
                                                 {membrosElegiveis.map(m => (
                                                     <option key={m.usuarios.id} value={m.usuarios.id} data-vinculo={m.vinculo}>
-                                                        {m.usuarios.nome_completo} ({m.vinculo})
+                                                        {m.usuarios.nome_completo} ({getLabelVinculo(m.vinculo)})
                                                     </option>
                                                 ))}
                                             </select>
@@ -457,7 +511,11 @@ const ModalDetalhesPartida = ({ isOpen, onClose, partida }) => {
                                                     </div>
                                                     <div style={{ flex: 1, color: '#e2e8f0', display: 'flex', alignItems: 'center', gap: '8px' }}>
                                                         {u?.nome_completo || 'Desconhecido'}
-                                                        {vinculo === 'mensalista' && <Star size={14} fill="#fbbf24" color="#fbbf24" title="Mensalista" />}
+                                                        {vinculo === 'mensalista' ? (
+                                                            <Star size={14} fill="#fbbf24" color="#fbbf24" title="Mensalista" />
+                                                        ) : (
+                                                            <Star size={14} fill="#94a3b8" color="#94a3b8" title="Avulso" />
+                                                        )}
                                                     </div>
                                                 </div>
                                             );

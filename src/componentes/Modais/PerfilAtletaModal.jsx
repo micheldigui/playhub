@@ -4,7 +4,7 @@ import { X, Trophy, MapPin, Calendar, User, Phone, MessageSquare } from 'lucide-
 import Botao from '../Botao/Botao';
 import './PerfilAtletaModal.css';
 
-const PerfilAtletaModal = ({ atleta, aoFechar, aoPassarBola, ehEu }) => {
+const PerfilAtletaModal = ({ atleta, aoFechar, aoPassarBola, ehEu, ehMatch }) => {
     const [modalidades, setModalidades] = useState([]);
     const [carregando, setCarregando] = useState(true);
 
@@ -100,14 +100,22 @@ const PerfilAtletaModal = ({ atleta, aoFechar, aoPassarBola, ehEu }) => {
                 {!ehEu && (
                     <div className="perfil-rodape">
                         <Botao 
-                            variant="primario" 
+                            variant={ehMatch ? "primario" : "secundario"} 
                             onClick={() => {
                                 aoPassarBola(atleta);
                                 aoFechar();
                             }}
-                            style={{ width: '100%', justifyContent: 'center', gap: '8px' }}
+                            style={{ 
+                                width: '100%', 
+                                justifyContent: 'center', 
+                                gap: '8px',
+                                background: ehMatch ? 'rgba(37, 211, 102, 0.1)' : undefined, 
+                                color: ehMatch ? '#25D366' : undefined, 
+                                borderColor: ehMatch ? 'rgba(37, 211, 102, 0.4)' : undefined 
+                            }}
                         >
-                            <MessageSquare size={18} /> Passar a bola para {atleta.apelido || 'ele(a)'}
+                            {ehMatch ? <MessageSquare size={18} /> : <User size={18} />}
+                            {ehMatch ? `Match! Conversar com ${atleta.apelido || 'ele(a)'}` : `Passar a bola para ${atleta.apelido || 'ele(a)'}`}
                         </Botao>
                     </div>
                 )}

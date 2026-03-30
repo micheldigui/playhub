@@ -3,14 +3,16 @@
   "name": "PlayHub - Gestão de Equipes",
   "icons": [
     {
-      "src": "icon.svg",
+      "src": "icon_ph_oficial.png",
       "sizes": "64x64 32x32 24x24 16x16",
-      "type": "image/svg+xml"
+      "type": "image/png",
+      "purpose": "any"
     },
     {
-      "src": "icon.svg",
-      "type": "image/svg+xml",
-      "sizes": "512x512"
+      "src": "icon_ph_oficial.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "maskable"
     }
   ],
   "start_url": ".",

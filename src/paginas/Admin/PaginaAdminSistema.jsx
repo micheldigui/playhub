@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Building2, Globe, Lock, Search, MapPin, Trophy, Shield, Users 
+  Building2, Globe, Lock, Search, MapPin, Trophy, Shield, Users, User 
 } from 'lucide-react';
 import { usarEquipe } from '../../contextos/EquipeContexto';
 import { usarAutenticacao } from '../../contextos/AutenticacaoContexto';
@@ -45,7 +45,11 @@ const PaginaAdminSistema = ({ aoSelecionarEquipe }) => {
     try {
       let query = supabase
         .from('equipes')
-        .select('*, membros_equipe(count)', { count: 'exact' })
+        .select(`
+          *,
+          admin:usuarios!equipes_admin_id_fkey (id, nome_completo, apelido, foto_url),
+          membros_equipe(count)
+        `, { count: 'exact' })
         .eq('status', 'ativo')
         .order('nome', { ascending: true })
         .range(de, ate);
@@ -207,6 +211,7 @@ const PaginaAdminSistema = ({ aoSelecionarEquipe }) => {
 
                   <div className="card-admin-meta">
                     <span><MapPin size={14} /> {eq.local_cidade || eq.cidade}, {eq.local_estado || eq.estado}</span>
+                    <span><User size={14} /> Capitão: {eq.admin?.nome_completo || eq.admin?.apelido || 'Desconhecido'}</span>
                     <span><Users size={14} /> {eq.membros_equipe?.[0]?.count || 0} {eq.membros_equipe?.[0]?.count === 1 ? 'Jogador' : 'Jogadores'}</span>
                     <div style={{ display: 'flex', gap: '4px', marginTop: '4px' }}>
                       <span className={`tag-visibilidade ${eq.visibilidade}`}>

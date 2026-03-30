@@ -3,7 +3,7 @@ import { Search, UserMinus, Crown, Users, Star, LogOut, ArrowRightLeft, X, Check
 import { usarEquipe } from '../../../../contextos/EquipeContexto';
 
 const EquipeMembrosTab = () => {
-    const { equipeAtiva, carregarMembrosEquipe, removerMembro, atualizarMembro, transferirTitularidade } = usarEquipe();
+    const { equipeAtiva, carregarMembrosEquipe, removerMembro, atualizarMembro, transferirTitularidade, getLabelVinculo, getAcaoVinculo } = usarEquipe();
     const [membros, setMembros] = useState([]);
     const [carregando, setCarregando] = useState(true);
     const [termoBusca, setTermoBusca] = useState('');
@@ -177,7 +177,7 @@ const EquipeMembrosTab = () => {
                                         </div>
                                         {isAdmin && <span title="Administrador Geral" style={{ display: 'flex' }}><Crown size={14} color="#fbbf24" /></span>}
                                         {isSubAdmin && <span title="Co-Administrador" style={{ display: 'flex' }}><Crown size={14} color="#94a3b8" /></span>}
-                                        {membro.vinculo === 'mensalista' && <span title="Mensalista" style={{ display: 'flex' }}><Star size={14} fill="#fbbf24" color="#fbbf24" /></span>}
+                                        {membro.vinculo === 'mensalista' && <span title={getLabelVinculo('mensalista')} style={{ display: 'flex' }}><Star size={14} fill="#fbbf24" color="#fbbf24" /></span>}
                                     </div>
                                     <div style={{ fontSize: '13px', color: '#64748b' }}>
                                         {user?.apelido && `@${user?.apelido} • `}{user?.cidade}
@@ -189,7 +189,7 @@ const EquipeMembrosTab = () => {
                                         <button
                                             className="btn-acao-icone"
                                             onClick={() => handleAlterarVinculo(membro.id, membro.vinculo === 'mensalista' ? 'avulso' : 'mensalista')}
-                                            title={membro.vinculo === 'mensalista' ? "Alterar para Avulso" : "Tornar Mensalista"}
+                                            title={getAcaoVinculo(membro.vinculo)}
                                             style={{ 
                                                 background: membro.vinculo === 'mensalista' ? 'rgba(251, 191, 36, 0.1)' : 'rgba(255, 255, 255, 0.05)', 
                                                 color: membro.vinculo === 'mensalista' ? '#fbbf24' : '#94a3b8', 

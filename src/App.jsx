@@ -16,6 +16,10 @@ const PaginaAdminUsuarios = lazy(() => import('./paginas/Admin/PaginaAdminUsuari
 const PaginaNotificacoes = lazy(() => import('./paginas/Notificacoes/PaginaNotificacoes'))
 const Dashboard = lazy(() => import('./paginas/Inicio/Dashboard'))
 const LandingPage = lazy(() => import('./paginas/Landing/LandingPage'))
+const GerenciarEquipes = lazy(() => import('./paginas/Equipe/GerenciarEquipes'))
+const PaginaConfiguracoes = lazy(() => import('./paginas/Configuracoes/PaginaConfiguracoes'))
+const PaginaTermos = lazy(() => import('./paginas/Legal/PaginasLegais').then(m => ({ default: m.PaginaTermos })));
+const PaginaPrivacidade = lazy(() => import('./paginas/Legal/PaginasLegais').then(m => ({ default: m.PaginaPrivacidade })));
 
 const CarregandoTela = () => (
   <div style={{ 
@@ -31,6 +35,11 @@ const CarregandoTela = () => (
 )
 
 function App() {
+  // Força o título correto da aba (limpeza de cache/metadados antigos)
+  useEffect(() => {
+    document.title = "PlayHub - Gestão de Equipes";
+  }, []);
+
   const { estaLogado } = usarAutenticacao()
   
   // Analisa URL na inicialização para capturar links de convite
@@ -145,6 +154,21 @@ function App() {
         />
       case 'convite':
         return <PaginaConvite equipeId={equipeConviteId} aoVoltar={() => setTelaAtiva('inicio')} />
+      case 'minhas_equipes':
+        return <GerenciarEquipes 
+          aoVoltar={() => setTelaAtiva('inicio')} 
+          aoNavegar={setTelaAtiva}
+          setAbaEquipe={setAbaEquipe}
+        />
+      case 'configuracoes':
+        return <PaginaConfiguracoes 
+          aoVoltar={() => setTelaAtiva('inicio')} 
+          aoNavegar={setTelaAtiva}
+        />
+      case 'termos':
+        return <PaginaTermos aoVoltar={() => setTelaAtiva('configuracoes')} />
+      case 'privacidade':
+        return <PaginaPrivacidade aoVoltar={() => setTelaAtiva('configuracoes')} />
       case 'inicio':
       default:
         return <Dashboard 

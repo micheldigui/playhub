@@ -143,15 +143,21 @@
     align-items: start;
 }
 
-@media (max-width: 768px) {
-    .dash-grid { grid-template-columns: 1fr; }
-    .dashboard-container { padding: 1rem 1rem 3rem; }
-}
-
 .dash-coluna {
     display: flex;
     flex-direction: column;
     gap: 1rem;
+}
+
+@media (max-width: 900px) {
+    .dash-grid { 
+        display: flex; 
+        flex-direction: column; 
+    }
+    .dash-coluna {
+        display: contents;
+    }
+    .dashboard-container { padding: 1rem 1rem 3rem; }
 }
 
 /* === CARD BASE === */
@@ -323,23 +329,75 @@
 }
 
 .equipe-chip {
+    width: 100%;
     display: flex;
     align-items: center;
     gap: 0.75rem;
-    padding: 0.6rem 0.75rem;
-    background: rgba(255,255,255,0.03);
-    border: 1px solid rgba(255,255,255,0.05);
-    border-radius: 10px;
+    padding: 0.75rem 1rem;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    border-radius: 14px;
+    margin-bottom: 0.5rem;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     cursor: pointer;
-    transition: all 0.15s;
-    text-align: left;
-    width: 100%;
+    position: relative;
+    overflow: hidden;
 }
 
 .equipe-chip:hover {
-    background: rgba(255,255,255,0.06);
-    border-color: rgba(139, 92, 246, 0.25);
-    transform: translateX(2px);
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.1);
+    transform: translateX(4px);
+}
+
+.equipe-chip.selecionada {
+    background: rgba(14, 165, 233, 0.08);
+    border-color: rgba(14, 165, 233, 0.3);
+    box-shadow: 0 0 15px rgba(14, 165, 233, 0.1), inset 0 0 0 1px rgba(14, 165, 233, 0.1);
+}
+
+.equipe-chip.selecionada::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 4px;
+    height: 60%;
+    background: var(--primaria);
+    border-radius: 0 4px 4px 0;
+    box-shadow: 0 0 10px var(--primaria);
+}
+
+.equipe-chip-arrow-btn {
+    margin-left: auto;
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    border: none;
+    background: rgba(255, 255, 255, 0.03);
+    color: #475569;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.equipe-chip-arrow-btn:hover {
+    background: var(--primaria);
+    color: #0f172a;
+    transform: scale(1.1);
+}
+
+.equipe-chip.selecionada .equipe-chip-arrow-btn {
+    background: rgba(14, 165, 233, 0.15);
+    color: #38bdf8;
+}
+
+.equipe-chip.selecionada .equipe-chip-arrow-btn:hover {
+    background: var(--primaria);
+    color: #0f172a;
 }
 
 .equipe-chip-foto {
@@ -377,7 +435,7 @@
     color: #64748b;
 }
 
-.equipe-chip-arrow { color: #475569; flex-shrink: 0; }
+/* ... ajustado acima no .equipe-chip-arrow-btn ... */
 
 /* === FINANCEIRO === */
 .fin-resumo {
@@ -424,68 +482,112 @@
 .fin-status.ok     { background: rgba(16,185,129,0.1); color: #34d399; }
 .fin-status.perigo { background: rgba(244,63,94,0.1);  color: #fb7185; }
 
+/* Ajustes para os cards de atleta no dashboard */
+.card-financeiro .grade-cards-atleta {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px !important;
+    margin-bottom: 16px !important;
+}
+
+@media (max-width: 480px) {
+    .card-financeiro .grade-cards-atleta {
+        grid-template-columns: 1fr 1fr !important; /* Mantém 2 colunas se possível, ou 1 se ficar muito apertado */
+    }
+}
+
+.card-financeiro .card-atleta-status {
+    padding: 12px 14px !important;
+    border-radius: 12px !important;
+    gap: 0 !important;
+    min-height: 54px !important;
+    justify-content: flex-start !important;
+    text-align: left !important;
+}
+
+.card-financeiro .card-atleta-info {
+    align-items: flex-start !important;
+}
+
+.card-financeiro .card-atleta-icone {
+    width: 32px !important;
+    height: 32px !important;
+    border-radius: 8px !important;
+}
+
+.card-financeiro .card-atleta-icone svg {
+    width: 16px !important;
+    height: 16px !important;
+}
+
+.card-financeiro .card-atleta-valor {
+    font-size: 0.85rem !important;
+    white-space: nowrap;
+}
+
+.card-financeiro .card-atleta-label {
+    font-size: 0.6rem !important;
+}
+
 /* === ATALHOS WINDOWS STYLE === */
 .atalhos-win-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
     gap: 0.75rem;
-    justify-items: center;
 }
 
 .atalho-win-btn {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 0.4rem;
-    padding: 0.75rem 0.5rem;
-    background: rgba(255,255,255,0.04);
-    border: 1px solid rgba(255,255,255,0.07);
-    border-radius: 12px;
+    justify-content: center;
+    gap: 0.35rem;
+    padding: 0.75rem 0.4rem;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 14px;
     cursor: pointer;
-    transition: all 0.18s;
-    width: 100%;
-    text-align: center;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    color: #f1f5f9;
 }
 
 .atalho-win-btn:hover {
-    background: rgba(255,255,255,0.09);
-    border-color: rgba(56,189,248,0.3);
-    transform: translateY(-3px);
-    box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+    background: rgba(14, 165, 233, 0.08);
+    border-color: rgba(14, 165, 233, 0.3);
+    transform: translateY(-4px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
 }
 
-.atalho-win-emoji { font-size: 1.6rem; line-height: 1; }
+.atalho-win-emoji {
+    font-size: 1.15rem;
+    background: rgba(255, 255, 255, 0.04);
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    transition: transform 0.3s ease;
+}
+
+.atalho-win-btn:hover .atalho-win-emoji {
+    transform: scale(1.1);
+    background: rgba(14, 165, 233, 0.15);
+}
 
 .atalho-win-label {
-    font-size: 0.65rem;
+    font-size: 0.8rem;
     font-weight: 600;
     color: #94a3b8;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    width: 100%;
     text-align: center;
 }
 
-.atalho-win-btn:hover .atalho-win-label { color: #e2e8f0; }
+.atalho-win-btn:hover .atalho-win-label {
+    color: #f1f5f9;
+}
 
 /* === FINANCEIRO POR EQUIPE === */
-.fin-seletor-equipe { margin-bottom: 0.75rem; }
-
-.fin-select {
-    width: 100%;
-    background: rgba(255,255,255,0.05);
-    border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 8px;
-    color: #e2e8f0;
-    padding: 0.5rem 0.75rem;
-    font-size: 0.85rem;
-    cursor: pointer;
-    outline: none;
-    transition: border-color 0.2s;
-}
-.fin-select:focus { border-color: rgba(56,189,248,0.5); }
-.fin-select option { background: #1e293b; }
+/* Eliminado seletor de equipe antigo */
 
 .fin-equipe-unica {
     display: flex;

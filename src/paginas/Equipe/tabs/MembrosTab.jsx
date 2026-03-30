@@ -6,9 +6,10 @@ import {
 } from 'lucide-react';
 import { usarEquipe } from '../../../contextos/EquipeContexto';
 import { usarAutenticacao } from '../../../contextos/AutenticacaoContexto';
+import InfoTooltip from '../../../componentes/Tooltip/InfoTooltip';
 
 const MembrosTab = ({ membrosIniciais = [], recarregar }) => {
-    const { equipeAtiva, atualizarMembro, removerMembro, temPermissaoEquipe } = usarEquipe();
+    const { equipeAtiva, atualizarMembro, removerMembro, temPermissaoEquipe, getLabelVinculo, getAcaoVinculo } = usarEquipe();
     const { usuario } = usarAutenticacao();
     
     const [membros, setMembros] = useState(membrosIniciais);
@@ -91,9 +92,15 @@ const MembrosTab = ({ membrosIniciais = [], recarregar }) => {
                     <thead>
                         <tr style={{ background: 'rgba(255,255,255,0.02)' }}>
                             <th style={{ padding: '16px', color: '#64748b', fontSize: '0.75rem', fontWeight: 'bold', textTransform: 'uppercase' }}>Atleta</th>
-                            <th style={{ padding: '16px', color: '#64748b', fontSize: '0.75rem', fontWeight: 'bold', textTransform: 'uppercase' }}>Cargo</th>
+                            <th style={{ padding: '16px', color: '#64748b', fontSize: '0.75rem', fontWeight: 'bold', textTransform: 'uppercase' }}>
+                                Cargo
+                                <InfoTooltip texto="Capitão: Dono e gestor total. Vice-Capitão: Auxilia na gestão com permissões específicas. Jogador: Membro comum." />
+                            </th>
                             <th style={{ padding: '16px', color: '#64748b', fontSize: '0.75rem', fontWeight: 'bold', textTransform: 'uppercase' }}>Entrou em</th>
-                            <th style={{ padding: '16px', textAlign: 'left', color: '#64748b', fontSize: '0.8rem', fontWeight: '600', textTransform: 'uppercase' }}>Vínculo</th>
+                            <th style={{ padding: '16px', textAlign: 'left', color: '#64748b', fontSize: '0.8rem', fontWeight: '600', textTransform: 'uppercase' }}>
+                                Vínculo
+                                <InfoTooltip texto="Mensalista: Atleta fixo que paga mensalidade. Avulso: Atleta convidado que paga apenas pelo jogo que participar." />
+                            </th>
                             <th style={{ padding: '16px', textAlign: 'right', color: '#64748b', fontSize: '0.8rem', fontWeight: '600', textTransform: 'uppercase' }}>Ações</th>
                         </tr>
                     </thead>
@@ -154,7 +161,7 @@ const MembrosTab = ({ membrosIniciais = [], recarregar }) => {
                                                 color: m.vinculo === 'mensalista' ? '#38bdf8' : '#94a3b8',
                                                 fontWeight: '600'
                                             }}>
-                                                {m.vinculo === 'mensalista' ? 'Mensalista' : 'Avulso'}
+                                                {getLabelVinculo(m.vinculo)}
                                             </span>
                                             {(equipeAtiva.papel === 'admin' || temPermissaoEquipe('gerenciar_membros')) && (
                                                 <button 
@@ -174,10 +181,10 @@ const MembrosTab = ({ membrosIniciais = [], recarregar }) => {
                                                         fontWeight: '600'
                                                     }}
                                                     className="btn-acao-membro"
-                                                    title={m.vinculo === 'mensalista' ? "Mudar para Avulso" : "Mudar para Mensalista"}
+                                                    title={getAcaoVinculo(m.vinculo)}
                                                 >
                                                     {m.vinculo === 'mensalista' ? <CreditCard size={14} /> : <Wallet size={14} />}
-                                                    {m.vinculo === 'mensalista' ? 'Virar Avulso' : 'Virar Mensalista'}
+                                                    {getAcaoVinculo(m.vinculo)}
                                                 </button>
                                             )}
                                         </div>

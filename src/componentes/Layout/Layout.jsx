@@ -19,7 +19,7 @@ const TITULOS_CABECALHO = {
 };
 
 const Layout = ({ children, telaAtiva, setTelaAtiva, abaEquipe, setAbaEquipe }) => {
-  const { modalCriacaoAberto, setModalCriacaoAberto } = usarEquipe();
+  const { equipeAtiva, modalCriacaoAberto, setModalCriacaoAberto } = usarEquipe();
   const { modalInstalacaoAberto, fecharModalInstalacao } = usarPwa();
 
   return (
@@ -43,7 +43,12 @@ const Layout = ({ children, telaAtiva, setTelaAtiva, abaEquipe, setAbaEquipe }) 
                 <span>Dashboard</span>
               </button>
             )}
-            <h2>{TITULOS_CABECALHO[telaAtiva] || 'Dashboard'}</h2>
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              <h2>{TITULOS_CABECALHO[telaAtiva] || 'Dashboard'}</h2>
+              {(equipeAtiva && (telaAtiva === 'equipe' || telaAtiva === 'equipe_admin')) && abaEquipe !== 'minha-equipe' && (
+                <span className="layout-cabecalho-equipe-nome">{equipeAtiva.nome}</span>
+              )}
+            </div>
           </div>
         </header>
         <section className="layout-secao">

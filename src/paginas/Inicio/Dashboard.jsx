@@ -6,38 +6,55 @@ import BannerInstalacaoApp from '../../componentes/Pwa/BannerInstalacaoApp';
 import ModalInstalacaoApp from '../../componentes/Pwa/ModalInstalacaoApp';
 import ModalDetalhesPartida from '../Equipe/tabs/modais/ModalDetalhesPartida';
 import { usePwaInstall } from '../../hooks/usePwaInstall';
+import CardsDadosAtleta from '../Equipe/componentes/CardsDadosAtleta';
 import {
     Calendar, Users, DollarSign, Globe, Lock, MapPin,
     CheckCircle, AlertCircle, Activity, ChevronRight,
     Settings, User, Trophy, Search, Swords, BarChart2,
-    ShieldCheck, Bell, Plus, X, GripHorizontal, Download
+    ShieldCheck, Bell, Plus, X, GripHorizontal, Download, Phone, Crown, Wallet, Star, Unlock
 } from 'lucide-react';
+import InfoTooltip from '../../componentes/Tooltip/InfoTooltip';
 import './Dashboard.css';
 
-// ── Catálogo completo de atalhos disponíveis no sistema ──────────────────────
-// roles: [] = todos, ['admin','sub_admin'] = só gestores
+// ── Catálogo completo de atalhos ──────────────────────────────────────────────
+// categoria: 'pessoal' | 'equipe'
+// permissao: null = visível a todos do papel | 'nome_perm' = vice precisa ter essa permissão
 const CATALOGO_ATALHOS = [
-    { id: 'perfil',           label: 'Meu Perfil',          emoji: '👤', icone: User,       tela: 'perfil',           roles: [] },
-    { id: 'perfil_esportivo', label: 'Perfil Esportivo',    emoji: '🏆', icone: Trophy,     tela: 'perfil_esportivo', roles: [] },
-    { id: 'explorar',         label: 'Explorar Times',       emoji: '🔍', icone: Search,     tela: 'explorar',         roles: [] },
-    { id: 'equipe',           label: 'Minha Equipe',         emoji: '👥', icone: Users,      tela: 'equipe',           roles: [] },
-    { id: 'partidas',         label: 'Partidas',             emoji: '📅', icone: Calendar,   tela: 'equipe',           roles: [] },
-    { id: 'financeiro',       label: 'Financeiro',           emoji: '💰', icone: DollarSign, tela: 'equipe',           roles: [] },
-    { id: 'disciplina',       label: 'Disciplina',           emoji: '⚖️', icone: ShieldCheck,tela: 'equipe',           roles: [] },
-    { id: 'notificacoes',     label: 'Notificações',         emoji: '🔔', icone: Bell,       tela: 'equipe',           roles: [] },
-    // Exclusivos p/ Admins
-    { id: 'gestao_equipe',    label: 'Gestão da Equipe',     emoji: '⚙️', icone: Settings,   tela: 'equipe_admin',     roles: ['admin','sub_admin'] },
-    { id: 'criar_partida',    label: 'Criar Partida',        emoji: '⚽', icone: Swords,     tela: 'equipe',           roles: ['admin','sub_admin'] },
+    // PESSOAIS (todos os usuários, sempre visíveis)
+    { id: 'perfil',           categoria: 'pessoal', label: 'Meu Perfil',      emoji: '👤', icone: User,       tela: 'perfil',           roles: [],                   permissao: null },
+    { id: 'perfil_esportivo', categoria: 'pessoal', label: 'Dados Atleta',    emoji: '🏆', icone: Trophy,     tela: 'perfil_esportivo', roles: [],                   permissao: null },
+    { id: 'explorar',         categoria: 'pessoal', label: 'Explorar Times',  emoji: '🔍', icone: Search,     tela: 'explorar',         roles: [],                   permissao: null },
+    { id: 'perfil_pub',       categoria: 'pessoal', label: 'Perfil Público',   emoji: '🌍', icone: Globe,      action: (nav) => { nav('perfil'); }, roles: [],  permissao: null },
+    { id: 'notificacoes_globais', categoria: 'pessoal', label: 'Notificações', emoji: '🔔', icone: Bell,       tela: 'notificacoes', roles: [], permissao: null },
+    
+    // EQUIPE (filtrados por papel/permissão)
+    { id: 'partidas',         categoria: 'equipe',  label: 'Próximos Jogos',  emoji: '📅', icone: Calendar,   action: (nav, set) => { set('agenda'); nav('equipe'); },           roles: [],                   permissao: null },
+    { id: 'var_atleta',       categoria: 'equipe',  label: 'Histórico VAR',    emoji: '⚖️', icone: ShieldCheck, action: (nav, set) => { set('disciplina'); nav('equipe'); },        roles: [],                   permissao: null },
+    { id: 'solicitacoes_eq',  categoria: 'equipe',  label: 'Solicitações',    emoji: '📥', icone: AlertCircle,action: (nav, set) => { set('solicitacoes'); nav('equipe'); },       roles: ['admin','sub_admin'],permissao: 'gerenciar_membros' },
+    { id: 'meus_pagamentos',  categoria: 'equipe',  label: 'Mensalistas',     emoji: '💰', icone: DollarSign, action: (nav, set) => { set('financeiro-mensal'); nav('equipe'); },  roles: [],                   permissao: null },
+    { id: 'financas_avulso',  categoria: 'equipe',  label: 'Avulsos',         emoji: '💸', icone: Wallet,     action: (nav, set) => { set('financeiro-avulsos'); nav('equipe'); }, roles: [],                   permissao: null },
+    { id: 'criar_partida',    categoria: 'equipe',  label: 'Marcar Jogo',     emoji: '⚽', icone: Swords,     action: (nav, set) => { set('agenda'); nav('equipe'); },           roles: ['admin','sub_admin'], permissao: 'gerenciar_partidas' },
+    { id: 'gerenciar_membros',categoria: 'equipe',  label: 'Membros',         emoji: '👥', icone: Users,      action: (nav, set) => { set('membros'); nav('equipe'); },           roles: ['admin','sub_admin'], permissao: 'gerenciar_membros' },
+    { id: 'relatorios_eq',    categoria: 'equipe',  label: 'Análise & Rels',  emoji: '📊', icone: BarChart2,  action: (nav, set) => { set('financeiro-relatorios'); nav('equipe'); }, roles: ['admin','sub_admin'], permissao: 'ver_relatorios' },
+    { id: 'regras_eq',        categoria: 'equipe',  label: 'Regras & Config', emoji: '⚙️', icone: Settings,   action: (nav, set) => { set('regras-config'); nav('equipe'); },    roles: ['admin','sub_admin'], permissao: null },
+    { id: 'descobrir_atletas',categoria: 'equipe',  label: 'Buscar Atletas',  emoji: '🔍', icone: Globe,      action: (nav, set) => { set('descobrir'); nav('equipe'); },        roles: ['admin','sub_admin'], permissao: 'gerenciar_membros' },
+    { id: 'permissoes_eq',    categoria: 'equipe',  label: 'Permissões',      emoji: '🛡️', icone: Crown,      action: (nav, set) => { set('permissoes'); nav('equipe'); },        roles: ['admin','sub_admin'], permissao: 'gerenciar_gestores' },
 ];
 
-const STORAGE_KEY_ATALHOS = 'playhub_atalhos_dashboard';
+const STORAGE_PESSOAL  = 'playhub_atalhos_pessoal';
+const STORAGE_EQUIPE   = 'playhub_atalhos_equipe';
+
+// IDs padrão (todos habilitados por categoria)
+const DEFAULTS_PESSOAL = ['perfil','perfil_esportivo','explorar','perfil_pub','notificacoes_globais'];
+const DEFAULTS_EQUIPE  = ['partidas','var_atleta','solicitacoes_eq','meus_pagamentos','financas_avulso','criar_partida','gerenciar_membros','relatorios_eq','regras_eq','descobrir_atletas','permissoes_eq'];
 
 const Dashboard = ({ aoNavegar, setAbaEquipe }) => {
-    const { dadosUsuario, alternarVisibilidadePerfil } = usarAutenticacao();
-    const { equipes } = usarEquipe();
+    const { dadosUsuario, alternarVisibilidadePerfil, alternarWhatsAppMatch } = usarAutenticacao();
+    const { equipes, getLabelVinculo, selecionarEquipe, equipeAtiva } = usarEquipe();
     const { isInstalled } = usePwaInstall();
 
     const [proximasPartidas, setProximasPartidas] = useState([]);
+    const [temMaisPartidas, setTemMaisPartidas] = useState(false);
     const [partidaSelecionada, setPartidaSelecionada] = useState(null);
     const [carregando, setCarregando] = useState(true);
     const [alterandoPriv, setAlterandoPriv] = useState(false);
@@ -48,87 +65,119 @@ const Dashboard = ({ aoNavegar, setAbaEquipe }) => {
     const [carregandoFin, setCarregandoFin] = useState(false);
     const [modalInstalacaoAberto, setModalInstalacaoAberto] = useState(false);
 
-    // ── Atalhos personalizáveis ───────────────────────────────────────────
+    // ── Atalhos: dois conjuntos independentes com todos habilitados por padrão ──
     const [modalAtalhosAberto, setModalAtalhosAberto] = useState(false);
-    const [atalhosSelecionados, setAtalhosSelecionados] = useState(() => {
+    const [modalCategoria, setModalCategoria]         = useState('pessoal'); // qual aba o modal abre
+
+    const lerStorage = (key, defaults) => {
         try {
-            const saved = localStorage.getItem(STORAGE_KEY_ATALHOS);
-            return saved ? JSON.parse(saved) : ['perfil', 'explorar', 'equipe', 'partidas'];
-        } catch { return ['perfil', 'explorar', 'equipe', 'partidas']; }
+            const s = localStorage.getItem(key);
+            // Se não existe ainda → devolver null para saber que são os defaults
+            return s ? JSON.parse(s) : null;
+        } catch { return null; }
+    };
+
+    const [atalhosPessoal, setAtalhosPessoal] = useState(() => {
+        const dados = lerStorage(STORAGE_PESSOAL, DEFAULTS_PESSOAL);
+        // Garante que o atalho novo 'notificacoes_globais' apareça para quem já tem storage cacheado antigo
+        return (dados || DEFAULTS_PESSOAL).includes('notificacoes_globais') ? dados || DEFAULTS_PESSOAL : [...(dados || DEFAULTS_PESSOAL), 'notificacoes_globais'];
+    });
+    
+    const [atalhosEquipe, setAtalhosEquipe] = useState(() => {
+        const dados = lerStorage(STORAGE_EQUIPE, DEFAULTS_EQUIPE);
+        // Atualiza 'notificacoes' antigo para o novo desmembrado 'solicitacoes_eq'
+        const atualizado = (dados || DEFAULTS_EQUIPE).map(a => a === 'notificacoes' ? 'solicitacoes_eq' : a);
+        return atualizado.includes('solicitacoes_eq') ? atualizado : [...atualizado, 'solicitacoes_eq'];
     });
 
-    // papel máximo do usuário (para filtrar catálogo)
-    const papelMaximo = equipes.some(e => e.papel === 'admin') ? 'admin'
-        : equipes.some(e => e.papel === 'sub_admin') ? 'sub_admin' : 'jogador';
-
-    const atalhosDisponiveis = CATALOGO_ATALHOS.filter(a =>
-        a.roles.length === 0 || a.roles.includes(papelMaximo)
-    );
-
-    const salvarAtalhos = (lista) => {
-        setAtalhosSelecionados(lista);
-        localStorage.setItem(STORAGE_KEY_ATALHOS, JSON.stringify(lista));
+    const toggleAtalho = (id, categoria) => {
+        if (categoria === 'pessoal') {
+            setAtalhosPessoal(prev => {
+                const nova = prev.includes(id) ? prev.filter(a => a !== id) : [...prev, id];
+                localStorage.setItem(STORAGE_PESSOAL, JSON.stringify(nova));
+                return nova;
+            });
+        } else {
+            setAtalhosEquipe(prev => {
+                const nova = prev.includes(id) ? prev.filter(a => a !== id) : [...prev, id];
+                localStorage.setItem(STORAGE_EQUIPE, JSON.stringify(nova));
+                return nova;
+            });
+        }
     };
 
-    const toggleAtalho = (id) => {
-        setAtalhosSelecionados(prev => {
-            const nova = prev.includes(id) ? prev.filter(a => a !== id) : [...prev, id];
-            localStorage.setItem(STORAGE_KEY_ATALHOS, JSON.stringify(nova));
-            return nova;
-        });
+    const navegarParaEquipeFocada = (aba = 'minha-equipe') => {
+        if (equipeFinSelecionada) {
+            selecionarEquipe(equipeFinSelecionada);
+            if (aba) setAbaEquipe(aba);
+            aoNavegar('equipe');
+        }
     };
 
-    // ── Carga inicial (partidas) ──────────────────────────────────────────
+    // ── Cargas de Dados ──────────────────────────────────────────────────
     useEffect(() => {
-        if (dadosUsuario && equipes) {
-            carregarPartidas();
-            if (equipes.length > 0 && !equipeFinSelecionada) {
-                setEquipeFinSelecionada(equipes[0].id);
-            }
+        if (dadosUsuario && equipes?.length > 0 && !equipeFinSelecionada) {
+            setEquipeFinSelecionada(equipes[0].id);
         }
     }, [dadosUsuario, equipes]);
 
+    // Efeito unificado para carregar tudo que depende da equipe selecionada
     useEffect(() => {
         if (equipeFinSelecionada && dadosUsuario) {
+            carregarPartidas();
             carregarFinanceiroPorEquipe(equipeFinSelecionada);
         }
     }, [equipeFinSelecionada, dadosUsuario]);
 
+    // Sincronia reversa: se o time mudar na barra lateral, o Dashboard foca nele também
+    useEffect(() => {
+        if (equipeAtiva?.id && equipeAtiva.id !== equipeFinSelecionada) {
+            setEquipeFinSelecionada(equipeAtiva.id);
+        }
+    }, [equipeAtiva?.id]);
+
     const carregarPartidas = async () => {
         setCarregando(true);
         try {
-            if (equipes.length > 0) {
+            if (equipeFinSelecionada) {
                 const hoje = new Date().toISOString().split('T')[0];
-                const daqui14 = new Date();
-                daqui14.setDate(daqui14.getDate() + 14);
-                const daqui14Str = daqui14.toISOString().split('T')[0];
+                const limitQuery = 16; // 15 + 1 para checar se tem mais
 
-                const equipeIds = equipes.map(e => e.id);
                 const { data: partidasData } = await supabase
                     .from('partidas')
                     .select('*, equipes(id, nome, logo_url, regras)')
-                    .in('equipe_id', equipeIds)
+                    .eq('equipe_id', equipeFinSelecionada)
                     .gte('data', hoje)
-                    .lte('data', daqui14Str)
                     .order('data', { ascending: true })
-                    .limit(5);
+                    .limit(limitQuery);
 
                 if (partidasData?.length > 0) {
+                    const temMais = partidasData.length === limitQuery;
+                    const partidasExibir = temMais ? partidasData.slice(0, 15) : partidasData;
+
                     const { data: inscricoes } = await supabase
                         .from('partidas_presencas')
                         .select('partida_id, status')
                         .eq('usuario_id', dadosUsuario.id)
-                        .in('partida_id', partidasData.map(p => p.id));
+                        .in('partida_id', partidasExibir.map(p => p.id));
 
-                    setProximasPartidas(partidasData.map(p => ({
+                    setProximasPartidas(partidasExibir.map(p => ({
                         ...p,
                         minhaInscricao: (inscricoes || []).find(i => i.partida_id === p.id) || null
                     })));
-                } else setProximasPartidas([]);
+                    setTemMaisPartidas(temMais);
+                } else {
+                    setProximasPartidas([]);
+                    setTemMaisPartidas(false);
+                }
+            } else {
+                setProximasPartidas([]);
+                setTemMaisPartidas(false);
             }
         } catch (e) { console.error(e); }
         finally { setCarregando(false); }
     };
+
 
     const carregarFinanceiroPorEquipe = async (equipeId) => {
         setCarregandoFin(true);
@@ -190,6 +239,12 @@ const Dashboard = ({ aoNavegar, setAbaEquipe }) => {
         setAlterandoPriv(false);
     };
 
+    const handleToggleWhatsApp = async () => {
+        setAlterandoPriv(true);
+        await alternarWhatsAppMatch();
+        setAlterandoPriv(false);
+    };
+
     if (!dadosUsuario) return null;
 
     const primeiroNome = dadosUsuario.apelido || dadosUsuario.nome_completo?.split(' ')[0] || 'Atleta';
@@ -198,18 +253,42 @@ const Dashboard = ({ aoNavegar, setAbaEquipe }) => {
     const saudacao = horaAtual < 12 ? 'Bom dia' : horaAtual < 18 ? 'Boa tarde' : 'Boa noite';
 
     const equipeFinAtual = equipes.find(e => e.id === equipeFinSelecionada);
-    
-    // Injetar atalho de instalação dinamicamente
-    let atalhosExibidos = CATALOGO_ATALHOS.filter(a => 
-        atalhosSelecionados.includes(a.id) && (a.roles.length === 0 || a.roles.includes(papelMaximo))
-    );
 
-    if (!isInstalled) {
-        atalhosExibidos = [
-            ...atalhosExibidos,
-            { id: 'instalar_pwa', label: 'Instalar App', emoji: '📲', icone: Download, action: () => setModalInstalacaoAberto(true), roles: [] }
-        ];
-    }
+    // papel do usuário na equipe ativa
+    const papelNaEquipe = equipeFinAtual?.papel || 'jogador';
+    const permsVice     = equipeFinAtual?.permissoes || [];
+
+    // Filtra atalhos PESSOAIS visíveis (todos os do catálogo pessoal)
+    const catalogoPessoal = CATALOGO_ATALHOS.filter(a => a.categoria === 'pessoal');
+    const atalhosExibidosPessoal = catalogoPessoal.filter(a => atalhosPessoal.includes(a.id));
+
+    // Filtra atalhos de EQUIPE: 1º filtra por cargo/perm, 2º aplica a escolha do usuário
+    const catalogoEquipe = CATALOGO_ATALHOS.filter(a => {
+        if (a.categoria !== 'equipe') return false;
+        // Capitão vê tudo
+        if (papelNaEquipe === 'admin') return true;
+        // Vice vê se o atalho não exige papel ou se tem a permissão específica
+        if (papelNaEquipe === 'sub_admin') {
+            if (a.roles.length === 0) return true;              // todos os papéis
+            if (a.permissao === null) return true;              // atalho admin sem permissão específica (ex: gestão)
+            return permsVice.includes(a.permissao);            // vice precisa ter a permissão
+        }
+        // Jogador só vê atalhos sem restrição de cargo
+        return a.roles.length === 0;
+    });
+    // Obs: financeiro só se equipe tem gestão_financeira
+    const catalogoEquipeFiltrado = equipeFinAtual?.gestao_financeira
+        ? catalogoEquipe
+        : catalogoEquipe.filter(a => a.id !== 'meus_pagamentos' && a.id !== 'financeiro_admin');
+
+    const atalhosExibidosEquipe = catalogoEquipeFiltrado.filter(a => atalhosEquipe.includes(a.id));
+
+    // Atalho PWA dinâmico
+    const atalhoInstalar = !isInstalled
+        ? [{ id: 'instalar_pwa', categoria: 'pessoal', label: 'Instalar App', emoji: '📲', icone: Download, action: () => setModalInstalacaoAberto(true) }]
+        : [];
+
+    const atalhosExibidosPessoalFinal = [...atalhosExibidosPessoal, ...atalhoInstalar];
 
     return (
         <div className="dashboard-container">
@@ -227,14 +306,45 @@ const Dashboard = ({ aoNavegar, setAbaEquipe }) => {
                         <h1 className="dash-saudacao-nome">{primeiroNome}!</h1>
                     </div>
                 </div>
-                <button
-                    className={`dash-priv-btn ${isPublico ? 'publico' : 'privado'} ${alterandoPriv ? 'loading' : ''}`}
-                    onClick={handlePrivacidade} disabled={alterandoPriv}
-                    title={isPublico ? 'Perfil público — clique para privatizar' : 'Perfil privado — clique para tornar público'}
-                >
-                    {isPublico ? <Globe size={15} /> : <Lock size={15} />}
-                    <span>Perfil {isPublico ? 'Público' : 'Privado'}</span>
-                </button>
+
+                
+                <div className="dash-hero-actions" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                    <div
+                        className={`dash-priv-btn ${alterandoPriv ? 'loading' : ''}`}
+                        onClick={!alterandoPriv ? handlePrivacidade : undefined}
+                        role="button"
+                        tabIndex="0"
+                        style={{
+                            borderColor: isPublico ? 'rgba(16, 185, 129, 0.4)' : 'rgba(244, 63, 94, 0.4)',
+                            color: isPublico ? '#10b981' : '#f43f5e',
+                            background: isPublico ? 'rgba(16, 185, 129, 0.08)' : 'rgba(244, 63, 94, 0.08)',
+                            opacity: alterandoPriv ? 0.7 : 1,
+                            cursor: alterandoPriv ? 'wait' : 'pointer'
+                        }}
+                    >
+                        {isPublico ? <Unlock size={15} /> : <Lock size={15} />}
+                        <span>Perfil</span>
+                        <InfoTooltip texto={`Seu perfil está ${isPublico ? 'Público' : 'Privado'}. Quando público, outros times podem te encontrar na busca do PlayHub para convites.`} posicao="bottom-left" />
+                    </div>
+                    
+                    <div
+                        className={`dash-priv-btn ${alterandoPriv ? 'loading' : ''}`}
+                        onClick={!alterandoPriv ? handleToggleWhatsApp : undefined}
+                        role="button"
+                        tabIndex="0"
+                        style={{ 
+                            borderColor: dadosUsuario.compartilhar_whatsapp_match ? 'rgba(37, 211, 102, 0.4)' : 'rgba(244, 63, 94, 0.4)',
+                            color: dadosUsuario.compartilhar_whatsapp_match ? '#25D366' : '#f43f5e',
+                            background: dadosUsuario.compartilhar_whatsapp_match ? 'rgba(37, 211, 102, 0.08)' : 'rgba(244, 63, 94, 0.08)',
+                            opacity: alterandoPriv ? 0.7 : 1,
+                            cursor: alterandoPriv ? 'wait' : 'pointer'
+                        }}
+                    >
+                        {dadosUsuario.compartilhar_whatsapp_match ? <Unlock size={15} /> : <Lock size={15} />}
+                        <span>WhatsApp</span>
+                        <InfoTooltip texto={`Seu WhatsApp está ${dadosUsuario.compartilhar_whatsapp_match ? 'Liberado' : 'Oculto'}. Quando liberado, seu número aparece apenas após interesse mútuo (Match).`} posicao="bottom-left" />
+                    </div>
+                </div>
             </header>
 
             <div style={{ padding: '0 20px' }}>
@@ -250,13 +360,13 @@ const Dashboard = ({ aoNavegar, setAbaEquipe }) => {
                 <main className="dash-grid">
 
                     {/* === COLUNA ESQUERDA: Agenda === */}
-                    <section className="bento-card card-agenda">
+                    <section className="bento-card card-agenda" style={{ order: 2 }}>
                         <div className="bento-top">
                             <div className="bento-titulo">
                                 <span className="bento-icone blue"><Calendar size={17} /></span>
-                                <h2>Próximos Jogos <span className="sub-hint">14 dias</span></h2>
+                                <h2>Partidas ({equipeFinAtual?.nome || 'Nenhuma Equipe'})</h2>
                             </div>
-                            <button className="bento-atalho" onClick={() => aoNavegar('equipe')}>Ir para Equipe <ChevronRight size={14} /></button>
+                            <button className="bento-atalho" onClick={() => navegarParaEquipeFocada('agenda')}>Ver Agenda <ChevronRight size={14} /></button>
                         </div>
                         {proximasPartidas.length > 0 ? (
                             <div className="agenda-lista">
@@ -304,11 +414,29 @@ const Dashboard = ({ aoNavegar, setAbaEquipe }) => {
                                         </div>
                                     );
                                 })}
+                                {temMaisPartidas && (
+                                    <button 
+                                        onClick={() => navegarParaEquipeFocada('agenda')}
+                                        style={{
+                                            width: '100%',
+                                            padding: '10px',
+                                            background: 'rgba(255,255,255,0.05)',
+                                            border: 'none',
+                                            borderRadius: '12px',
+                                            color: '#e2e8f0',
+                                            cursor: 'pointer',
+                                            marginTop: '8px',
+                                            fontSize: '0.85rem'
+                                        }}
+                                    >
+                                        Carregar Mais Partidas...
+                                    </button>
+                                )}
                             </div>
                         ) : (
                             <div className="bento-vazio">
                                 <Calendar size={36} opacity={0.3} />
-                                <p>Nenhum jogo nos próximos 14 dias.</p>
+                                <p>Nenhuma partida agendada para {equipeFinAtual?.nome}.</p>
                             </div>
                         )}
                     </section>
@@ -317,7 +445,7 @@ const Dashboard = ({ aoNavegar, setAbaEquipe }) => {
                     <div className="dash-coluna">
 
                         {/* === CARD: Equipes === */}
-                        <section className="bento-card card-equipes">
+                        <section className="bento-card card-equipes" style={{ order: 1 }}>
                             <div className="bento-top">
                                 <div className="bento-titulo">
                                     <span className="bento-icone purple"><Users size={17} /></span>
@@ -327,23 +455,58 @@ const Dashboard = ({ aoNavegar, setAbaEquipe }) => {
                             </div>
                             {equipes.length > 0 ? (
                                 <div className="equipes-carrossel">
-                                    {equipes.map(e => (
-                                        <button key={e.id} className="equipe-chip" onClick={() => { 
-                                            setAbaEquipe('minha-equipe');
-                                            aoNavegar('equipe'); 
-                                        }} title={e.nome}>
-                                            <div className="equipe-chip-foto">
-                                                {e.logo_url ? <img src={e.logo_url} alt={e.nome} /> : <span>{e.nome.charAt(0).toUpperCase()}</span>}
+                                    {equipes.map(e => {
+                                        const selecionada = e.id === equipeFinSelecionada;
+                                        return (
+                                            <div 
+                                                key={e.id} 
+                                                className={`equipe-chip ${selecionada ? 'selecionada' : ''}`} 
+                                                onClick={() => {
+                                                    setEquipeFinSelecionada(e.id);
+                                                    selecionarEquipe(e.id); // Sincroniza globalmente
+                                                }}
+                                                title={`Clique para ver estatísticas de ${e.nome}`}
+                                            >
+                                                <div className="equipe-chip-foto">
+                                                    {e.logo_url ? <img src={e.logo_url} alt={e.nome} /> : <span>{e.nome.charAt(0).toUpperCase()}</span>}
+                                                </div>
+                                                <div className="equipe-chip-info">
+                                                    <span className="equipe-chip-nome">{e.nome}</span>
+                                                    <span className="equipe-chip-papel">
+                                                        {e.papel === 'admin' ? (
+                                                            <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                                <Crown size={12} fill="#fbbf24" color="#fbbf24" /> Capitão
+                                                            </span>
+                                                        ) : e.papel === 'sub_admin' ? (
+                                                            <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                                <Crown size={12} fill="#94a3b8" color="#94a3b8" /> Vice-Cap.
+                                                            </span>
+                                                        ) : (
+                                                            <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                                {e.vinculo === 'mensalista' ? (
+                                                                    <Star size={12} fill="#fbbf24" color="#fbbf24" />
+                                                                ) : (
+                                                                    <Star size={12} fill="#94a3b8" color="#94a3b8" />
+                                                                )}
+                                                                {getLabelVinculo(e.vinculo, e.gestao_financeira)}
+                                                            </span>
+                                                        )}
+                                                    </span>
+                                                </div>
+                                                <button 
+                                                    className="equipe-chip-arrow-btn" 
+                                                    onClick={(ev) => {
+                                                        ev.stopPropagation();
+                                                        setAbaEquipe('minha-equipe');
+                                                        aoNavegar('equipe');
+                                                    }}
+                                                    title="Entrar na página da equipe"
+                                                >
+                                                    <ChevronRight size={16} />
+                                                </button>
                                             </div>
-                                            <div className="equipe-chip-info">
-                                                <span className="equipe-chip-nome">{e.nome}</span>
-                                                <span className="equipe-chip-papel">
-                                                    {e.papel === 'admin' ? '👑 Admin' : e.papel === 'sub_admin' ? '⚡ Co-admin' : e.vinculo === 'mensalista' ? '📋 Mensalista' : '🎟 Avulso'}
-                                                </span>
-                                            </div>
-                                            <ChevronRight size={14} className="equipe-chip-arrow" />
-                                        </button>
-                                    ))}
+                                        );
+                                    })}
                                 </div>
                             ) : (
                                 <div className="bento-vazio">
@@ -354,126 +517,54 @@ const Dashboard = ({ aoNavegar, setAbaEquipe }) => {
                         </section>
 
                         {/* === CARD: Financeiro por Equipe === */}
-                        <section className="bento-card card-financeiro">
+                        <section className="bento-card card-financeiro" style={{ order: 4 }}>
                             <div className="bento-top">
                                 <div className="bento-titulo">
-                                    <span className="bento-icone green"><DollarSign size={17} /></span>
-                                    <h2>Situação Financeira</h2>
+                                    <span className="bento-icone green"><Activity size={17} /></span>
+                                    <h2>Resumo Teu na Equipe</h2>
                                 </div>
-                                <button className="bento-atalho" onClick={() => {
-                                    setAbaEquipe('minha-equipe');
-                                    aoNavegar('equipe');
-                                }}>Detalhes</button>
+                                <button className="bento-atalho" onClick={() => navegarParaEquipeFocada('minha-equipe')}>Detalhes</button>
                             </div>
 
-                            {/* Seletor de equipe */}
-                            {equipes.length > 1 && (
-                                <div className="fin-seletor-equipe">
-                                    <select
-                                        value={equipeFinSelecionada || ''}
-                                        onChange={e => setEquipeFinSelecionada(e.target.value)}
-                                        className="fin-select"
-                                    >
-                                        {equipes.map(e => (
-                                            <option key={e.id} value={e.id}>{e.nome}</option>
-                                        ))}
-                                    </select>
-                                </div>
-                            )}
-                            {equipes.length === 1 && equipeFinAtual && (
-                                <div className="fin-equipe-unica">
-                                    <div className="fin-equipe-chip-foto">
-                                        {equipeFinAtual.logo_url
-                                            ? <img src={equipeFinAtual.logo_url} alt={equipeFinAtual.nome} />
-                                            : <span>{equipeFinAtual.nome.charAt(0)}</span>}
-                                    </div>
-                                    <span>{equipeFinAtual.nome}</span>
-                                </div>
-                            )}
+                            {/* Info de qual equipe está selecionada */}
+                            <p style={{ fontSize: '0.8rem', color: '#64748b', marginTop: '-0.5rem', marginBottom: '1.25rem', paddingBottom: '0.75rem', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                                Focado em: <strong style={{color: 'var(--primaria)'}}>{equipeFinAtual?.nome}</strong>
+                            </p>
 
                             {carregandoFin ? (
                                 <div className="fin-loading"><Activity size={18} className="dash-spinner" /></div>
-                            ) : finDados ? (
-                                <div className="fin-detalhe">
-                                    {/* Mensalidade */}
-                                    <div className={`fin-item ${finDados.statusMensalidade === 'pago' ? 'ok' : finDados.statusMensalidade === 'pendente' ? 'alerta' : 'neutro'}`}>
-                                        <div className="fin-item-left">
-                                            <span className="fin-label">Mensalidade ({new Date().toLocaleString('pt-BR', { month: 'short' }).toUpperCase()})</span>
-                                            {finDados.statusMensalidade === 'pendente' && (
-                                                <span className="fin-venc">Vence em {finDados.diasRestantes}d (dia {finDados.diaVenc})</span>
-                                            )}
-                                        </div>
-                                        <div className="fin-item-right">
-                                            <strong>R$ {Number(finDados.valorMensalidade).toFixed(2)}</strong>
-                                            <span className={`fin-badge ${finDados.statusMensalidade}`}>
-                                                {finDados.statusMensalidade === 'pago' ? '✓ Pago' : finDados.statusMensalidade === 'pendente' ? 'Pendente' : 'Sem ciclo'}
-                                            </span>
-                                        </div>
-                                    </div>
-
-                                    {/* Quadra proporcional */}
-                                    {finDados.custoProporcionado && (
-                                        <div className="fin-item neutro">
-                                            <div className="fin-item-left">
-                                                <span className="fin-label">Sua cota da Quadra</span>
-                                                <span className="fin-venc">Custo rateado por membro</span>
-                                            </div>
-                                            <div className="fin-item-right">
-                                                <strong>R$ {finDados.custoProporcionado}</strong>
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {/* Avulsos pendentes */}
-                                    {finDados.totalAvulsosPendentes > 0 && (
-                                        <div className="fin-item perigo">
-                                            <div className="fin-item-left">
-                                                <span className="fin-label">Avulso(s) Pendente(s)</span>
-                                            </div>
-                                            <div className="fin-item-right">
-                                                <strong>R$ {finDados.totalAvulsosPendentes.toFixed(2)}</strong>
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {/* Chave PIX */}
-                                    {finDados.chave_pix && (
-                                        <div className="fin-pix">
-                                            <span>PIX: </span>
-                                            <code>{finDados.chave_pix}</code>
-                                        </div>
-                                    )}
-
-                                    {/* Status geral */}
-                                    {(finDados.statusMensalidade !== 'pendente' && finDados.totalAvulsosPendentes === 0) ? (
-                                        <div className="fin-status ok"><CheckCircle size={14} /> <span>Tudo em dia com esse time! 🎉</span></div>
-                                    ) : (
-                                        <div className="fin-status perigo"><AlertCircle size={14} /> <span>Você possui débitos neste time.</span></div>
-                                    )}
-                                </div>
                             ) : (
-                                <div className="bento-vazio pequeno">
-                                    <p>Sem dados financeiros para essa equipe ainda.</p>
+                                <div style={{ marginTop: '1.25rem' }}>
+                                    <CardsDadosAtleta equipeIdOpcional={equipeFinSelecionada} esconderIcones={true} />
+                                    
+                                    <div className="fin-acoes-wrap" style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '-1rem' }}>
+                                        <button className="bento-atalho" onClick={() => navegarParaEquipeFocada('financeiro-mensal')}>
+                                            Ver Detalhes Financeiros <ChevronRight size={14} />
+                                        </button>
+                                    </div>
                                 </div>
                             )}
                         </section>
 
-                        {/* === CARD: Atalhos Personalizáveis === */}
-                        <section className="bento-card card-atalhos">
+                        {/* === CARD: Acesso Rápido (Pessoal) === */}
+                        <section className="bento-card card-atalhos" style={{ order: 5 }}>
                             <div className="bento-top" style={{ marginBottom: '0.75rem' }}>
                                 <div className="bento-titulo">
                                     <span className="bento-icone orange"><GripHorizontal size={17} /></span>
-                                    <h2>Meus Atalhos</h2>
+                                    <h2>Acesso Rápido</h2>
                                 </div>
-                                <button className="bento-atalho" onClick={() => setModalAtalhosAberto(true)}>
+                                <button className="bento-atalho" onClick={() => { setModalCategoria('pessoal'); setModalAtalhosAberto(true); }}>
                                     <Settings size={13} /> Personalizar
                                 </button>
                             </div>
 
-                            {atalhosExibidos.length > 0 ? (
+                            {atalhosExibidosPessoalFinal.length > 0 ? (
                                 <div className="atalhos-win-grid">
-                                    {atalhosExibidos.map(a => (
-                                        <button key={a.id} className="atalho-win-btn" onClick={a.action ? a.action : () => aoNavegar(a.tela)}>
+                                    {atalhosExibidosPessoalFinal.map(a => (
+                                        <button key={a.id} className="atalho-win-btn" onClick={() => {
+                                            if (a.action) a.action(aoNavegar, setAbaEquipe);
+                                            else aoNavegar(a.tela);
+                                        }}>
                                             <span className="atalho-win-emoji">{a.emoji}</span>
                                             <span className="atalho-win-label">{a.label}</span>
                                         </button>
@@ -481,52 +572,103 @@ const Dashboard = ({ aoNavegar, setAbaEquipe }) => {
                                 </div>
                             ) : (
                                 <div className="bento-vazio pequeno">
-                                    <p>Nenhum atalho configurado.</p>
-                                    <button className="bento-atalho" style={{ marginTop: '0.5rem' }} onClick={() => setModalAtalhosAberto(true)}>
+                                    <p>Nenhum atalho ativo.</p>
+                                    <button className="bento-atalho" style={{ marginTop: '0.5rem' }} onClick={() => { setModalCategoria('pessoal'); setModalAtalhosAberto(true); }}>
                                         <Plus size={13} /> Adicionar
                                     </button>
                                 </div>
                             )}
                         </section>
 
+                        {/* === CARD: Atalhos da Equipe === */}
+                        {equipes.length > 0 && (
+                            <section className="bento-card card-atalhos-equipe" style={{ order: (equipeFinAtual?.papel === 'admin' || equipeFinAtual?.papel === 'sub_admin') ? 3 : 6 }}>
+                                <div className="bento-top" style={{ marginBottom: '0.75rem' }}>
+                                    <div className="bento-titulo">
+                                        <span className="bento-icone blue"><Users size={17} /></span>
+                                        <div>
+                                            <h2>Minha Equipe</h2>
+                                            {equipeFinAtual && (
+                                                <span style={{ fontSize: '0.7rem', color: '#38bdf8', fontWeight: '500', display: 'block', marginTop: '-2px' }}>
+                                                    {equipeFinAtual.nome}
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <button className="bento-atalho" onClick={() => { setModalCategoria('equipe'); setModalAtalhosAberto(true); }}>
+                                        <Settings size={13} /> Personalizar
+                                    </button>
+                                </div>
+
+                                {atalhosExibidosEquipe.length > 0 ? (
+                                    <div className="atalhos-win-grid">
+                                        {atalhosExibidosEquipe.map(a => (
+                                            <button key={a.id} className="atalho-win-btn" onClick={() => {
+                                                if (equipeFinSelecionada) selecionarEquipe(equipeFinSelecionada);
+                                                if (a.action) a.action(aoNavegar, setAbaEquipe);
+                                                else aoNavegar(a.tela);
+                                            }}>
+                                                <span className="atalho-win-emoji">{a.emoji}</span>
+                                                <span className="atalho-win-label">{a.label}</span>
+                                            </button>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="bento-vazio pequeno">
+                                        <p>Nenhum atalho de equipe ativo.</p>
+                                        <button className="bento-atalho" style={{ marginTop: '0.5rem' }} onClick={() => { setModalCategoria('equipe'); setModalAtalhosAberto(true); }}>
+                                            <Plus size={13} /> Adicionar
+                                        </button>
+                                    </div>
+                                )}
+                            </section>
+                        )}
+
                     </div>
                 </main>
             )}
 
             {/* === MODAL: Personalizar Atalhos === */}
-            {modalAtalhosAberto && (
-                <div className="modal-overlay" onClick={() => setModalAtalhosAberto(false)}>
-                    <div className="modal-atalhos" onClick={e => e.stopPropagation()}>
-                        <div className="modal-atalhos-header">
-                            <h2>Personalizar Atalhos</h2>
-                            <button onClick={() => setModalAtalhosAberto(false)} className="modal-fechar"><X size={20} /></button>
-                        </div>
-                        <p className="modal-sub">Selecione os atalhos que deseja exibir na tela inicial.</p>
-                        {papelMaximo === 'jogador' && (
-                            <p className="modal-aviso">⚡ Atalhos de gestão estão disponíveis apenas para admins e co-admins.</p>
-                        )}
-                        <div className="modal-atalhos-grid">
-                            {atalhosDisponiveis.map(a => {
-                                const selecionado = atalhosSelecionados.includes(a.id);
-                                return (
-                                    <button
-                                        key={a.id}
-                                        className={`modal-atalho-item ${selecionado ? 'selecionado' : ''}`}
-                                        onClick={() => toggleAtalho(a.id)}
-                                    >
-                                        <span className="atalho-win-emoji">{a.emoji}</span>
-                                        <span className="atalho-win-label">{a.label}</span>
-                                        {selecionado && <div className="modal-check">✓</div>}
-                                    </button>
-                                );
-                            })}
-                        </div>
-                        <div className="modal-atalhos-footer">
-                            <button className="btn-confirmar" onClick={() => setModalAtalhosAberto(false)}>Concluído</button>
+            {modalAtalhosAberto && (() => {
+                const isEquipe = modalCategoria === 'equipe';
+                const catalogoModal  = isEquipe ? catalogoEquipeFiltrado : catalogoPessoal;
+                const selecionados   = isEquipe ? atalhosEquipe : atalhosPessoal;
+                const titulo         = isEquipe ? 'Atalhos da Equipe' : 'Acesso Rápido';
+
+                return (
+                    <div className="modal-overlay" onClick={() => setModalAtalhosAberto(false)}>
+                        <div className="modal-atalhos" onClick={e => e.stopPropagation()}>
+                            <div className="modal-atalhos-header">
+                                <h2>Personalizar — {titulo}</h2>
+                                <button onClick={() => setModalAtalhosAberto(false)} className="modal-fechar"><X size={20} /></button>
+                            </div>
+                            <p className="modal-sub">Ative ou desative os atalhos que deseja ver no painel.</p>
+                            {isEquipe && papelNaEquipe === 'jogador' && (
+                                <p className="modal-aviso">⚡ Atalhos de gestão aparecem apenas para Capitães e Vice-Capitães.</p>
+                            )}
+                            <div className="modal-atalhos-grid">
+                                {catalogoModal.map(a => {
+                                    const sel = selecionados.includes(a.id);
+                                    return (
+                                        <button
+                                            key={a.id}
+                                            className={`modal-atalho-item ${sel ? 'selecionado' : ''}`}
+                                            onClick={() => toggleAtalho(a.id, modalCategoria)}
+                                        >
+                                            <span className="atalho-win-emoji">{a.emoji}</span>
+                                            <span className="atalho-win-label">{a.label}</span>
+                                            {sel && <div className="modal-check">✓</div>}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                            <div className="modal-atalhos-footer">
+                                <button className="btn-confirmar" onClick={() => setModalAtalhosAberto(false)}>Concluído</button>
+                            </div>
                         </div>
                     </div>
-                </div>
-            )}
+                );
+            })()}
 
             {/* === MODAIS === */}
             {partidaSelecionada && (

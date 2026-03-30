@@ -30,20 +30,28 @@
   background: #1e293b;
   border: 1px solid rgba(255,255,255,0.1);
   border-radius: 8px;
-  padding: 8px 12px;
-  font-size: 0.775rem;
-  color: #cbd5e1;
-  width: 220px;
-  line-height: 1.5;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+  padding: 10px 16px;
+  font-size: 0.8rem;
+  color: #f1f5f9;
+  min-width: 180px;
+  max-width: 280px;
+  width: max-content;
+  line-height: 1.45;
+  box-shadow: 0 12px 32px rgba(0,0,0,0.5);
   animation: fadeInTooltip 0.15s ease;
+  pointer-events: none;
+  white-space: normal;
+  word-break: break-word;
+  text-align: left;
 }
 
 .tooltip-top    { bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%); }
+.tooltip-top-left { bottom: calc(100% + 8px); right: 0; transform: none; }
 .tooltip-bottom { top: calc(100% + 8px);    left: 50%; transform: translateX(-50%); }
+.tooltip-bottom-left { top: calc(100% + 8px); right: 0; transform: none; }
 .tooltip-right  { left: calc(100% + 8px);   top: 50%;  transform: translateY(-50%); }
 
 @keyframes fadeInTooltip {
-  from { opacity: 0; transform: translateX(-50%) translateY(4px); }
-  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
 }

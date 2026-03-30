@@ -15,6 +15,7 @@ const AgendaTab = () => {
     const [partidaSelecionada, setPartidaSelecionada] = useState(null);
     const [modalCriacaoAberto, setModalCriacaoAberto] = useState(false);
     const [partidaEditando, setPartidaEditando] = useState(null);
+    const [exibirHistorico, setExibirHistorico] = useState(false);
 
     const podeGerenciar = equipeAtiva?.papel === 'admin' || temPermissaoEquipe('gerenciar_partidas');
 
@@ -29,6 +30,13 @@ const AgendaTab = () => {
         const dataPartida = new Date(p.data + 'T' + p.hora);
         return dataPartida >= new Date();
     }).sort((a, b) => new Date(a.data + 'T' + a.hora) - new Date(b.data + 'T' + b.hora));
+
+    const partidasPassadas = partidasCarregadas.filter(p => {
+        const dataPartida = new Date(p.data + 'T' + p.hora);
+        return dataPartida < new Date();
+    }).sort((a, b) => new Date(b.data + 'T' + b.hora) - new Date(a.data + 'T' + a.hora));
+
+    const partidasExibir = exibirHistorico ? partidasPassadas : partidasFuturas;
 
     const formatarData = (dataOriginal) => {
         const dataObj = new Date(dataOriginal + 'T00:00:00');
@@ -55,9 +63,27 @@ const AgendaTab = () => {
                         <Calendar size={20} color="#38bdf8" /> Próximos Jogos
                     </h3>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
-                        <p style={{ color: '#94a3b8', fontSize: '0.9rem', margin: 0 }}>
-                            Confira as próximas partidas agendadas e confirme sua presença.
-                        </p>
+                        <div>
+                            <p style={{ color: '#94a3b8', fontSize: '0.9rem', margin: 0 }}>
+                                {exibirHistorico ? 'Veja os resultados e a frequência das partidas anteriores.' : 'Confira as próximas partidas agendadas e confirme sua presença.'}
+                            </p>
+                            <button 
+                                onClick={() => setExibirHistorico(!exibirHistorico)}
+                                style={{ 
+                                    background: 'none', 
+                                    border: 'none', 
+                                    color: '#38bdf8', 
+                                    fontSize: '0.85rem', 
+                                    cursor: 'pointer', 
+                                    padding: '0', 
+                                    marginTop: '8px',
+                                    textDecoration: 'underline',
+                                    fontWeight: '500'
+                                }}
+                            >
+                                {exibirHistorico ? '« Voltar para Próximos Jogos' : 'Ver Histórico de Jogos »'}
+                            </button>
+                        </div>
                         {(equipeAtiva.papel === 'admin' || temPermissaoEquipe('gerenciar_partidas')) && (
                             <Botao onClick={() => setModalCriacaoAberto(true)} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                 <Plus size={18} /> Agendar Partida
@@ -67,7 +93,7 @@ const AgendaTab = () => {
                 </div>
 
                 <div style={{ display: 'grid', gap: '16px' }}>
-                    {partidasFuturas.length > 0 ? partidasFuturas.map(partida => (
+                    {partidasExibir.length > 0 ? partidasExibir.map(partida => (
                         <div
                             key={partida.id}
                             style={{
@@ -128,7 +154,7 @@ const AgendaTab = () => {
                     )) : (
                         <div style={{ padding: '32px', textAlign: 'center', color: '#64748b', background: 'rgba(255,255,255,0.02)', borderRadius: '12px' }}>
                             <Calendar size={32} style={{ margin: '0 auto 16px auto', opacity: 0.5 }} />
-                            <p>Nenhuma partida agendada para os próximos dias.</p>
+                            <p>{exibirHistorico ? 'Nenhum histórico de partidas econtrado.' : 'Nenhuma partida agendada para os próximos dias.'}</p>
                         </div>
                     )}
                 </div>

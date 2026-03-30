@@ -3,7 +3,7 @@ import {
   LayoutDashboard, Users, Settings, LogOut, Menu, X, 
   ChevronRight, UserCircle, Trophy, Globe, Building2, Shield, Bell,
   Calendar, DollarSign, ChevronDown, ShieldCheck, Wallet, BarChart2,
-  Plus, SquarePlus, CircleHelp
+  Plus, SquarePlus, CircleHelp, Crown
 } from 'lucide-react';
 import './BarraLateral.css';
 import { supabase } from '../../servicos/supabase';
@@ -28,7 +28,7 @@ const BarraLateral = ({ ativo, setAtivo, abaEquipe, setAbaEquipe }) => {
     setModalCriacaoAberto
   } = usarEquipe();
   const { contagemNaoLidas: bolasRecebidas } = usarNotificacoes();
-  const { ehSuperAdmin, dadosUsuario } = usarAutenticacao();
+  const { ehSuperAdmin, dadosUsuario, logout } = usarAutenticacao();
   
   // O usuário pediu para que solicitações de ingresso não fiquem na aba de equipe, mas sim na aba de Notificações Gerais.
   const totalNotificacoesEquipe = (convitesPendentesGlobais || 0) + (transferenciasPendentesGlobais || 0);
@@ -41,27 +41,29 @@ const BarraLateral = ({ ativo, setAtivo, abaEquipe, setAbaEquipe }) => {
   };
 
   const ITENS_NAV = [
-    { id: 'inicio',           icone: LayoutDashboard, label: 'Início' },
-    { id: 'notificacoes',     icone: Bell,            label: 'Notificações' },
+    { id: 'notificacoes',     icone: Bell,             label: 'Notificações' },
+    { 
+      id: 'minhas_equipes',   
+      icone: Trophy,          
+      label: 'Minhas Equipes' 
+    },
     { 
       id: 'equipe',           
       icone: Users,            
       label: 'Equipe',
       subItens: equipeAtiva ? [
-    { id: 'minha-equipe', label: 'Minha Equipe', icone: Trophy },
-    { id: 'agenda',       label: 'Partidas',      icone: Calendar },
-    ...(temPermissao('gerenciar_financeiro') ? [{ id: 'financeiro-mensal', label: 'Mensalistas', icone: DollarSign }] : []),
-    ...(temPermissao('gerenciar_financeiro') ? [{ id: 'financeiro-avulsos', label: 'Avulsos', icone: Wallet }] : []),
-    ...(temPermissao('ver_relatorios') || temPermissao('gerenciar_financeiro') ? [{ id: 'financeiro-relatorios', label: 'Relatórios', icone: BarChart2 }] : []),
-    { id: 'membros',      label: 'Membros & Cargos', icone: Users },
-    ...(temPermissao('gerenciar_membros') ? [{ id: 'solicitacoes', label: 'Solicitações', icone: Bell }] : []),
-    ...(temPermissao('gerenciar_membros') ? [{ id: 'disciplina', label: 'Disciplina', icone: Shield }] : []),
-    ...(temPermissao('gerenciar_equipe') ? [{ id: 'regras-config', label: 'Regras & Config', icone: Settings }] : []),
-    ...(temPermissao('gerenciar_membros') ? [{ id: 'descobrir', label: 'Buscar Atletas', icone: Globe }] : []),
-    ...(equipeAtiva.papel === 'admin' || (ehSuperAdmin && equipeAtiva.gestao_global) ? [{ id: 'permissoes', label: 'Permissões (Vice)', icone: ShieldCheck }] : []),
-  ] : [
-    { id: 'criar-equipe-vazio', label: 'Criar Minha Equipe', icone: Plus }
-  ]
+        { id: 'minha-equipe', label: 'Minha Equipe', icone: Trophy },
+        { id: 'agenda',       label: 'Partidas',      icone: Calendar },
+        ...(equipeAtiva.gestao_financeira && temPermissao('gerenciar_financeiro') ? [{ id: 'financeiro-mensal', label: 'Mensalistas', icone: DollarSign }] : []),
+        ...(equipeAtiva.gestao_financeira && temPermissao('gerenciar_financeiro') ? [{ id: 'financeiro-avulsos', label: 'Avulsos', icone: Wallet }] : []),
+        ...(equipeAtiva.gestao_financeira && (temPermissao('ver_relatorios') || temPermissao('gerenciar_financeiro')) ? [{ id: 'financeiro-relatorios', label: 'Relatórios', icone: BarChart2 }] : []),
+        { id: 'membros',      label: 'Membros & Cargos', icone: Users },
+        ...(temPermissao('gerenciar_membros') ? [{ id: 'solicitacoes', label: 'Solicitações G.', icone: Bell }] : []),
+        { id: 'disciplina', label: 'Fair Play', icone: Shield },
+        ...(temPermissao('gerenciar_equipe') ? [{ id: 'regras-config', label: 'Regras & Config', icone: Settings }] : []),
+        ...(temPermissao('gerenciar_membros') ? [{ id: 'descobrir', label: 'Buscar Atletas', icone: Globe }] : []),
+        ...(equipeAtiva.papel === 'admin' || (ehSuperAdmin && equipeAtiva.gestao_global) ? [{ id: 'permissoes', label: 'Permissões (Gestores)', icone: Crown }] : []),
+      ] : []
     },
     { id: 'perfil',           icone: UserCircle,       label: 'Meu Perfil' },
     { id: 'perfil_esportivo', icone: Trophy,           label: 'Perfil Esportivo' },
@@ -73,9 +75,6 @@ const BarraLateral = ({ ativo, setAtivo, abaEquipe, setAbaEquipe }) => {
     { id: 'configuracoes',    icone: Settings,          label: 'Configurações' },
   ];
 
-  const fazerLogout = async () => {
-    await supabase.auth.signOut();
-  };
 
   return (
     <>
@@ -89,7 +88,7 @@ const BarraLateral = ({ ativo, setAtivo, abaEquipe, setAbaEquipe }) => {
         <div className="barra-topo">
           <div className="logotipo">
             <div className="logo-icone" style={{ background: 'transparent', boxShadow: 'none' }}>
-              <img src="/icon.svg" alt="PlayHub" style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: '10px' }} />
+              <img src="/icon_ph_oficial.png" alt="PlayHub" style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: '4px' }} />
             </div>
             <span className="logo-texto">PlayHub</span>
           </div>
@@ -99,7 +98,15 @@ const BarraLateral = ({ ativo, setAtivo, abaEquipe, setAbaEquipe }) => {
         </div>
 
         <nav className="navegacao">
-          {ITENS_NAV.map(({ id, icone: Icone, label, subItens }) => {
+          <div key="inicio" className={`nav-item-container ${ativo === 'inicio' ? 'container-ativo' : ''}`}>
+            <button className={`item-nav ${ativo === 'inicio' ? 'ativo' : ''}`} onClick={() => { setAtivo('inicio'); setAberta(false); }}>
+              <span className="item-nav-icone"><LayoutDashboard size={19} /></span>
+              <span className="item-nav-label">Início</span>
+              <ChevronRight size={14} className="item-nav-seta" />
+            </button>
+          </div>
+
+          {ITENS_NAV.filter(i => i.id !== 'inicio').map(({ id, icone: Icone, label, subItens }) => {
             const isEquipe = id === 'equipe';
             const isActive = ativo === id;
             const hasSubmenu = subItens && subItens.length > 0;
@@ -151,52 +158,8 @@ const BarraLateral = ({ ativo, setAtivo, abaEquipe, setAbaEquipe }) => {
                   )}
                 </button>
 
-            {/* SELETOR DE EQUIPE / CRIAR NOVO (Sempre visível se houver permissão ou se tiver equipe ativa) */}
-            {isEquipe && menuEquipeExpandido && (
-          <div className="submenu">
-            {/* Lista outras equipes se houver mais de uma */}
-            {equipes.length > 1 && (
-              <div className="seletor-equipe-menu">
-                <p className="seletor-titulo">Trocar Equipe</p>
-                <div className="lista-outras-equipes">
-                  {equipes.map(eq => (
-                    <button 
-                      key={eq.id} 
-                      className={`btn-troca-equipe ${eq.id === equipeAtiva?.id ? 'ativa' : ''}`}
-                      onClick={() => selecionarEquipe(eq.id)}
-                      title={eq.nome}
-                    >
-                      <div className="avatar-troca">
-                        {eq.logo_url ? <img src={eq.logo_url} alt={eq.nome} /> : <Users size={14} />}
-                      </div>
-                      <span className="nome-troca">{eq.nome}</span>
-                      {eq.id === equipeAtiva?.id && <div className="ponto-ativo"></div>}
-                    </button>
-                  ))}
-                </div>
-                <div className="divisor-submenu"></div>
-              </div>
-            )}
-
-            {/* Botão de Criar Equipe (Sempre visível no submenu da equipe se puder criar) */}
-            {podeCriarEquipe && (
-              <div style={{ padding: '4px 8px 8px' }}>
-                <button 
-                    className="btn-troca-equipe btn-add-equipe-sidebar" 
-                    onClick={() => {
-                        setModalCriacaoAberto(true);
-                        setAberta(false);
-                    }}
-                    style={{ background: 'rgba(255,255,255,0.03)', border: '1px dashed rgba(255,255,255,0.1)', width: '100%', borderRadius: '8px' }}
-                >
-                    <div className="avatar-troca add-icon">
-                        <SquarePlus size={14} />
-                    </div>
-                    <span className="nome-troca" style={{ fontWeight: '600', color: 'var(--primaria)' }}>Criar Novo Time</span>
-                </button>
-              </div>
-            )}
-
+                {isEquipe && menuEquipeExpandido && hasSubmenu && (
+                  <div className="submenu">
                     {subItens.map((sub) => {
                       const SubIcone = sub.icone;
                       const isSubAtivo = abaEquipe === sub.id && isActive;
@@ -204,13 +167,9 @@ const BarraLateral = ({ ativo, setAtivo, abaEquipe, setAbaEquipe }) => {
                         <button
                           key={sub.id}
                           className={`submenu-item ${isSubAtivo ? 'sub-ativo' : ''}`}
-                        onClick={() => {
-                            if (sub.id === 'criar-equipe-vazio') {
-                                setModalCriacaoAberto(true);
-                            } else {
-                                setAbaEquipe(sub.id);
-                                setAtivo('equipe');
-                            }
+                          onClick={() => {
+                            setAbaEquipe(sub.id);
+                            setAtivo('equipe');
                             setAberta(false);
                           }}
                         >
@@ -257,7 +216,7 @@ const BarraLateral = ({ ativo, setAtivo, abaEquipe, setAbaEquipe }) => {
               </div>
             </div>
           )}
-          <button className="botao-sair" onClick={fazerLogout}>
+          <button className="botao-sair" onClick={logout}>
             <LogOut size={18} />
             <span>Sair</span>
           </button>

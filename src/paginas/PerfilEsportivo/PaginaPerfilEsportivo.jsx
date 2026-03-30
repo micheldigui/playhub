@@ -148,14 +148,6 @@ const PaginaPerfilEsportivo = ({ aoVoltar }) => {
 
   return (
     <div className="perfil-esportivo-container animacao-entrada">
-      <div className="perfil-cabecalho-acoes">
-        {aoVoltar && (
-          <button onClick={aoVoltar} className="btn-voltar-perfil">
-            <ArrowLeft size={16} />
-            <span>Voltar para Dashboard</span>
-          </button>
-        )}
-      </div>
 
       <div className="perfil-cabecalho">
         <h2>Perfil Esportivo</h2>

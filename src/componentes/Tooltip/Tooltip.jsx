@@ -7,17 +7,20 @@ const Tooltip = ({ texto, posicao = 'top' }) => {
 
   return (
     <span className={`tooltip-raiz ${visivel ? 'tooltip-visivel' : ''}`}>
-      <button
-        type="button"
+      <span
+        role="button"
         className="tooltip-botao"
         onMouseEnter={() => setVisivel(true)}
         onMouseLeave={() => setVisivel(false)}
-        onClick={() => setVisivel(!visivel)}
+        onClick={(e) => {
+          e.stopPropagation();
+          setVisivel(!visivel);
+        }}
         aria-label="Mais informações"
-        tabIndex="-1"
+        tabIndex="0"
       >
         <Info size={13} />
-      </button>
+      </span>
       {visivel && (
         <div className={`tooltip-balao tooltip-${posicao}`}>
           {texto}

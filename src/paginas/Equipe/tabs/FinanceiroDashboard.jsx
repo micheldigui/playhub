@@ -68,46 +68,45 @@ const FinanceiroDashboard = () => {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
 
             {/* ── CARDS DE RESUMO GERAL ── */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
-                <div className="dash-card" style={{ borderTop: '3px solid #10b981' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
+                <div className="dash-card-premium" style={{ borderLeft: '5px solid #10b981', background: 'linear-gradient(145deg, rgba(16,185,129,0.1) 0%, rgba(15,23,42,0.6) 100%)' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                         <div>
-                            <span className="dash-label">Total Recebido</span>
-                            <p className="dash-valor" style={{ color: '#10b981' }}>{formatarMoeda(totalRecebido)}</p>
+                            <span className="dash-label">Arrecadação Total (Geral)</span>
+                            <p className="dash-valor" style={{ color: '#10b981', fontSize: '1.8rem' }}>{formatarMoeda(totalRecebido)}</p>
+                            <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Total acumulado de todos os ciclos</span>
                         </div>
-                        <div style={{ background: 'rgba(16,185,129,0.1)', padding: '8px', borderRadius: '10px' }}>
-                            <TrendingUp size={20} color="#10b981" />
+                        <div style={{ background: 'rgba(16,185,129,0.2)', padding: '12px', borderRadius: '16px', boxShadow: '0 4px 12px rgba(16,185,129,0.3)' }}>
+                            <TrendingUp size={24} color="#10b981" />
                         </div>
                     </div>
-                    <span style={{ fontSize: '0.75rem', color: '#64748b' }}>{historico.length} ciclo(s) no histórico</span>
                 </div>
 
-                <div className="dash-card" style={{ borderTop: '3px solid #f59e0b' }}>
+                <div className="dash-card-premium" style={{ borderLeft: '5px solid #f59e0b', background: 'linear-gradient(145deg, rgba(245,158,11,0.1) 0%, rgba(15,23,42,0.6) 100%)' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                         <div>
-                            <span className="dash-label">Total Pendente</span>
-                            <p className="dash-valor" style={{ color: '#f59e0b' }}>{formatarMoeda(totalPendente)}</p>
+                            <span className="dash-label">Montante em Aberto</span>
+                            <p className="dash-valor" style={{ color: '#f59e0b', fontSize: '1.8rem' }}>{formatarMoeda(totalPendente)}</p>
+                            <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Dívidas pendentes dos atletas</span>
                         </div>
-                        <div style={{ background: 'rgba(245,158,11,0.1)', padding: '8px', borderRadius: '10px' }}>
-                            <AlertCircle size={20} color="#f59e0b" />
+                        <div style={{ background: 'rgba(245,158,11,0.2)', padding: '12px', borderRadius: '16px', boxShadow: '0 4px 12px rgba(245,158,11,0.3)' }}>
+                            <AlertCircle size={24} color="#f59e0b" />
                         </div>
                     </div>
-                    <span style={{ fontSize: '0.75rem', color: '#64748b' }}>Em aberto nos ciclos</span>
                 </div>
 
-                <div className="dash-card" style={{ borderTop: '3px solid #38bdf8' }}>
+                <div className="dash-card-premium" style={{ borderLeft: '5px solid #38bdf8', background: 'linear-gradient(145deg, rgba(56,189,248,0.1) 0%, rgba(15,23,42,0.6) 100%)' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                         <div>
-                            <span className="dash-label">Taxa de Adimplência</span>
-                            <p className="dash-valor" style={{ color: '#38bdf8' }}>{taxaAdimplencia}%</p>
+                            <span className="dash-label">Índice de Adimplência</span>
+                            <p className="dash-valor" style={{ color: '#38bdf8', fontSize: '1.8rem' }}>{taxaAdimplencia}%</p>
+                            <div style={{ marginTop: '12px', background: 'rgba(255,255,255,0.05)', borderRadius: '100px', height: '8px', width: '160px' }}>
+                                <div style={{ width: `${taxaAdimplencia}%`, height: '100%', background: 'linear-gradient(90deg, #38bdf8, #818cf8)', borderRadius: '100px', boxShadow: '0 0 10px rgba(56,189,248,0.5)' }} />
+                            </div>
                         </div>
-                        <div style={{ background: 'rgba(56,189,248,0.1)', padding: '8px', borderRadius: '10px' }}>
-                            <CheckCircle2 size={20} color="#38bdf8" />
+                        <div style={{ background: 'rgba(56,189,248,0.2)', padding: '12px', borderRadius: '16px', boxShadow: '0 4px 12px rgba(56,189,248,0.3)' }}>
+                            <CheckCircle2 size={24} color="#38bdf8" />
                         </div>
-                    </div>
-                    {/* Barra de progresso */}
-                    <div style={{ marginTop: '8px', background: 'rgba(255,255,255,0.05)', borderRadius: '4px', height: '6px' }}>
-                        <div style={{ width: `${taxaAdimplencia}%`, height: '100%', background: '#38bdf8', borderRadius: '4px', transition: 'width 0.5s ease' }} />
                     </div>
                 </div>
             </div>
@@ -224,11 +223,27 @@ const FinanceiroDashboard = () => {
                     border-radius: 16px;
                     padding: 20px;
                 }
+                .dash-card-premium {
+                    background: rgba(15,23,42,0.8);
+                    border: 1px solid rgba(255,255,255,0.07);
+                    border-radius: 20px;
+                    padding: 24px;
+                    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+                }
+                .dash-card-premium:hover {
+                    transform: translateY(-5px);
+                    border-color: rgba(255,255,255,0.12);
+                    box-shadow: 0 12px 24px rgba(0,0,0,0.4);
+                }
                 .dash-label {
                     color: #94a3b8;
-                    font-size: 0.8rem;
+                    font-size: 0.85rem;
                     display: block;
-                    margin-bottom: 4px;
+                    margin-bottom: 6px;
+                    font-weight: 500;
+                    text-transform: uppercase;
+                    letter-spacing: 0.02em;
                 }
                 .dash-valor {
                     font-size: 1.5rem;

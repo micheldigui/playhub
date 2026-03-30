@@ -1,8 +1,9 @@
 import { useState, useCallback } from 'react';
 import { usarEquipe } from '../../contextos/EquipeContexto';
 import { usarAutenticacao } from '../../contextos/AutenticacaoContexto';
+import { usarNotificacoes } from '../../contextos/NotificacoesContexto';
 import { supabase } from '../../servicos/supabase';
-import { Globe, MapPin, Trophy, Users, Search, ArrowLeft, Crown, User } from 'lucide-react';
+import { Globe, MapPin, Trophy, Users, Search, ArrowLeft, Crown, User, Phone, MessageCircle } from 'lucide-react';
 import Botao from '../../componentes/Botao/Botao';
 import PerfilAtletaModal from '../../componentes/Modais/PerfilAtletaModal';
 import './PaginaExplorar.css';
@@ -40,6 +41,7 @@ const PaginaExplorar = ({ aoVoltar }) => {
   const [buscando, setBuscando] = useState(false);
   const { solicitarIngresso, cancelarSolicitacaoIngresso, equipes: minhasEquipes, minhasSolicitacoes } = usarEquipe();
   const { usuario, dadosUsuario } = usarAutenticacao();
+  const { matchesConfirmados } = usarNotificacoes();
   
   const [abaAtiva, setAbaAtiva] = useState('equipes'); // 'equipes' ou 'atletas'
   const [pagina, setPagina] = useState(0);
@@ -151,6 +153,19 @@ const PaginaExplorar = ({ aoVoltar }) => {
     if (idadeEu < 18 || idadeAlvo < 18) {
       alert('Para segurança de todos, a interação direta ("Passar a bola") só é permitida entre maiores de 18 anos. 🛡️');
       return;
+    }
+
+    // Se já é um match histórico
+    if (matchesConfirmados?.has(atletaAlvo.id)) {
+        const ambosAutorizaram = dadosUsuario.compartilhar_whatsapp_match && atletaAlvo.compartilhar_whatsapp_match;
+        if (ambosAutorizaram && atletaAlvo.telefone) {
+            const numeroLimpo = atletaAlvo.telefone.replace(/\D/g, '');
+            const msg = `Fala craque! Vi que demos match no PlayHub ⚽. Bora jogar?`;
+            window.open(`https://api.whatsapp.com/send?phone=55${numeroLimpo}&text=${encodeURIComponent(msg)}`, '_blank');
+        } else {
+            alert('Vocês já deram Match! Mas um dos perfis (ou ambos) está com o compartilhamento de WhatsApp ocultado nas configurações do painel.');
+        }
+        return;
     }
 
     try {
@@ -346,6 +361,21 @@ const PaginaExplorar = ({ aoVoltar }) => {
                             Desfazer Solicitação
                         </button>
                       </div>
+                    ) : !equipe.aceitando_membros ? (
+                      <div className="tag-recrutamento-fechado" style={{ 
+                        marginTop: 'auto', 
+                        padding: '12px', 
+                        textAlign: 'center', 
+                        background: 'rgba(244, 63, 94, 0.05)', 
+                        border: '1px dashed rgba(244, 63, 94, 0.2)',
+                        color: '#fb7185',
+                        borderRadius: '12px',
+                        fontSize: '0.8rem',
+                        fontWeight: '600'
+                      }}>
+                        <Ban size={14} style={{ marginBottom: '4px' }} /><br/>
+                        Recrutamento fechado no momento
+                      </div>
                     ) : (
                       <Botao
                         onClick={() => handleSolicitar(equipe.id)}
@@ -397,11 +427,12 @@ const PaginaExplorar = ({ aoVoltar }) => {
                     </Botao>
                     <Botao 
                       variant="secundario" 
-                      style={{ flex: 1, fontSize: '0.8rem', gap: '4px' }}
+                      style={{ flex: 1, fontSize: '0.8rem', gap: '4px', background: matchesConfirmados?.has(atleta.id) ? 'rgba(37, 211, 102, 0.1)' : undefined, color: matchesConfirmados?.has(atleta.id) ? '#25D366' : undefined, borderColor: matchesConfirmados?.has(atleta.id) ? 'rgba(37, 211, 102, 0.4)' : undefined }}
                       onClick={() => handleCutucar(atleta)}
                       disabled={atleta.id === usuario.id}
+                      title={matchesConfirmados?.has(atleta.id) ? "Vocês já deram Match!" : "Mostrar interesse"}
                     >
-                      ⚽ Passar a bola
+                      {matchesConfirmados?.has(atleta.id) ? <><MessageCircle size={14}/> Match!</> : '⚽ Passar a bola'}
                     </Botao>
                   </div>
                 </div>
@@ -439,6 +470,7 @@ const PaginaExplorar = ({ aoVoltar }) => {
           aoFechar={() => setAtletaSelecionado(null)}
           aoPassarBola={handleCutucar}
           ehEu={atletaSelecionado.id === usuario?.id}
+          ehMatch={matchesConfirmados?.has(atletaSelecionado.id)}
         />
       )}
     </div>

@@ -9,7 +9,8 @@ export const NotificacoesProvedor = ({ children }) => {
     const [notificacoes, setNotificacoes] = useState([]);
     const [contagemNaoLidas, setContagemNaoLidas] = useState(0);
 
-    const [matches, setMatches] = useState(new Set());
+    const [matches, setMatches] = useState(new Set()); // Para quem eu enviei a bola
+    const [matchesConfirmados, setMatchesConfirmados] = useState(new Set()); // Match mútuo
 
     const carregarNotificacoes = useCallback(async () => {
         if (!usuario) return;
@@ -76,8 +77,22 @@ export const NotificacoesProvedor = ({ children }) => {
 
             const idsEnviados = new Set((resEnviadas.data || []).map(e => e.destinatario_id));
             setMatches(idsEnviados);
-            setNotificacoes(todasNotificacoes);
-            setContagemNaoLidas(todasNotificacoes.length);
+            
+            // Um "Match Confirmado" é quando EU enviei e eles me enviaram (mesmo que a notificação deles esteja arquivada)
+            const idsRecebidos = new Set(
+                (resInteracoes.data || [])
+                .filter(i => i.tipo === 'bola' || i.tipo === 'bola_arquivada')
+                .map(i => i.remetente_id)
+            );
+            const matchesMutuos = [...idsEnviados].filter(id => idsRecebidos.has(id));
+            setMatchesConfirmados(new Set(matchesMutuos));
+            
+            // Só conta como notificação lida/não-lida pra UI as que NÃO estão arquivadas explicitamente ou via localStorage
+            const apagadasMemoria = new Set(JSON.parse(localStorage.getItem(`playhub_arquivadas_${usuario.id}`) || '[]'));
+            const notificacoesVisiveis = todasNotificacoes.filter(n => n.tipo !== 'bola_arquivada' && !apagadasMemoria.has(n.id));
+
+            setNotificacoes(notificacoesVisiveis);
+            setContagemNaoLidas(notificacoesVisiveis.length);
         } catch (error) {
             console.error('Erro ao carregar notificações:', error);
         }
@@ -117,19 +132,22 @@ export const NotificacoesProvedor = ({ children }) => {
     const limparNotificacoes = useCallback(async () => {
         if (!usuario) return;
         try {
-            // Limpa apenas as interações
-            const { error } = await supabase
-                .from('interacoes')
-                .delete()
-                .eq('destinatario_id', usuario.id);
+            // Utilizamos LocalStorage para ocultar as interacoes do usuário localmente.
+            // Isso evita erro de Row-Level Security do Supabase ao tentar dar UPDATE, além de não DELETAR o registro, 
+            // preservando firmemente os "Matches" e histórico para a lógica de contato.
+            const apagadasAtuais = JSON.parse(localStorage.getItem(`playhub_arquivadas_${usuario.id}`) || '[]');
             
-            if (error) throw error;
-            carregarNotificacoes(); // Recarrega para manter os convites pendentes na tela, mas remover os avatares de interacao
+            // Pega os IDs de todas as interações de passadas de bola atuais e manda pro "limbo" visual
+            const idsParaEsconder = notificacoes.filter(n => n.tipo === 'bola' || n.tipo === 'interacao').map(n => n.id);
+            
+            localStorage.setItem(`playhub_arquivadas_${usuario.id}`, JSON.stringify([...apagadasAtuais, ...idsParaEsconder]));
+            
+            carregarNotificacoes();
         } catch (error) {
             console.error('Erro ao limpar notificações:', error);
             alert('Erro ao limpar notificações.');
         }
-    }, [usuario, carregarNotificacoes]);
+    }, [usuario, carregarNotificacoes, notificacoes]);
 
     return (
         <NotificacoesContexto.Provider value={{ 
@@ -137,7 +155,8 @@ export const NotificacoesProvedor = ({ children }) => {
             contagemNaoLidas, 
             carregarNotificacoes,
             limparNotificacoes,
-            matches
+            matches,
+            matchesConfirmados
         }}>
             {children}
         </NotificacoesContexto.Provider>

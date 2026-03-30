@@ -1,28 +1,39 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../../servicos/supabase';
 import { usarEquipe } from '../../../contextos/EquipeContexto';
-import { DollarSign, User, CheckCircle2, AlertCircle, Trash2, Calendar } from 'lucide-react';
+import { DollarSign, User, CheckCircle2, AlertCircle, XCircle, Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
+import { usarFinanceiro } from '../../../contextos/FinanceiroContexto';
 
 const FinanceiroAvulsos = () => {
     const { equipeAtiva, temPermissaoEquipe } = usarEquipe();
+    const { obterCicloAtual, formatarPeriodoParaExibicao } = usarFinanceiro();
     const [pagamentos, setPagamentos] = useState([]);
     const [carregando, setCarregando] = useState(true);
     const [processando, setProcessando] = useState(null);
+    const [periodoAtivo, setPeriodoAtivo] = useState(() => obterCicloAtual(10));
 
     const isAdmin = equipeAtiva?.papel === 'admin' || temPermissaoEquipe('gerenciar_financeiro');
 
     const carregarAvulsos = async () => {
-        if (!equipeAtiva) return;
+        if (!equipeAtiva || !periodoAtivo) return;
         setCarregando(true);
+
+        // Define os limites do mês selecionado para o filtro
+        const [ano, mes] = periodoAtivo.split('-');
+        const dataInicio = `${ano}-${mes}-01`;
+        const dataFim = new Date(ano, mes, 0).toISOString().split('T')[0];
+
         try {
             const { data, error } = await supabase
                 .from('pagamentos_avulsos')
                 .select(`
                     id, status, valor_pago, pago_em,
                     usuarios (id, nome_completo, foto_url),
-                    partidas (id, data)
+                    partidas!inner (id, data)
                 `)
                 .eq('equipe_id', equipeAtiva.id)
+                .gte('partidas.data', dataInicio)
+                .lte('partidas.data', dataFim)
                 .order('pago_em', { ascending: false });
                 
             if (error) throw error;
@@ -34,9 +45,18 @@ const FinanceiroAvulsos = () => {
         }
     };
 
+    const navegarPeriodo = (direcao) => {
+        if (!periodoAtivo) return;
+        const [ano, mes] = periodoAtivo.split('-').map(Number);
+        const data = new Date(ano, mes - 1 + direcao, 1);
+        const novoAno = data.getFullYear();
+        const novoMes = String(data.getMonth() + 1).padStart(2, '0');
+        setPeriodoAtivo(`${novoAno}-${novoMes}`);
+    };
+
     useEffect(() => {
         carregarAvulsos();
-    }, [equipeAtiva]);
+    }, [equipeAtiva, periodoAtivo]);
 
     const alternarStatus = async (id, statusAtual) => {
         if (!isAdmin) return;
@@ -58,19 +78,27 @@ const FinanceiroAvulsos = () => {
         }
     };
 
-    const excluirCobranca = async (id) => {
+    const anularCobranca = async (pag) => {
         if (!isAdmin) return;
-        if (!window.confirm("Deseja realmente apagar esta cobrança avulsa?")) return;
-        setProcessando(id);
+        
+        // Regra de Segurança: Não permite apagar se estiver pago
+        if (pag.status === 'pago') {
+            alert("⚠️ Não é possível anular uma cobrança já PAGA. \n\nPara anular, primeiro clique no botão 'Pago' para voltá-la ao estado Pendente.");
+            return;
+        }
+
+        if (!window.confirm("Deseja ANULAR esta cobrança? \n\n⚠️ O valor NÃO entrará no caixa e o registro financeiro será excluído permanentemente.")) return;
+        
+        setProcessando(pag.id);
         try {
             const { error } = await supabase
                 .from('pagamentos_avulsos')
                 .delete()
-                .eq('id', id);
+                .eq('id', pag.id);
             if (error) throw error;
             await carregarAvulsos();
         } catch (error) {
-            alert('Falha ao apagar: ' + error.message);
+            alert('Falha ao anular: ' + error.message);
         } finally {
             setProcessando(null);
         }
@@ -92,6 +120,16 @@ const FinanceiroAvulsos = () => {
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            {/* SELETOR DE PERÍODO (Consistent style with FinanceiroTab) */}
+            <div style={{ background: 'rgba(15,23,42,0.6)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)', padding: '12px 20px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '24px' }}>
+                <button onClick={() => navegarPeriodo(-1)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: '8px', color: '#94a3b8' }} title="Mês Anterior"><ChevronLeft size={22} /></button>
+                <div style={{ textAlign: 'center', minWidth: '120px' }}>
+                    <div style={{ color: '#94a3b8', fontSize: '0.75rem', textTransform: 'uppercase', fontWeight: '800', marginBottom: '2px', letterSpacing: '0.05em' }}>Período dos Jogos</div>
+                    <div style={{ color: '#f8fafc', fontSize: '1.2rem', fontWeight: '800' }}>{formatarPeriodoParaExibicao(periodoAtivo)}</div>
+                </div>
+                <button onClick={() => navegarPeriodo(1)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: '8px', color: '#94a3b8' }} title="Próximo Mês"><ChevronRight size={22} /></button>
+            </div>
+
             {/* CARDS DE RESUMO */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
                 <div style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', padding: '16px', borderRadius: '12px' }}>
@@ -156,11 +194,18 @@ const FinanceiroAvulsos = () => {
                                     
                                     {isAdmin && (
                                         <button 
-                                            onClick={() => excluirCobranca(p.id)}
-                                            style={{ background: 'transparent', border: 'none', color: '#64748b', cursor: 'pointer', padding: '6px' }}
-                                            title="Anular Fatura"
+                                            onClick={() => anularCobranca(p)}
+                                            style={{ 
+                                                background: 'transparent', 
+                                                border: 'none', 
+                                                color: '#64748b', 
+                                                cursor: p.status === 'pago' ? 'not-allowed' : 'pointer', 
+                                                padding: '6px',
+                                                opacity: p.status === 'pago' ? 0.3 : 1
+                                            }}
+                                            title={p.status === 'pago' ? "Bloqueado: Desmarque o pagamento para anular" : "Anular/Cancelar Fatura"}
                                         >
-                                            <Trash2 size={18} />
+                                            <XCircle size={18} />
                                         </button>
                                     )}
                                 </div>

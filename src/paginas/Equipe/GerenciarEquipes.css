@@ -1,0 +1,381 @@
+.gerenciar-equipes-container {
+  padding: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  min-height: calc(100vh - 80px);
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.4s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.gerenciar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2.5rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.header-texto h1 {
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: #fff;
+  margin-bottom: 0.5rem;
+  letter-spacing: -0.02em;
+}
+
+.header-texto p {
+  color: #94a3b8;
+  font-size: 1.1rem;
+}
+
+.limite-equipes-alerta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: rgba(244, 63, 94, 0.1);
+  color: #fb7185;
+  border: 1px solid rgba(244, 63, 94, 0.2);
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.btn-criar-equipe-topo {
+  padding: 0.8rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  box-shadow: 0 4px 20px rgba(56, 189, 248, 0.3);
+}
+
+/* CARDS DE INFO */
+.info-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 3.5rem;
+}
+
+.info-card {
+  position: relative;
+  padding: 2rem;
+  border-radius: 20px;
+  overflow: hidden;
+  background: rgba(15, 23, 42, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  display: flex;
+  gap: 1.5rem;
+  transition: all 0.3s ease;
+}
+
+.info-card::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, transparent 60%);
+  z-index: 0;
+}
+
+.info-card.gold::after {
+  content: "";
+  position: absolute;
+  top: -50%; right: -50%;
+  width: 150px; height: 150px;
+  background: radial-gradient(circle, rgba(251, 191, 36, 0.1) 0%, transparent 70%);
+  filter: blur(40px);
+}
+
+.info-card.azure::after {
+  content: "";
+  position: absolute;
+  top: -50%; right: -50%;
+  width: 150px; height: 150px;
+  background: radial-gradient(circle, rgba(56, 189, 248, 0.1) 0%, transparent 70%);
+  filter: blur(40px);
+}
+
+.info-card.interativo {
+  cursor: pointer;
+}
+
+.info-card.interativo:hover {
+  transform: translateY(-4px);
+  background: rgba(15, 23, 42, 0.6);
+  border-color: rgba(56, 189, 248, 0.3);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.3);
+}
+
+.info-card.interativo:active {
+  transform: translateY(0);
+}
+
+.info-card-back {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  z-index: 1;
+}
+
+.info-card-icon {
+  position: relative;
+  z-index: 2;
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.gold .info-card-icon { background: rgba(251, 191, 36, 0.1); color: #fbbf24; border: 1px solid rgba(251, 191, 36, 0.2); }
+.azure .info-card-icon { background: rgba(56, 189, 248, 0.1); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.2); }
+
+.info-card-content {
+  position: relative;
+  z-index: 2;
+}
+
+.info-card-content h3 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 0.5rem;
+}
+
+.info-card-content p {
+  color: #94a3b8;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+/* LISTA DE EQUIPES */
+.lista-equipes-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 1.5rem;
+}
+
+.lista-equipes-header h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #f8fafc;
+}
+
+.lista-equipes-header span {
+  color: #64748b;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.equipes-vazia {
+  padding: 5rem;
+  background: rgba(15, 23, 42, 0.3);
+  border: 1px dashed rgba(255, 255, 255, 0.05);
+  border-radius: 20px;
+  text-align: center;
+  color: #64748b;
+}
+
+.equipes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.5rem;
+}
+
+.equipe-card {
+  position: relative;
+  background: rgba(15, 23, 42, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 20px;
+  padding: 1.5rem;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.equipe-card:hover {
+  transform: translateY(-5px);
+  background: rgba(15, 23, 42, 0.7);
+  border-color: rgba(56, 189, 248, 0.3);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.equipe-card.card-ativo {
+  border-color: rgba(56, 189, 248, 0.6);
+  background: rgba(56, 189, 248, 0.05);
+}
+
+.equipe-card-glow {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: linear-gradient(135deg, rgba(56, 189, 248, 0.1) 0%, transparent 60%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.equipe-card:hover .equipe-card-glow {
+  opacity: 1;
+}
+
+.equipe-card-topo {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1.25rem;
+}
+
+.equipe-logo-wrapper {
+  position: relative;
+  width: 64px;
+  height: 64px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.03);
+  overflow: hidden;
+  border: 2px solid rgba(255, 255, 255, 0.05);
+}
+
+.equipe-logo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.equipe-logo-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #475569;
+}
+
+.estrela-ativa {
+  position: absolute;
+  top: 0; right: 0;
+  background: #0f172a;
+  width: 24px;
+  height: 24px;
+  border-radius: 0 0 0 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.equipe-badge-papel {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.1);
+  padding: 4px 10px;
+  border-radius: 20px;
+  letter-spacing: 0.05em;
+}
+
+.equipe-card-info {
+  margin-bottom: 1.5rem;
+}
+
+.equipe-nome {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 0.25rem;
+}
+
+.equipe-detalhes {
+  font-size: 0.85rem;
+  color: #94a3b8;
+}
+
+.equipe-card-footer {
+  margin-top: auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.equipe-config-badges {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.badge-config {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: rgba(56, 189, 248, 0.1);
+  color: #38bdf8;
+}
+
+.badge-config.gray { background: rgba(255, 255, 255, 0.05); color: #64748b; }
+.badge-config.red { background: rgba(244, 63, 94, 0.1); color: #fb7185; }
+.badge-config.green { background: rgba(16, 185, 129, 0.1); color: #10b981; }
+
+.btn-ativar {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.card-ativo .btn-ativar {
+  color: #38bdf8;
+}
+
+.btn-ativar svg {
+  transition: transform 0.2s ease;
+}
+
+.equipe-card:hover .btn-ativar svg {
+  transform: translateX(3px);
+}
+
+.gerenciar-footer {
+  margin-top: 4rem;
+  padding: 2rem;
+  background: rgba(56, 189, 248, 0.03);
+  border-radius: 20px;
+  border: 1px dashed rgba(56, 189, 248, 0.2);
+}
+
+.footer-alerta {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  color: #38bdf8;
+}
+
+.footer-alerta p {
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+@media (max-width: 768px) {
+  .gerenciar-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1.5rem;
+  }
+  
+  .header-texto h1 {
+    font-size: 2rem;
+  }
+}

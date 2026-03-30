@@ -7,6 +7,7 @@ const EquipeConfiguracoesTab = () => {
     const { equipeAtiva, atualizarRegrasEquipe } = usarEquipe();
     const [regras, setRegras] = useState({
         maxStrikes: 3,
+        redCardSuspension: 1,
         cancelDeadlineHours: 2,
         registrationCloseHours: 1,
         registrationOpenDays: 7,
@@ -70,26 +71,42 @@ const EquipeConfiguracoesTab = () => {
 
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '24px' }}>
                     
-                    {/* Limite de Punições */}
+                    {/* Limite de Amarelos */}
                     <div style={{ background: 'rgba(255,255,255,0.02)', padding: '16px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
                         <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: '#94a3b8', marginBottom: '12px', fontWeight: '600' }}>
-                            <ShieldAlert size={16} color="#ef4444" /> Limite de Punições (Strikes)
+                            <ShieldAlert size={16} color="#fbbf24" /> Limite de Amarelos (Suspensão)
                         </label>
                         <input
                             type="number"
                             name="maxStrikes"
                             value={regras.maxStrikes || ''}
                             onChange={handleChange}
-                            min="0"
+                            min="1"
                             style={{ width: '100%', padding: '12px', borderRadius: '8px', background: 'rgba(15,23,42,0.8)', border: '1px solid rgba(255,255,255,0.1)', color: '#f1f5f9', outline: 'none' }}
                         />
-                        <p style={{ fontSize: '11px', color: '#64748b', marginTop: '8px' }}>Atletas que atingirem esse limite serão bloqueados de confirmar presença presencialmente.</p>
+                        <p style={{ fontSize: '11px', color: '#64748b', marginTop: '8px' }}>Quantidade de amarelos acumulados que gera suspensão automática de 1 jogo.</p>
+                    </div>
+
+                    {/* Suspensão Vermelho */}
+                    <div style={{ background: 'rgba(255,255,255,0.02)', padding: '16px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                        <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: '#94a3b8', marginBottom: '12px', fontWeight: '600' }}>
+                            <ShieldAlert size={16} color="#ef4444" /> Suspensão por Vermelho (Jogos)
+                        </label>
+                        <input
+                            type="number"
+                            name="redCardSuspension"
+                            value={regras.redCardSuspension || ''}
+                            onChange={handleChange}
+                            min="1"
+                            style={{ width: '100%', padding: '12px', borderRadius: '8px', background: 'rgba(15,23,42,0.8)', border: '1px solid rgba(255,255,255,0.1)', color: '#f1f5f9', outline: 'none' }}
+                        />
+                        <p style={{ fontSize: '11px', color: '#64748b', marginTop: '8px' }}>Quantas partidas o atleta ficará suspenso ao receber um cartão vermelho direto.</p>
                     </div>
 
                     {/* Prazo de Cancelamento */}
                     <div style={{ background: 'rgba(255,255,255,0.02)', padding: '16px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
                         <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: '#94a3b8', marginBottom: '12px', fontWeight: '600' }}>
-                            <Clock size={16} color="#fbbf24" /> Prazo de Cancelamento Justificado (Horas)
+                            <Clock size={16} color="#0ea5e9" /> Prazo de Cancelamento (Horas)
                         </label>
                         <input
                             type="number"
@@ -99,7 +116,7 @@ const EquipeConfiguracoesTab = () => {
                             min="0"
                             style={{ width: '100%', padding: '12px', borderRadius: '8px', background: 'rgba(15,23,42,0.8)', border: '1px solid rgba(255,255,255,0.1)', color: '#f1f5f9', outline: 'none' }}
                         />
-                        <p style={{ fontSize: '11px', color: '#64748b', marginTop: '8px' }}>Tempo limite antes da partida para o atleta "desconfirmar" sem levar strike.</p>
+                        <p style={{ fontSize: '11px', color: '#64748b', marginTop: '8px' }}>Limite para desconfirmar sem levar cartão amarelo automático por falta.</p>
                     </div>
 
                     {/* Fim das inscrições */}

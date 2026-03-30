@@ -3,7 +3,8 @@ import Modal from '../Modal/Modal';
 import Botao from '../Botao/Botao';
 import { 
   Globe, Lock, MapPin, Search, Camera, User, 
-  Image as ImageIcon, Home, Hash, Map, Building2, Flag, Link
+  Image as ImageIcon, Home, Hash, Map, Building2, Flag, Link,
+  Settings, DollarSign, Users
 } from 'lucide-react';
 import { usarEquipe } from '../../contextos/EquipeContexto';
 import './ModalCriacaoEquipe.css';
@@ -36,7 +37,9 @@ const ModalCriacaoEquipe = ({ isOpen, onClose, aoSucesso, equipeParaEditar = nul
     local_cidade: equipeParaEditar?.local_cidade || '',
     local_estado: equipeParaEditar?.local_estado || '',
     local_mapa_link: equipeParaEditar?.local_mapa_link || '',
-    link_grupo: equipeParaEditar?.link_grupo || ''
+    link_grupo: equipeParaEditar?.link_grupo || '',
+    gestao_financeira: equipeParaEditar?.gestao_financeira ?? true,
+    aceitando_membros: equipeParaEditar?.aceitando_membros ?? true
   });
 
   const [arquivoLogo, setArquivoLogo] = useState(null);
@@ -69,7 +72,9 @@ const ModalCriacaoEquipe = ({ isOpen, onClose, aoSucesso, equipeParaEditar = nul
           local_cidade: equipeParaEditar.local_cidade || '',
           local_estado: equipeParaEditar.local_estado || '',
           local_mapa_link: equipeParaEditar.local_mapa_link || '',
-          link_grupo: equipeParaEditar.link_grupo || ''
+          link_grupo: equipeParaEditar.link_grupo || '',
+          gestao_financeira: equipeParaEditar.gestao_financeira ?? true,
+          aceitando_membros: equipeParaEditar.aceitando_membros ?? true
         });
         setPreviewLogo(equipeParaEditar.logo_url || null);
       } else {
@@ -93,7 +98,9 @@ const ModalCriacaoEquipe = ({ isOpen, onClose, aoSucesso, equipeParaEditar = nul
           local_cidade: '',
           local_estado: '',
           local_mapa_link: '',
-          link_grupo: ''
+          link_grupo: '',
+          gestao_financeira: true,
+          aceitando_membros: true
         });
         setPreviewLogo(null);
       }
@@ -197,7 +204,8 @@ const ModalCriacaoEquipe = ({ isOpen, onClose, aoSucesso, equipeParaEditar = nul
         nivel: '', cep: '', cidade: '', estado: '',
         local_nome: '', local_cep: '', local_rua: '', local_numero: '', 
         local_complemento: '', local_bairro: '', local_cidade: '', 
-        local_estado: '', local_mapa_link: '', link_grupo: ''
+        local_estado: '', local_mapa_link: '', link_grupo: '',
+        gestao_financeira: true, aceitando_membros: true
       });
       setArquivoLogo(null);
       setPreviewLogo(null);
@@ -461,6 +469,50 @@ const ModalCriacaoEquipe = ({ isOpen, onClose, aoSucesso, equipeParaEditar = nul
                 <span>Invísivel para outros. Apenas convite por link.</span>
               </div>
             </button>
+          </div>
+        </div>
+
+        <div className="secao-form">
+          <span className="secao-titulo" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Settings size={18} /> Configurações de Módulos
+          </span>
+          
+          <div className="campo-toggle-grupo">
+            <div className="item-toggle">
+              <div className="toggle-info">
+                <div className="toggle-label-principal">
+                  <DollarSign size={18} />
+                  <strong>Controle Financeiro da Equipe</strong>
+                </div>
+                <p>Habilita gestão de mensalidades, rateio de custos de quadra e relatórios de fluxo de caixa.</p>
+              </div>
+              <label className="switch">
+                <input 
+                  type="checkbox" 
+                  checked={form.gestao_financeira} 
+                  onChange={(e) => handleMudanca('gestao_financeira', e.target.checked)}
+                />
+                <span className="slider round"></span>
+              </label>
+            </div>
+
+            <div className="item-toggle">
+              <div className="toggle-info">
+                <div className="toggle-label-principal">
+                  <Users size={18} />
+                  <strong>Aceitando novos membros agora?</strong>
+                </div>
+                <p>Define se o botão "Solicitar Ingresso" ficará ativo para atletas que encontrarem seu time.</p>
+              </div>
+              <label className="switch">
+                <input 
+                  type="checkbox" 
+                  checked={form.aceitando_membros} 
+                  onChange={(e) => handleMudanca('aceitando_membros', e.target.checked)}
+                />
+                <span className="slider round"></span>
+              </label>
+            </div>
           </div>
         </div>
 

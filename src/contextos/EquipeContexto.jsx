@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '../servicos/supabase';
 import { usarAutenticacao } from './AutenticacaoContexto';
 
@@ -105,8 +105,9 @@ export const EquipeProvedor = ({ children }) => {
                         local_mapa_link,
                         link_grupo,
                         regras,
+                        gestao_financeira,
+                        aceitando_membros,
                         admin_id_pendente,
-                        data_solicitacao_posse,
                         admin:usuarios!equipes_admin_id_fkey (id, nome_completo, apelido, foto_url)
                     )
                 `)
@@ -119,6 +120,7 @@ export const EquipeProvedor = ({ children }) => {
                 ...m.equipes,
                 id: m.equipe_id, // Garante o ID mesmo se o join 'equipes' falhar por RLS
                 papel: m.papel,
+                vinculo: m.vinculo,
                 permissoes: m.permissoes || [],
                 membroStatus: m.status
             })).filter(e => e.id);
@@ -311,7 +313,9 @@ export const EquipeProvedor = ({ children }) => {
                     local_mapa_link: dadosDaEquipe.local_mapa_link || null,
                     link_grupo: dadosDaEquipe.link_grupo || null,
                     latitude: coords.lat,
-                    longitude: coords.lon
+                    longitude: coords.lon,
+                    gestao_financeira: dadosDaEquipe.gestao_financeira ?? true,
+                    aceitando_membros: dadosDaEquipe.aceitando_membros ?? true
                 })
                 .select()
                 .single();
@@ -402,7 +406,9 @@ export const EquipeProvedor = ({ children }) => {
                     local_mapa_link: dadosDaEquipe.local_mapa_link || null,
                     link_grupo: dadosDaEquipe.link_grupo || null,
                     latitude: coords.lat,
-                    longitude: coords.lon
+                    longitude: coords.lon,
+                    gestao_financeira: dadosDaEquipe.gestao_financeira,
+                    aceitando_membros: dadosDaEquipe.aceitando_membros
                 })
                 .eq('id', equipeId);
 
@@ -448,6 +454,28 @@ export const EquipeProvedor = ({ children }) => {
             return { sucesso: true, equipe: equipeAtualizada };
         } catch (error) {
             console.error('Erro ao editar equipe:', error);
+            return { sucesso: false, erro: error.message };
+        }
+    };
+
+    const atualizarConfiguracoesEquipe = async (equipeId, configuracoes) => {
+        try {
+            const { error } = await supabase
+                .from('equipes')
+                .update(configuracoes)
+                .eq('id', equipeId);
+
+            if (error) throw error;
+
+            // Atualiza estado local
+            setEquipes(prev => prev.map(e => e.id === equipeId ? { ...e, ...configuracoes } : e));
+            if (equipeAtiva?.id === equipeId) {
+                setEquipeAtiva(prev => ({ ...prev, ...configuracoes }));
+            }
+
+            return { sucesso: true };
+        } catch (error) {
+            console.error('Erro ao atualizar configurações:', error);
             return { sucesso: false, erro: error.message };
         }
     };
@@ -1066,7 +1094,21 @@ export const EquipeProvedor = ({ children }) => {
         return false;
     }, [equipeAtiva, ehSuperAdmin]);
 
-    const valor = {
+    const getLabelVinculo = (vinculo, financeiroAtivo = equipeAtiva?.gestao_financeira) => {
+        if (vinculo === 'mensalista') {
+            return financeiroAtivo ? 'Mensalista' : 'Fixo';
+        }
+        return financeiroAtivo ? 'Avulso' : 'Convidado';
+    };
+
+    const getAcaoVinculo = (vinculo, financeiroAtivo = equipeAtiva?.gestao_financeira) => {
+        if (vinculo === 'mensalista') {
+            return financeiroAtivo ? 'Virar Avulso' : 'Virar Convidado';
+        }
+        return financeiroAtivo ? 'Virar Mensalista' : 'Virar Fixo';
+    };
+
+    const valor = useMemo(() => ({
         equipes,
         equipeAtiva,
         carregando,
@@ -1077,6 +1119,7 @@ export const EquipeProvedor = ({ children }) => {
         editarEquipe,
         excluirEquipe,
         atualizarRegrasEquipe,
+        atualizarConfiguracoesEquipe,
         buscarEquipes,
         selecionarEquipeGlobal,
         solicitarIngresso,
@@ -1107,8 +1150,22 @@ export const EquipeProvedor = ({ children }) => {
         totalCriadas,
         limiteEquipes: LIMITE_EQUIPES_AD_POR_CONTA,
         modalCriacaoAberto,
-        setModalCriacaoAberto
-    };
+        setModalCriacaoAberto,
+        getLabelVinculo,
+        getAcaoVinculo
+    }), [
+        equipes, equipeAtiva, carregando, convitesPendentesGlobais, solicitacoesPendentesGlobais, 
+        minhasSolicitacoes, podeCriarEquipe, totalCriadas, modalCriacaoAberto,
+        selecionarEquipe, carregarEquipes, criarEquipe, editarEquipe, excluirEquipe, 
+        atualizarRegrasEquipe, atualizarConfiguracoesEquipe, buscarEquipes, 
+        selecionarEquipeGlobal, solicitarIngresso, cancelarSolicitacaoIngresso, 
+        carregarSolicitacoes, responderSolicitacao, buscarJogadores, 
+        carregarMembrosEquipe, atualizarMembro, atualizarPermissoesMembro, 
+        removerMembro, enviarConvite, cancelarConvite, carregarConvitesRecebidos, 
+        responderConvite, carregarConvitesEnviados, carregarStatusMembro, 
+        transferirTitularidade, aceitarTransferenciaPosse, recusarTransferenciaPosse, 
+        sairDaEquipe, getLabelVinculo, getAcaoVinculo
+    ]);
 
 
     return (
