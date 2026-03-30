@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import './Layout.css';
 import BarraLateral from '../Navegacao/BarraLateral';
 import { ArrowLeft } from 'lucide-react';
@@ -21,6 +22,11 @@ const TITULOS_CABECALHO = {
 const Layout = ({ children, telaAtiva, setTelaAtiva, abaEquipe, setAbaEquipe }) => {
   const { equipeAtiva, modalCriacaoAberto, setModalCriacaoAberto } = usarEquipe();
   const { modalInstalacaoAberto, fecharModalInstalacao } = usarPwa();
+
+  useEffect(() => {
+    // Força o scroll voltar para o começo sempre que mudar de tela ou de aba
+    window.scrollTo({ top: 0, behavior: 'auto' });
+  }, [telaAtiva, abaEquipe]);
 
   return (
     <div className="layout-raiz">
