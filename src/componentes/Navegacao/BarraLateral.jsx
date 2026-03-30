@@ -88,7 +88,7 @@ const BarraLateral = ({ ativo, setAtivo, abaEquipe, setAbaEquipe }) => {
         <div className="barra-topo">
           <div className="logotipo">
             <div className="logo-icone" style={{ background: 'transparent', boxShadow: 'none' }}>
-              <img src="/icon_ph_oficial.png" alt="PlayHub" style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: '4px' }} />
+              <img src="/icon_ph_oficial_cf.png" alt="PlayHub" style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: '4px' }} />
             </div>
             <span className="logo-texto">PlayHub</span>
           </div>

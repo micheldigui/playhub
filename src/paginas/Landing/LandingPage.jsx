@@ -12,7 +12,7 @@ const LandingPage = ({ aoLogin }) => {
       {/* ── Navbar ── */}
       <nav className="landing-nav">
         <div className="landing-logo">
-          <img src="/icon_ph_oficial.png" alt="PlayHub Logo" style={{ borderRadius: '4px' }} />
+          <img src="/icon_ph_oficial_cf.png" alt="PlayHub Logo" style={{ borderRadius: '4px' }} />
           <span>PlayHub</span>
         </div>
         <button className="btn-hero-secondary" style={{ padding: '0.6rem 1.5rem', fontSize: '0.9rem' }} onClick={aoLogin}>
@@ -122,7 +122,7 @@ const LandingPage = ({ aoLogin }) => {
       <footer className="landing-footer">
         <div className="footer-content">
           <div className="landing-logo" style={{ justifyContent: 'center', marginBottom: '1.5rem', opacity: 0.8 }}>
-            <img src="/icon_ph_oficial.png" alt="PlayHub Logo" style={{ borderRadius: '4px' }} />
+            <img src="/icon_ph_oficial_cf.png" alt="PlayHub Logo" style={{ borderRadius: '4px' }} />
             <span>PlayHub</span>
           </div>
           <p>© {new Date().getFullYear()} PlayHub - Todos os direitos reservados.</p>
