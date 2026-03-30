@@ -93,7 +93,7 @@ const ModalDetalhesPartida = ({ isOpen, onClose, partida }) => {
     }
 
     // Regras de Tempo (Novo)
-    const isAdmin = equipeAtiva?.papel === 'admin' || temPermissaoEquipe('gerenciar_partidas');
+    const isAdmin = equipeAtiva?.papel === 'admin' || temPermissaoEquipe('gerenciar_partidas') || temPermissaoEquipe('gerenciar_punicoes');
     const regras = equipeAtiva?.regras || {};
     const openDays = regras.registrationOpenDays || 7;
     const closeHours = regras.registrationCloseHours || 1;

@@ -36,7 +36,7 @@ const CATALOGO_ATALHOS = [
     { id: 'criar_partida',    categoria: 'equipe',  label: 'Marcar Jogo',     emoji: '⚽', icone: Swords,     action: (nav, set) => { set('agenda'); nav('equipe'); },           roles: ['admin','sub_admin'], permissao: 'gerenciar_partidas' },
     { id: 'gerenciar_membros',categoria: 'equipe',  label: 'Membros',         emoji: '👥', icone: Users,      action: (nav, set) => { set('membros'); nav('equipe'); },           roles: ['admin','sub_admin'], permissao: 'gerenciar_membros' },
     { id: 'relatorios_eq',    categoria: 'equipe',  label: 'Análise & Rels',  emoji: '📊', icone: BarChart2,  action: (nav, set) => { set('financeiro-relatorios'); nav('equipe'); }, roles: ['admin','sub_admin'], permissao: 'ver_relatorios' },
-    { id: 'regras_eq',        categoria: 'equipe',  label: 'Regras & Config', emoji: '⚙️', icone: Settings,   action: (nav, set) => { set('regras-config'); nav('equipe'); },    roles: ['admin','sub_admin'], permissao: null },
+    { id: 'regras_eq',        categoria: 'equipe',  label: 'Regras & Config', emoji: '⚙️', icone: Settings,   action: (nav, set) => { set('regras-config'); nav('equipe'); },    roles: ['admin','sub_admin'], permissao: 'gerenciar_equipe' },
     { id: 'descobrir_atletas',categoria: 'equipe',  label: 'Buscar Atletas',  emoji: '🔍', icone: Globe,      action: (nav, set) => { set('descobrir'); nav('equipe'); },        roles: ['admin','sub_admin'], permissao: 'gerenciar_membros' },
     { id: 'permissoes_eq',    categoria: 'equipe',  label: 'Permissões',      emoji: '🛡️', icone: Crown,      action: (nav, set) => { set('permissoes'); nav('equipe'); },        roles: ['admin','sub_admin'], permissao: 'gerenciar_gestores' },
 ];

@@ -56,7 +56,7 @@ const BarraLateral = ({ ativo, setAtivo, abaEquipe, setAbaEquipe }) => {
         { id: 'agenda',       label: 'Partidas',      icone: Calendar },
         ...(equipeAtiva.gestao_financeira && temPermissao('gerenciar_financeiro') ? [{ id: 'financeiro-mensal', label: 'Mensalistas', icone: DollarSign }] : []),
         ...(equipeAtiva.gestao_financeira && temPermissao('gerenciar_financeiro') ? [{ id: 'financeiro-avulsos', label: 'Avulsos', icone: Wallet }] : []),
-        ...(equipeAtiva.gestao_financeira && (temPermissao('ver_relatorios') || temPermissao('gerenciar_financeiro')) ? [{ id: 'financeiro-relatorios', label: 'Relatórios', icone: BarChart2 }] : []),
+        ...((temPermissao('ver_relatorios') || temPermissao('gerenciar_financeiro')) ? [{ id: 'financeiro-relatorios', label: 'Relatórios', icone: BarChart2 }] : []),
         { id: 'membros',      label: 'Membros & Cargos', icone: Users },
         ...(temPermissao('gerenciar_membros') ? [{ id: 'solicitacoes', label: 'Solicitações G.', icone: Bell }] : []),
         { id: 'disciplina', label: 'Fair Play', icone: Shield },

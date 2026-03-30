@@ -45,7 +45,22 @@ const GerenciarEquipes = ({ aoVoltar, aoNavegar, setAbaEquipe }) => {
       </header>
 
       <section className="info-cards-grid">
-        <div className="info-card gold">
+        <div 
+          className={`info-card gold ${equipeAtiva ? 'interativo' : ''}`}
+          onClick={() => {
+            if (equipeAtiva) {
+              if (equipeAtiva.gestao_financeira) {
+                setAbaEquipe('financeiro-mensal');
+              } else {
+                setAbaEquipe('regras-config');
+              }
+              aoNavegar('equipe');
+            }
+          }}
+          title={equipeAtiva 
+            ? (equipeAtiva.gestao_financeira ? 'Ir para o Financeiro da Equipe' : 'Habilitar módulo financeiro nas configurações') 
+            : 'Selecione uma equipe para gerenciar o financeiro'}
+        >
           <div className="info-card-back"></div>
           <div className="info-card-icon"><DollarSign size={24} /></div>
           <div className="info-card-content">

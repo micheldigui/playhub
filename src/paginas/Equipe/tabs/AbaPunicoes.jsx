@@ -13,7 +13,7 @@ const AbaPunicoes = () => {
     const [carregando, setCarregando] = useState(true);
     const [processando, setProcessando] = useState(null);
 
-    const isAdmin = equipeAtiva?.papel === 'admin' || temPermissaoEquipe('gerenciar_membros');
+    const isAdmin = equipeAtiva?.papel === 'admin' || temPermissaoEquipe('gerenciar_membros') || temPermissaoEquipe('gerenciar_punicoes');
 
     const carregarPunicoes = async () => {
         if (!equipeAtiva) return;
@@ -113,7 +113,8 @@ const AbaPunicoes = () => {
     const ativas = punicoes.filter(p => p.ativa);
     const amarelosAtivos = ativas.filter(p => p.tipo_cartao === 'amarelo').length;
     const vermelhosAtivos = ativas.filter(p => p.tipo_cartao === 'vermelho').length;
-    const justificadosAtivos = ativas.filter(p => p.tipo_cartao === 'justificado' || p.tipo_cartao === 'azul').length;
+    // Justificados (azul) são salvos com ativa=false intencionalmente, então buscamos sem filtrar por 'ativa'
+    const justificadosAtivos = punicoes.filter(p => p.tipo_cartao === 'justificado' || p.tipo_cartao === 'azul').length;
 
     return (
         <div className="animate-fade-in" style={{ padding: '0 1rem' }}>
@@ -177,7 +178,8 @@ const AbaPunicoes = () => {
                 const minhasPunicoesAtivas = punicoes.filter(p => p.ativa && p.usuarios?.id === usuario?.id);
                 const amareloUser = minhasPunicoesAtivas.filter(p => p.tipo_cartao === 'amarelo').length;
                 const vermelhoUser = minhasPunicoesAtivas.filter(p => p.tipo_cartao === 'vermelho').length;
-                const justificadoUser = minhasPunicoesAtivas.filter(p => p.tipo_cartao === 'justificado' || p.tipo_cartao === 'azul').length;
+                // Justificados não têm 'ativa=true', buscamos sem esse filtro
+                const justificadoUser = punicoes.filter(p => (p.tipo_cartao === 'justificado' || p.tipo_cartao === 'azul') && p.usuarios?.id === usuario?.id).length;
                 const isSuspenso = vermelhoUser > 0;
 
                 return (

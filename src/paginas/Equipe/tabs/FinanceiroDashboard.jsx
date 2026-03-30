@@ -1,11 +1,203 @@
 import React, { useState, useEffect } from 'react';
 import {
-    TrendingUp, TrendingDown, DollarSign, Users, 
-    CheckCircle2, AlertCircle, BarChart2, Calendar,
-    ChevronDown, Loader2
+    TrendingUp, AlertCircle, BarChart2, Calendar,
+    Loader2, Users, CheckCircle2, Trophy, Activity
 } from 'lucide-react';
 import { usarFinanceiro } from '../../../contextos/FinanceiroContexto';
 import { usarEquipe } from '../../../contextos/EquipeContexto';
+import { supabase } from '../../../servicos/supabase';
+
+// ── Componente de Histórico de Presenças (independente do módulo financeiro) ──
+const HistoricoPresencas = ({ equipeId }) => {
+    const [partidas, setPartidas] = useState([]);
+    const [carregando, setCarregando] = useState(true);
+
+    useEffect(() => {
+        if (!equipeId) return;
+        const carregar = async () => {
+            setCarregando(true);
+            try {
+                // Busca as últimas 20 partidas com suas presenças
+                const { data: partidasData, error } = await supabase
+                    .from('partidas')
+                    .select(`
+                        id, data, hora, local_nome,
+                        partidas_presencas (
+                            frequencia,
+                            usuarios ( id, nome_completo, foto_url )
+                        )
+                    `)
+                    .eq('equipe_id', equipeId)
+                    .order('data', { ascending: false })
+                    .limit(20);
+
+                if (error) throw error;
+
+                setPartidas(partidasData || []);
+            } catch (err) {
+                console.error('Erro ao carregar histórico de presenças:', err);
+            } finally {
+                setCarregando(false);
+            }
+        };
+        carregar();
+    }, [equipeId]);
+
+    if (carregando) {
+        return (
+            <div style={{ padding: '40px', textAlign: 'center', color: '#94a3b8' }}>
+                <Loader2 className="animate-spin" style={{ margin: '0 auto 12px auto' }} />
+                Carregando presenças...
+            </div>
+        );
+    }
+
+    if (partidas.length === 0) {
+        return (
+            <div style={{ padding: '60px', textAlign: 'center', color: '#64748b' }}>
+                <Calendar size={40} style={{ margin: '0 auto 12px auto', opacity: 0.4 }} />
+                <p>Nenhuma partida registrada ainda.</p>
+            </div>
+        );
+    }
+
+    // Calcula ranking de frequência por jogador
+    const rankingMap = {};
+    partidas.forEach(partida => {
+        (partida.partidas_presencas || []).forEach(p => {
+            if (!p.usuarios) return;
+            const uid = p.usuarios.id;
+            if (!rankingMap[uid]) {
+                rankingMap[uid] = {
+                    id: uid,
+                    nome: p.usuarios.nome_completo,
+                    foto: p.usuarios.foto_url,
+                    presencas: 0,
+                    faltas: 0,
+                    total: 0,
+                };
+            }
+            rankingMap[uid].total++;
+            if (p.frequencia === 'P') rankingMap[uid].presencas++;
+            else if (p.frequencia === 'F') rankingMap[uid].faltas++;
+        });
+    });
+
+    const ranking = Object.values(rankingMap)
+        .sort((a, b) => b.presencas - a.presencas);
+
+    const maxPresencas = Math.max(...ranking.map(r => r.presencas), 1);
+
+    const formatarData = (data) => new Date(data + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
+
+    return (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            {/* Header */}
+            <div style={{ background: 'rgba(15,23,42,0.6)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '16px', padding: '20px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+                    <div style={{ background: 'rgba(56,189,248,0.1)', padding: '10px', borderRadius: '12px' }}>
+                        <Activity size={22} color="#38bdf8" />
+                    </div>
+                    <div>
+                        <h3 style={{ color: '#f8fafc', fontWeight: '700', fontSize: '1.1rem' }}>Histórico de Presenças</h3>
+                        <p style={{ color: '#64748b', fontSize: '0.85rem' }}>{partidas.length} partida(s) registrada(s)</p>
+                    </div>
+                </div>
+
+                {/* Cards de resumo */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '12px' }}>
+                    <div style={{ background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.15)', borderRadius: '12px', padding: '16px', textAlign: 'center' }}>
+                        <div style={{ fontSize: '1.8rem', fontWeight: '800', color: '#10b981' }}>{partidas.length}</div>
+                        <div style={{ fontSize: '0.75rem', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Partidas</div>
+                    </div>
+                    <div style={{ background: 'rgba(56,189,248,0.08)', border: '1px solid rgba(56,189,248,0.15)', borderRadius: '12px', padding: '16px', textAlign: 'center' }}>
+                        <div style={{ fontSize: '1.8rem', fontWeight: '800', color: '#38bdf8' }}>{ranking.length}</div>
+                        <div style={{ fontSize: '0.75rem', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Atletas</div>
+                    </div>
+                    <div style={{ background: 'rgba(168,85,247,0.08)', border: '1px solid rgba(168,85,247,0.15)', borderRadius: '12px', padding: '16px', textAlign: 'center' }}>
+                        <div style={{ fontSize: '1.8rem', fontWeight: '800', color: '#a855f7' }}>
+                            {ranking.length > 0 ? Math.round(ranking.reduce((a, r) => a + r.presencas, 0) / ranking.length) : 0}
+                        </div>
+                        <div style={{ fontSize: '0.75rem', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Média P/Jogador</div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Ranking de frequência */}
+            <div style={{ background: 'rgba(15,23,42,0.6)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '16px', padding: '20px' }}>
+                <h4 style={{ color: '#f8fafc', fontWeight: '600', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Trophy size={18} color="#fbbf24" /> Ranking de Frequência
+                </h4>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    {ranking.map((jogador, index) => {
+                        const taxa = jogador.total > 0 ? Math.round((jogador.presencas / jogador.total) * 100) : 0;
+                        const corMedal = index === 0 ? '#fbbf24' : index === 1 ? '#94a3b8' : index === 2 ? '#b45309' : '#475569';
+                        const largura = maxPresencas > 0 ? (jogador.presencas / maxPresencas) * 100 : 0;
+                        return (
+                            <div key={jogador.id} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                <span style={{ width: '24px', textAlign: 'center', fontSize: '0.85rem', fontWeight: '700', color: corMedal, flexShrink: 0 }}>
+                                    {index + 1}
+                                </span>
+                                <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'rgba(255,255,255,0.05)', overflow: 'hidden', flexShrink: 0 }}>
+                                    {jogador.foto
+                                        ? <img src={jogador.foto} alt={jogador.nome} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                        : <Users size={16} style={{ margin: '10px', color: '#475569' }} />}
+                                </div>
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                                        <span style={{ color: '#f1f5f9', fontSize: '0.875rem', fontWeight: '500', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                            {jogador.nome}
+                                        </span>
+                                        <span style={{ color: '#94a3b8', fontSize: '0.75rem', flexShrink: 0, marginLeft: '8px' }}>
+                                            {jogador.presencas}P / {jogador.faltas}F
+                                            <span style={{ color: taxa >= 70 ? '#10b981' : taxa >= 40 ? '#f59e0b' : '#f43f5e', marginLeft: '6px', fontWeight: '600' }}>
+                                                {taxa}%
+                                            </span>
+                                        </span>
+                                    </div>
+                                    <div style={{ background: 'rgba(255,255,255,0.05)', borderRadius: '100px', height: '5px' }}>
+                                        <div style={{ width: `${largura}%`, height: '100%', background: taxa >= 70 ? 'linear-gradient(90deg,#10b981,#34d399)' : taxa >= 40 ? 'linear-gradient(90deg,#f59e0b,#fbbf24)' : 'linear-gradient(90deg,#f43f5e,#fb7185)', borderRadius: '100px', transition: 'width 0.5s ease' }} />
+                                    </div>
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+            </div>
+
+            {/* Últimas partidas */}
+            <div style={{ background: 'rgba(15,23,42,0.6)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '16px', padding: '20px' }}>
+                <h4 style={{ color: '#f8fafc', fontWeight: '600', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Calendar size={18} color="#38bdf8" /> Últimas Partidas
+                </h4>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {partidas.slice(0, 10).map(partida => {
+                        const confirmados = (partida.partidas_presencas || []).filter(p => p.frequencia === 'P').length;
+                        const faltaram = (partida.partidas_presencas || []).filter(p => p.frequencia === 'F').length;
+                        const total = (partida.partidas_presencas || []).length;
+                        return (
+                            <div key={partida.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 12px', background: 'rgba(255,255,255,0.02)', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.04)' }}>
+                                <div style={{ background: 'rgba(56,189,248,0.1)', padding: '8px 12px', borderRadius: '8px', textAlign: 'center', flexShrink: 0 }}>
+                                    <div style={{ color: '#38bdf8', fontSize: '0.75rem', fontWeight: '700' }}>{formatarData(partida.data)}</div>
+                                </div>
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                    <div style={{ color: '#f1f5f9', fontSize: '0.875rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                        {partida.local_nome || 'Local não informado'}
+                                    </div>
+                                    <div style={{ color: '#64748b', fontSize: '0.75rem' }}>{total} inscrito(s)</div>
+                                </div>
+                                <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
+                                    <span style={{ background: 'rgba(16,185,129,0.1)', color: '#10b981', padding: '3px 10px', borderRadius: '8px', fontSize: '0.8rem', fontWeight: '600' }}>✓ {confirmados}</span>
+                                    {faltaram > 0 && <span style={{ background: 'rgba(244,63,94,0.1)', color: '#f43f5e', padding: '3px 10px', borderRadius: '8px', fontSize: '0.8rem', fontWeight: '600' }}>✗ {faltaram}</span>}
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+            </div>
+        </div>
+    );
+};
 
 const FinanceiroDashboard = () => {
     const { buscarHistoricoCiclos, formatarPeriodoParaExibicao } = usarFinanceiro();
@@ -54,12 +246,16 @@ const FinanceiroDashboard = () => {
         );
     }
 
+    // Módulo financeiro habilitado, mas sem ciclos → mostra aviso + histórico de presenças
     if (historico.length === 0) {
         return (
-            <div style={{ padding: '60px', textAlign: 'center', color: '#64748b' }}>
-                <BarChart2 size={40} style={{ margin: '0 auto 12px auto', opacity: 0.4 }} />
-                <p>Nenhum ciclo registrado ainda.</p>
-                <p style={{ fontSize: '0.85rem', marginTop: '8px' }}>Inicie um ciclo na aba de gestão para visualizar o histórico aqui.</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                <div style={{ background: 'rgba(56,189,248,0.05)', border: '1px solid rgba(56,189,248,0.15)', borderRadius: '16px', padding: '28px', textAlign: 'center' }}>
+                    <BarChart2 size={36} color="#38bdf8" style={{ margin: '0 auto 12px auto', opacity: 0.6 }} />
+                    <p style={{ color: '#f1f5f9', fontWeight: '600', marginBottom: '6px' }}>Módulo Financeiro Ativo</p>
+                    <p style={{ color: '#64748b', fontSize: '0.875rem' }}>Nenhum ciclo de mensalidades iniciado ainda. Vá para a aba <strong style={{ color: '#38bdf8' }}>Mensalistas</strong> para começar.</p>
+                </div>
+                <HistoricoPresencas equipeId={equipeAtiva?.id} />
             </div>
         );
     }
@@ -251,6 +447,11 @@ const FinanceiroDashboard = () => {
                     margin: 0;
                 }
             `}</style>
+
+            {/* ── HISTÓRICO DE PRESENÇAS (sempre exibido junto ao financeiro) ── */}
+            <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '0' }}>
+                <HistoricoPresencas equipeId={equipeAtiva?.id} />
+            </div>
         </div>
     );
 };

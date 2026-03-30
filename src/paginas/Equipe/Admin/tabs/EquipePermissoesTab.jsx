@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { usarEquipe } from '../../../../contextos/EquipeContexto';
-import { Crown, Users, Calendar, DollarSign, Settings, FileText, Loader2, CheckCircle2, XCircle, Save, ChevronDown } from 'lucide-react';
+import { Crown, Users, Calendar, DollarSign, Settings, FileText, Loader2, CheckCircle2, XCircle, Save, ChevronDown, ShieldAlert } from 'lucide-react';
 
 const PERMISSOES_DISPONIVEIS = [
     {
@@ -23,6 +23,13 @@ const PERMISSOES_DISPONIVEIS = [
         descricao: 'Visualizar e operar ciclos de mensalidades e pagamentos',
         icone: DollarSign,
         cor: '#10b981'
+    },
+    {
+        id: 'gerenciar_punicoes',
+        label: 'Sistema de Fair Play',
+        descricao: 'Aplicar cartões, justificar faltas e anistiar suspensões no VAR',
+        icone: ShieldAlert,
+        cor: '#ef4444'
     },
     {
         id: 'gerenciar_equipe',

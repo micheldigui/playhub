@@ -257,6 +257,7 @@ const PaginaEquipe = ({ abaAtiva, setAbaAtiva, aoVoltar }) => {
                                                     </div>
                                                 )}
                                                 {membro.papel === 'admin' && <div className="tag-lider" title="Capitão"><Crown size={12} /></div>}
+                                                {membro.papel === 'sub_admin' && <div className="tag-lider" title="Vice-Capitão" style={{ background: '#94a3b8' }}><Shield size={12} /></div>}
                                             </div>
                                             <div className="atleta-info-box">
                                                 <h4>{u.apelido || u.nome_completo.split(' ')[0]}</h4>

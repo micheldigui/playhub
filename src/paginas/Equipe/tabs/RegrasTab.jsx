@@ -60,7 +60,12 @@ const RegrasTab = ({ abrirEdicao, aoExcluir }) => {
             // 1. Salva no financeiro_config
             const resFin = await salvarConfiguracao({
                 equipe_id: equipeAtiva.id,
-                ...configLocal
+                valor_mensalidade: configLocal.valor_mensalidade,
+                dia_vencimento: configLocal.dia_vencimento,
+                dia_tolerancia: configLocal.dia_tolerancia,
+                custo_quadra: configLocal.custo_quadra,
+                limite_vencimento_horas: configLocal.limite_vencimento_horas,
+                chave_pix: configLocal.chave_pix
             });
             if (!resFin.success) throw new Error(resFin.error);
 
