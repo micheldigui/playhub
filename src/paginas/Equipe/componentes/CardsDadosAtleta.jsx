@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Trophy, Wallet, ShieldAlert, Activity, 
-  Copy, CheckCircle2, Info, Landmark, HelpCircle, Star
+  Copy, CheckCircle2, Info, Landmark, HelpCircle, Star, AlertTriangle, Clock as ClockIcon
 } from 'lucide-react';
 import { usarEquipe } from '../../../contextos/EquipeContexto';
 import { usarAutenticacao } from '../../../contextos/AutenticacaoContexto';
@@ -12,7 +12,7 @@ import InfoTooltip from '../../../componentes/Tooltip/InfoTooltip';
 const CardsDadosAtleta = ({ equipeIdOpcional, esconderIcones = false }) => {
     const { equipeAtiva: equipeContexto, equipes, getLabelVinculo } = usarEquipe();
     const { usuario } = usarAutenticacao();
-    const { obterCicloAtual } = usarFinanceiro();
+    const { verificarSituacaoFinanceiraAtleta } = usarFinanceiro();
 
     // Determina qual equipe usar: a passada por prop ou a ativa do contexto
     const equipeAlvo = equipeIdOpcional 
@@ -20,7 +20,7 @@ const CardsDadosAtleta = ({ equipeIdOpcional, esconderIcones = false }) => {
         : equipeContexto;
 
     const [dadosAtleta, setDadosAtleta] = useState({
-        pagoMes: 'carregando',
+        financeiro: { status: 'carregando', ciclo: '' },
         cartoes: 0,
         assiduidade: 0,
         copiado: false
@@ -32,12 +32,12 @@ const CardsDadosAtleta = ({ equipeIdOpcional, esconderIcones = false }) => {
 
             // Escuta mudanças em tempo real na mensalidade deste atleta/equipe
             const canal = supabase
-                .channel(`fins-atleta-${equipeAlvo.id}-${usuario.id}`)
+                .channel(`fins-atleta-v3-${equipeAlvo.id}-${usuario.id}`)
                 .on('postgres_changes', {
                     event: '*',
                     schema: 'public',
                     table: 'mensalidades',
-                    filter: `equipe_id=eq.${equipeAlvo.id}`
+                    filter: `usuario_id=eq.${usuario.id}`
                 }, () => {
                     carregarEstatisticasPessoais();
                 })
@@ -51,16 +51,8 @@ const CardsDadosAtleta = ({ equipeIdOpcional, esconderIcones = false }) => {
 
     const carregarEstatisticasPessoais = async () => {
         try {
-            const ciclo = obterCicloAtual();
-            
-            // 1. Verificar Pagamento
-            const { data: mens } = await supabase
-                .from('mensalidades')
-                .select('status')
-                .eq('equipe_id', equipeAlvo.id)
-                .eq('usuario_id', usuario.id)
-                .eq('periodo', ciclo)
-                .maybeSingle();
+            // 1. Verificar Situação Financeira REAL
+            const situacao = await verificarSituacaoFinanceiraAtleta(equipeAlvo.id, usuario.id);
 
             // 2. Contar Cartões por Cor
             const { data: todosCartoes } = await supabase
@@ -87,7 +79,7 @@ const CardsDadosAtleta = ({ equipeIdOpcional, esconderIcones = false }) => {
             const percAssiduidade = totalJogos > 0 ? Math.round((presentes / totalJogos) * 100) : 0;
 
             setDadosAtleta({
-                pagoMes: mens?.status || 'pendente',
+                financeiro: situacao,
                 cartoes: { 
                     total: (todosCartoes?.length || 0),
                     amarelo: countAmarelo,
@@ -99,6 +91,8 @@ const CardsDadosAtleta = ({ equipeIdOpcional, esconderIcones = false }) => {
             });
         } catch (error) {
             console.error('Erro ao carregar dados do atleta:', error);
+            // Em caso de erro, removemos o estado carregando para não travar a UI
+            setDadosAtleta(prev => ({ ...prev, financeiro: { status: 'ocultar', ciclo: '' } }));
         }
     };
 
@@ -110,10 +104,12 @@ const CardsDadosAtleta = ({ equipeIdOpcional, esconderIcones = false }) => {
     };
 
     const regras = equipeAlvo?.regras || {};
+    const vinculoAtleta = equipeAlvo.vinculo || 'mensalista';
+    const fin = dadosAtleta.financeiro;
 
     return (
         <div className="grade-cards-atleta" style={{
-            display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+            display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
             gap: '16px', marginBottom: '32px'
         }}>
             {/* CARD: PERFIL */}
@@ -124,7 +120,7 @@ const CardsDadosAtleta = ({ equipeIdOpcional, esconderIcones = false }) => {
                         color: '#38bdf8',
                         border: '1px solid rgba(14, 165, 233, 0.4)'
                     }}>
-                        <Trophy size={22} strokeWidth={2.5} />
+                        <Trophy size={20} strokeWidth={2.5} />
                     </div>
                 )}
                 <div className="card-atleta-info">
@@ -133,32 +129,58 @@ const CardsDadosAtleta = ({ equipeIdOpcional, esconderIcones = false }) => {
                         <InfoTooltip texto="Seu vínculo com esta equipe. Mensalistas pagam mensalidade fixa, Avulsos pagam por cada jogo que participam." />
                     </span>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <strong className="card-atleta-valor">{getLabelVinculo(equipeAlvo.vinculo || 'mensalista')}</strong>
-                        {equipeAlvo.vinculo === 'mensalista' ? (
-                            <Star size={16} fill="#fbbf24" color="#fbbf24" />
+                        <strong className="card-atleta-valor" style={{ fontSize: '1rem' }}>{getLabelVinculo(vinculoAtleta)}</strong>
+                        {vinculoAtleta === 'mensalista' ? (
+                            <Star size={14} fill="#fbbf24" color="#fbbf24" />
                         ) : (
-                            <Star size={16} fill="#94a3b8" color="#94a3b8" />
+                            <Star size={14} fill="#94a3b8" color="#94a3b8" />
                         )}
                     </div>
                 </div>
             </div>
 
-            {/* CARD: MENSALIDADE (Apenas para Mensalistas) */}
-            {equipeAlvo.gestao_financeira && equipeAlvo.vinculo === 'mensalista' && (
-                <div className="card-atleta-status" style={{ borderLeft: `4px solid ${dadosAtleta.pagoMes === 'pago' ? '#10b981' : '#f59e0b'}` }}>
+            {/* CARD: MENSALIDADE */}
+            {equipeAlvo.gestao_financeira && vinculoAtleta === 'mensalista' && fin.status !== 'ocultar' && (
+                <div 
+                    className="card-atleta-status" 
+                    style={{ 
+                        borderLeft: `4px solid ${
+                            fin.status === 'vencido' ? '#ef4444' : 
+                            fin.status === 'pendente' ? '#f59e0b' : 
+                            fin.status === 'pago' ? '#10b981' : '#64748b'
+                        }` 
+                    }}
+                >
                     {!esconderIcones && (
                         <div className="card-atleta-icone" style={{ 
-                            background: dadosAtleta.pagoMes === 'pago' ? 'rgba(16, 185, 129, 0.25)' : 'rgba(245, 158, 11, 0.25)', 
-                            color: dadosAtleta.pagoMes === 'pago' ? '#10b981' : '#f59e0b',
-                            border: `1px solid ${dadosAtleta.pagoMes === 'pago' ? 'rgba(16, 185, 129, 0.4)' : 'rgba(245, 158, 11, 0.4)'}`
+                            background: fin.status === 'vencido' ? 'rgba(239, 68, 68, 0.15)' : 
+                                       fin.status === 'pendente' ? 'rgba(245, 158, 11, 0.15)' : 
+                                       fin.status === 'pago' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(100, 116, 139, 0.15)', 
+                            color: fin.status === 'vencido' ? '#ef4444' : 
+                                   fin.status === 'pendente' ? '#f59e0b' : 
+                                   fin.status === 'pago' ? '#10b981' : '#64748b',
+                            border: `1px solid ${
+                                fin.status === 'vencido' ? 'rgba(239, 68, 68, 0.3)' : 
+                                fin.status === 'pendente' ? 'rgba(245, 158, 11, 0.3)' : 
+                                fin.status === 'pago' ? 'rgba(16, 185, 129, 0.3)' : 'rgba(100, 116, 139, 0.3)'
+                            }`
                         }}>
-                            <Wallet size={22} strokeWidth={2.5} />
+                            {fin.status === 'vencido' ? <AlertTriangle size={20} /> : 
+                             fin.status === 'pendente' ? <ClockIcon size={20} /> : 
+                             <Wallet size={20} strokeWidth={2.5} />}
                         </div>
                     )}
                     <div className="card-atleta-info">
-                        <span className="card-atleta-label">Financeiro</span>
-                        <strong className="card-atleta-valor" style={{ color: dadosAtleta.pagoMes === 'pago' ? '#10b981' : '#f59e0b' }}>
-                            {dadosAtleta.pagoMes === 'pago' ? 'Paga' : 'Pendente'}
+                        <span className="card-atleta-label">Financeiro mensal</span>
+                        <strong className="card-atleta-valor" style={{ 
+                            fontSize: '0.95rem',
+                            color: fin.status === 'vencido' ? '#ef4444' : 
+                                   fin.status === 'pendente' ? '#f59e0b' : 
+                                   fin.status === 'pago' ? '#10b981' : '#94a3b8' 
+                        }}>
+                            {fin.status === 'vencido' ? `Vencido (${fin.ciclo})` : 
+                             fin.status === 'pendente' ? `Pendente (${fin.ciclo})` : 
+                             fin.status === 'pago' ? `Status OK (${fin.ciclo})` : 'Carregando...'}
                         </strong>
                     </div>
                 </div>
@@ -172,20 +194,20 @@ const CardsDadosAtleta = ({ equipeIdOpcional, esconderIcones = false }) => {
                         color: '#f43f5e',
                         border: '1px solid rgba(244, 63, 94, 0.4)'
                     }}>
-                        <ShieldAlert size={22} strokeWidth={2.5} />
+                        <ShieldAlert size={20} strokeWidth={2.5} />
                     </div>
                 )}
                 <div className="card-atleta-info">
                     <span className="card-atleta-label">
                         Fair Play
-                        <InfoTooltip texto="Regra da Equipe: 3 Cartões Amarelos ou 1 Vermelho = Suspensão Automática do próximo jogo da equipe." />
+                        <InfoTooltip texto="Regra da Equipe: 3 Cartões Amarelos ou 1 Vermelho = Suspensão Automática do próximo jogo." />
                     </span>
                     <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
-                        <strong className="card-atleta-valor">{dadosAtleta.cartoes.total}</strong>
-                        <div style={{ display: 'flex', gap: '6px', fontSize: '0.75rem' }}>
-                            {dadosAtleta.cartoes.amarelo > 0 && <span title="Amarelos">🟨 {dadosAtleta.cartoes.amarelo}</span>}
-                            {dadosAtleta.cartoes.vermelho > 0 && <span title="Vermelhos">🟥 {dadosAtleta.cartoes.vermelho}</span>}
-                            {dadosAtleta.cartoes.justificado > 0 && <span title="Justificados">🟦 {dadosAtleta.cartoes.justificado}</span>}
+                        <strong className="card-atleta-valor" style={{ fontSize: '1rem' }}>{dadosAtleta.cartoes.total}</strong>
+                        <div style={{ display: 'flex', gap: '6px', fontSize: '0.7rem' }}>
+                            {dadosAtleta.cartoes.amarelo > 0 && <span title="Amarelos">🟨{dadosAtleta.cartoes.amarelo}</span>}
+                            {dadosAtleta.cartoes.vermelho > 0 && <span title="Vermelhos">🟥{dadosAtleta.cartoes.vermelho}</span>}
+                            {dadosAtleta.cartoes.justificado > 0 && <span title="Justificados">🟦{dadosAtleta.cartoes.justificado}</span>}
                         </div>
                     </div>
                 </div>
@@ -199,34 +221,34 @@ const CardsDadosAtleta = ({ equipeIdOpcional, esconderIcones = false }) => {
                         color: '#a78bfa',
                         border: '1px solid rgba(139, 92, 246, 0.4)'
                     }}>
-                        <Activity size={22} strokeWidth={2.5} />
+                        <Activity size={20} strokeWidth={2.5} />
                     </div>
                 )}
                 <div className="card-atleta-info">
                     <span className="card-atleta-label">
                         Assiduidade
-                        <InfoTooltip texto="Seu índice de presença nos últimos 10 jogos em que você esteve na lista (confirmado ou espera)." />
+                        <InfoTooltip texto="Seu índice de presença nos últimos 10 jogos em que você esteve na lista." />
                     </span>
-                    <strong className="card-atleta-valor">{dadosAtleta.assiduidade}%</strong>
+                    <strong className="card-atleta-valor" style={{ fontSize: '1rem' }}>{dadosAtleta.assiduidade}%</strong>
                 </div>
             </div>
 
             {/* CARD: CHAVE PIX */}
             {regras.chave_pix && (
-                <div className="card-atleta-status card-pix-interativo" style={{ borderLeft: '4px solid #38bdf8' }} onClick={copiarPix}>
+                <div className="card-atleta-status card-pix-interativo" style={{ borderLeft: '4px solid #10b981' }} onClick={copiarPix}>
                     {!esconderIcones && (
                         <div className="card-atleta-icone" style={{ 
-                            background: 'rgba(14, 165, 233, 0.25)', 
-                            color: '#38bdf8',
-                            border: '1px solid rgba(14, 165, 233, 0.4)'
+                            background: 'rgba(16, 185, 129, 0.2)', 
+                            color: '#10b981',
+                            border: '1px solid rgba(16, 185, 129, 0.3)'
                         }}>
-                            <Landmark size={22} strokeWidth={2.5} />
+                            <Landmark size={20} strokeWidth={2.5} />
                         </div>
                     )}
                     <div className="card-atleta-info" style={{ flex: 1 }}>
-                        <span className="card-atleta-label">Chave PIX p/ Pagamento</span>
+                        <span className="card-atleta-label">Pagar Mensalidade</span>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <strong className="card-atleta-valor" style={{ fontSize: '0.9rem', maxWidth: '140px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            <strong className="card-atleta-valor" style={{ fontSize: '0.85rem', maxWidth: '160px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                 {regras.chave_pix}
                             </strong>
                             {dadosAtleta.copiado ? <CheckCircle2 size={14} color="#10b981" /> : <Copy size={14} color="#94a3b8" />}
@@ -240,10 +262,10 @@ const CardsDadosAtleta = ({ equipeIdOpcional, esconderIcones = false }) => {
                     background: rgba(15, 23, 42, 0.6);
                     border: 1px solid rgba(255, 255, 255, 0.08);
                     border-radius: 16px;
-                    padding: 16px 20px;
+                    padding: 12px 16px;
                     display: flex;
                     align-items: center;
-                    gap: 16px;
+                    gap: 12px;
                     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
                     position: relative;
                 }
@@ -252,25 +274,21 @@ const CardsDadosAtleta = ({ equipeIdOpcional, esconderIcones = false }) => {
                     border-color: rgba(255, 255, 255, 0.15);
                     transform: translateY(-2px);
                 }
-                .card-pix-interativo { cursor: pointer; border: 1px dashed rgba(56, 189, 248, 0.3); }
-                .card-pix-interativo:hover { background: rgba(56, 189, 248, 0.1); }
+                .card-pix-interativo { cursor: pointer; }
+                .card-pix-interativo:hover { background: rgba(16, 185, 129, 0.1); }
                 
                 .card-atleta-icone {
-                    width: 44px; height: 44px;
-                    border-radius: 12px;
+                    width: 40px; height: 40px;
+                    border-radius: 10px;
                     display: flex; 
                     align-items: center; 
                     justify-content: center;
                     flex-shrink: 0;
                     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
-                    transition: transform 0.3s;
                 }
-                .card-atleta-status:hover .card-atleta-icone {
-                    transform: scale(1.1);
-                }
-                .card-atleta-info { display: flex; flex-direction: column; gap: 2px; }
-                .card-atleta-label { font-size: 0.65rem; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px; }
-                .card-atleta-valor { font-size: 1.1rem; color: #f8fafc; font-weight: 800; }
+                .card-atleta-info { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+                .card-atleta-label { font-size: 0.6rem; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
+                .card-atleta-valor { color: #f8fafc; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
             `}</style>
         </div>
     );

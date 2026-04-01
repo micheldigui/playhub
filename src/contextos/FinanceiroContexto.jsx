@@ -332,6 +332,84 @@ export const FinanceiroProvider = ({ children }) => {
         }
     };
 
+    const verificarSituacaoFinanceiraAtleta = async (equipeId, usuarioId) => {
+        try {
+            // 1. Buscar a configuração de vencimento
+            const { data: config } = await supabase
+                .from('financeiro_config')
+                .select('dia_vencimento')
+                .eq('equipe_id', equipeId)
+                .maybeSingle();
+
+            if (!config || !config.dia_vencimento) {
+                return { status: 'ocultar' };
+            }
+
+            // 2. Buscar todas as mensalidades do usuário
+            const { data: mensalidades, error: errMens } = await supabase
+                .from('mensalidades')
+                .select('*')
+                .eq('equipe_id', equipeId)
+                .eq('usuario_id', usuarioId)
+                .order('periodo', { ascending: false });
+
+            if (errMens) throw errMens;
+            if (!mensalidades || mensalidades.length === 0) return { status: 'ocultar' };
+
+            // 3. Buscar os ciclos para pegar snapshots de vencimento
+            const periodos = mensalidades.map(m => m.periodo);
+            const { data: ciclos, error: errCiclos } = await supabase
+                .from('ciclos_financeiros')
+                .select('periodo, dia_vencimento_snapshot')
+                .eq('equipe_id', equipeId)
+                .in('periodo', periodos);
+
+            if (errCiclos) throw errCiclos;
+
+            const mapaCiclos = (ciclos || []).reduce((acc, c) => {
+                acc[c.periodo] = c;
+                return acc;
+            }, {});
+
+            const hoje = new Date();
+            let statusFinal = 'pago';
+            let cicloReferencia = mensalidades[0].periodo;
+            let bloqueio = false;
+
+            // Percorremos para achar o status mais crítico (Vencido > Pendente > Pago)
+            for (const m of mensalidades) {
+                if (m.status === 'pago') continue;
+
+                const [ano, mes] = m.periodo.split('-').map(Number);
+                const cicData = mapaCiclos[m.periodo];
+                const diaVenc = cicData?.dia_vencimento_snapshot || config.dia_vencimento;
+                const dataVencimento = new Date(ano, mes - 1, diaVenc, 23, 59, 59);
+
+                if (hoje > dataVencimento) {
+                    statusFinal = 'vencido';
+                    cicloReferencia = m.periodo;
+                    bloqueio = true;
+                    break; 
+                } else {
+                    if (statusFinal !== 'vencido') {
+                        statusFinal = 'pendente';
+                        cicloReferencia = m.periodo;
+                    }
+                }
+            }
+
+            return { 
+                status: statusFinal, 
+                ciclo: formatarPeriodoParaExibicao(cicloReferencia),
+                bloqueio 
+            };
+        } catch (error) {
+            console.error('Erro ao verificar situação financeira:', error);
+            // Em caso de erro técnico, ocultamos o card para evitar falsos alertas
+            return { status: 'ocultar' };
+        }
+    };
+
     return (
         <FinanceiroContexto.Provider value={{
             configuracao,
@@ -350,7 +428,8 @@ export const FinanceiroProvider = ({ children }) => {
             registrarPagamentoAvulso,
             removerPagamentoAvulso,
             obterCicloAtual,
-            formatarPeriodoParaExibicao
+            formatarPeriodoParaExibicao,
+            verificarSituacaoFinanceiraAtleta
         }}>
             {children}
         </FinanceiroContexto.Provider>

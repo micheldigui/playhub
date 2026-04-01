@@ -3,6 +3,9 @@ import { supabase } from '../servicos/supabase';
 
 const AutenticacaoContexto = createContext({});
 
+// E-mail do proprietário root do sistema
+const EMAIL_ROOT = 'michelssouza@gmail.com';
+
 export const usarAutenticacao = () => {
     const contexto = useContext(AutenticacaoContexto);
     if (!contexto) {
@@ -96,11 +99,27 @@ export const AutenticacaoProvedor = ({ children }) => {
         if (error) console.error('Erro ao encerrar sessão:', error.message);
     };
 
+    // Abreviação para verificar se é o dono root
+    const ehRootAdmin = dadosUsuario?.email === EMAIL_ROOT;
+
+    // Função para verificar permissões granulares
+    const temPermissao = (chave) => {
+        // Root sempre tem permissão
+        if (ehRootAdmin) return true;
+        // Super Admin (Co-Admin) precisa ter a flag no JSON admin_permissoes
+        if (dadosUsuario?.eh_super_admin && dadosUsuario?.admin_permissoes?.[chave] === true) {
+            return true;
+        }
+        return false;
+    };
+
     const valor = {
         usuario,
         dadosUsuario,
         carregando,
-        ehSuperAdmin: dadosUsuario?.eh_super_admin === true,
+        ehRootAdmin,
+        ehSuperAdmin: ehRootAdmin || (dadosUsuario?.eh_super_admin === true),
+        temPermissao,
         estaLogado: !!usuario,
         logout,
         recarregarUsuario: () => usuario && carregarDadosUsuario(usuario.id),

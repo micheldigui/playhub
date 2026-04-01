@@ -529,6 +529,18 @@
   animation: fadeIn 0.3s ease;
 }
 
+@media (max-width: 768px) {
+  .modal-overlay {
+    align-items: flex-start;
+    padding-top: 60px;
+    overflow-y: auto;
+  }
+  
+  .modal-content {
+    margin-bottom: 60px; /* Garante que o usuário consiga subir o modal se ele for longo */
+  }
+}
+
 .modal-content {
   background: var(--fundo-cartao);
   border: 1px solid rgba(255, 255, 255, 0.1);

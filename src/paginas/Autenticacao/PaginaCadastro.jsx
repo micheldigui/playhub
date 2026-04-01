@@ -3,7 +3,7 @@ import './PaginaAutenticacao.css';
 import { supabase } from '../../servicos/supabase';
 import {
   Mail, Lock, User, Eye, EyeOff,
-  MapPin, Search, Phone, AlertCircle, Calendar
+  MapPin, Search, Phone, AlertCircle, Calendar, HelpCircle
 } from 'lucide-react';
 import Botao from '../../componentes/Botao/Botao';
 import Tooltip from '../../componentes/Tooltip/Tooltip';
@@ -42,6 +42,7 @@ const PaginaCadastro = ({ aoIrParaLogin }) => {
     cep: '', rua: '', numero: '', complemento: '', bairro: '', cidade: '', estado: '',
     senha: '', confirmarSenha: '',
     perfil_publico: true,
+    compartilhar_whatsapp_match: false,
   });
 
   const set = (campo) => (e) => setForm(prev => ({ ...prev, [campo]: e.target.value }));
@@ -257,7 +258,7 @@ const PaginaCadastro = ({ aoIrParaLogin }) => {
         <div className="auth-grupo">
           <label style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             Visibilidade do Perfil
-            <Tooltip texto="Perfil público permite que capitães de outras equipes te encontrem. Perfil privado oculta você das buscas." />
+            <Tooltip texto="Permite que capitães de outras equipes te encontrem na busca de atletas." />
           </label>
           <div className="auth-perfil-toggle-container" style={{ marginTop: '8px' }}>
             <label className="auth-toggle" style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
@@ -268,8 +269,31 @@ const PaginaCadastro = ({ aoIrParaLogin }) => {
                 tabIndex="8"
                 style={{ width: 'auto', margin: 0 }}
               />
-              <span style={{ fontSize: '0.9rem', color: 'var(--texto-cor)' }}>
-                {form.perfil_publico ? 'Perfil Público (Recomendado)' : 'Perfil Privado'}
+              <span style={{ fontSize: '0.9rem', color: 'var(--texto-cor)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                {form.perfil_publico ? <Eye size={16} color="#0ea5e9" /> : <EyeOff size={16} color="#64748b" />}
+                {form.perfil_publico ? 'Perfil Público (Padrão)' : 'Perfil Privado'}
+              </span>
+            </label>
+          </div>
+        </div>
+
+        <div className="auth-grupo">
+          <label style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            Privacidade do WhatsApp
+            <Tooltip texto="Seu número só será exibido para jogadores que derem match com você e que sejam maiores de 18 anos." />
+          </label>
+          <div className="auth-perfil-toggle-container" style={{ marginTop: '8px' }}>
+            <label className="auth-toggle" style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
+              <input 
+                type="checkbox" 
+                checked={form.compartilhar_whatsapp_match} 
+                onChange={(e) => setForm(prev => ({ ...prev, compartilhar_whatsapp_match: e.target.checked }))}
+                tabIndex="8"
+                style={{ width: 'auto', margin: 0 }}
+              />
+              <span style={{ fontSize: '0.9rem', color: 'var(--texto-cor)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                {form.compartilhar_whatsapp_match ? <Phone size={16} color="#22c55e" /> : <Phone size={16} color="#64748b" />}
+                {form.compartilhar_whatsapp_match ? 'Compartilhar no Match' : 'Não compartilhar'}
               </span>
             </label>
           </div>

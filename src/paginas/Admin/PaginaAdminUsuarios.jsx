@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Users, Mail, Search, MapPin, Shield, Eye, EyeOff, UserCog, MailQuestion
+  Users, Mail, Search, MapPin, Shield, Eye, EyeOff, UserCog, MailQuestion, ShieldCheck
 } from 'lucide-react';
 import { usarAutenticacao } from '../../contextos/AutenticacaoContexto';
 import { supabase } from '../../servicos/supabase';
@@ -9,7 +9,7 @@ import ModalEdicaoUsuario from './modais/ModalEdicaoUsuario';
 import './PaginaAdminUsuarios.css';
 
 const PaginaAdminUsuarios = () => {
-  const { ehSuperAdmin } = usarAutenticacao();
+  const { ehSuperAdmin, ehRootAdmin, temPermissao } = usarAutenticacao();
   const [termoBusca, setTermoBusca] = useState('');
   const [usuarios, setUsuarios] = useState([]);
   const [buscando, setBuscando] = useState(false);
@@ -21,19 +21,22 @@ const PaginaAdminUsuarios = () => {
 
   const ITENS_POR_PAGINA = 20;
 
+  // Verifica permissão específica para esta página
+  const podeAcessar = ehRootAdmin || temPermissao('usuarios');
+
   // Busca inicial e dinâmica com debounce
   useEffect(() => {
-    if (!ehSuperAdmin) return;
+    if (!podeAcessar) return;
     
     const timer = setTimeout(() => {
       handleBuscarUsuarios(true);
     }, 500);
     
     return () => clearTimeout(timer);
-  }, [termoBusca, letraFiltro, ehSuperAdmin]);
+  }, [termoBusca, letraFiltro, podeAcessar]);
 
   const handleBuscarUsuarios = async (novaBusca = false) => {
-    if (!ehSuperAdmin) return;
+    if (!podeAcessar) return;
     setBuscando(true);
     
     const novaPagina = novaBusca ? 0 : pagina + 1;
@@ -78,12 +81,13 @@ const PaginaAdminUsuarios = () => {
     setModalAberto(true);
   };
 
-  if (!ehSuperAdmin) {
+  if (!podeAcessar) {
     return (
       <div className="pagina-servico-vazia">
         <Shield size={48} color="#f43f5e" />
         <h2>Acesso Restrito</h2>
-        <p>Esta página é exclusiva para administradores do sistema.</p>
+        <p>Você não tem permissão para gerenciar usuários do sistema.</p>
+        <p style={{ fontSize: '0.85rem', color: '#64748b', marginTop: '0.5rem' }}>Solicite acesso ao Super Admin Root.</p>
       </div>
     );
   }
@@ -140,46 +144,58 @@ const PaginaAdminUsuarios = () => {
         {usuarios.length > 0 ? (
           <>
             <div className="grade-admin-usuarios">
-              {usuarios.map((u) => (
-                <div key={u.id} className="card-usuario-admin">
-                  <div className="card-usuario-topo">
-                    <div className="usuario-avatar-admin">
-                      {u.foto_url ? (
-                        <img src={u.foto_url} alt={u.nome_completo} />
-                      ) : (
-                        <div className="avatar-admin-placeholder">
-                          {u.nome_completo?.charAt(0).toUpperCase()}
+              {usuarios.map((u) => {
+                  const ehO_Root = u.email === 'michelssouza@gmail.com';
+                  return (
+                    <div key={u.id} className="card-usuario-admin">
+                    <div className="card-usuario-topo">
+                        <div className="usuario-avatar-admin" style={{ borderColor: ehO_Root ? '#fbbf24' : 'rgba(255,255,255,0.1)' }}>
+                        {u.foto_url ? (
+                            <img src={u.foto_url} alt={u.nome_completo} />
+                        ) : (
+                            <div className="avatar-admin-placeholder">
+                            {u.nome_completo?.charAt(0).toUpperCase()}
+                            </div>
+                        )}
                         </div>
-                      )}
+                        <div className="usuario-info-admin">
+                        <h4 style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            {u.nome_completo} 
+                            {ehO_Root && <ShieldCheck size={14} color="#fbbf24" title="Super Admin Root" />}
+                            {!ehO_Root && u.eh_super_admin && <Shield size={14} color="#94a3b8" title="Administrador" />}
+                        </h4>
+                        <span className="usuario-email-admin"><Mail size={12} /> {u.email}</span>
+                        </div>
                     </div>
-                    <div className="usuario-info-admin">
-                      <h4>{u.nome_completo} {u.eh_super_admin && <Shield size={14} color="#fbbf24" style={{ display: 'inline', marginLeft: '4px' }} title="Super Admin" />}</h4>
-                      <span className="usuario-email-admin"><Mail size={12} /> {u.email}</span>
-                    </div>
-                  </div>
 
-                  <div className="usuario-corpo-admin">
-                    <div className="usuario-meta-admin">
-                      {u.apelido && <p><strong>Apelido:</strong> @{u.apelido}</p>}
-                      <p><strong>Local:</strong> {u.cidade || 'Não inf.'}, {u.estado || '??'}</p>
-                      <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
-                        <span className={`tag-visibilidade ${u.perfil_publico ? 'publica' : 'privada'}`}>
-                          {u.perfil_publico ? <Eye size={12} /> : <EyeOff size={12} />}
-                          {u.perfil_publico ? 'Público' : 'Privado'}
-                        </span>
-                      </div>
+                    <div className="usuario-corpo-admin">
+                        <div className="usuario-meta-admin">
+                        {u.apelido && <p><strong>Apelido:</strong> @{u.apelido}</p>}
+                        <p><strong>Local:</strong> {u.cidade || 'Não inf.'}, {u.estado || '??'}</p>
+                        <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+                            <span className={`tag-visibilidade ${u.perfil_publico ? 'publica' : 'privada'}`}>
+                            {u.perfil_publico ? <Eye size={12} /> : <EyeOff size={12} />}
+                            {u.perfil_publico ? 'Público' : 'Privado'}
+                            </span>
+                            {u.eh_super_admin && (
+                                <span className="tag-visibilidade" style={{ background: ehO_Root ? 'rgba(251, 191, 36, 0.1)' : 'rgba(255,255,255,0.05)', color: ehO_Root ? '#fbbf24' : '#94a3b8' }}>
+                                    {ehO_Root ? 'ROOT' : 'ADMIN'}
+                                </span>
+                            )}
+                        </div>
+                        </div>
                     </div>
-                  </div>
 
-                  <Botao 
-                    onClick={() => abrirEdicao(u)} 
-                    variant="secundario"
-                    style={{ width: '100%', marginTop: '1rem', justifyContent: 'center', gap: '0.5rem', fontSize: '0.85rem' }}
-                  >
-                    <UserCog size={16} /> Gerenciar Usuário
-                  </Botao>
-                </div>
-              ))}
+                    <Botao 
+                        onClick={() => abrirEdicao(u)} 
+                        variant="secundario"
+                        style={{ width: '100%', marginTop: '1rem', justifyContent: 'center', gap: '0.5rem', fontSize: '0.85rem' }}
+                    >
+                        <UserCog size={16} /> Gerenciar Usuário
+                    </Botao>
+                    </div>
+                  );
+              })}
             </div>
 
             {temMais && (
@@ -209,7 +225,7 @@ const PaginaAdminUsuarios = () => {
           usuario={usuarioSelecionado} 
           aoFechar={() => {
             setModalAberto(false);
-            handleBuscarUsuarios();
+            handleBuscarUsuarios(true);
           }} 
         />
       )}

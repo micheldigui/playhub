@@ -494,11 +494,11 @@ export const EquipeProvedor = ({ children }) => {
             // Extraímos apenas os campos financeiros das regras
             const configFinanceira = {
                 equipe_id: equipeId,
-                valor_mensalidade: Number(novasRegras.mensalidade) || 50,
-                dia_vencimento: Number(novasRegras.vencimento_dia) || 10,
-                custo_quadra: Number(novasRegras.custo_quadra) || 0,
-                limite_vencimento_horas: Number(novasRegras.horas_limite_pagamento) || 24,
-                chave_pix: novasRegras.chave_pix || ''
+                valor_mensalidade: Number(novasRegras.mensalidade || 0),
+                dia_vencimento: Number(novasRegras.vencimento_dia || 10),
+                custo_quadra: Number(novasRegras.custo_quadra || 0),
+                limite_vencimento_horas: Number(novasRegras.horas_limite_pagamento || 24),
+                chave_pix: String(novasRegras.chave_pix || '')
             };
 
             const { error: errFinanceiro } = await supabase

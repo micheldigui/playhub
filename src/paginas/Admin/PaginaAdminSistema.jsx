@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Building2, Globe, Lock, Search, MapPin, Trophy, Shield, Users, User 
+  Building2, Globe, Lock, Search, MapPin, Trophy, Shield, Users, User, ShieldCheck
 } from 'lucide-react';
 import { usarEquipe } from '../../contextos/EquipeContexto';
 import { usarAutenticacao } from '../../contextos/AutenticacaoContexto';
@@ -9,7 +9,7 @@ import Botao from '../../componentes/Botao/Botao';
 import './PaginaAdminSistema.css';
 
 const PaginaAdminSistema = ({ aoSelecionarEquipe }) => {
-  const { usuario, ehSuperAdmin } = usarAutenticacao();
+  const { usuario, ehRootAdmin, temPermissao } = usarAutenticacao();
   const { buscarEquipes, selecionarEquipeGlobal, equipes } = usarEquipe();
 
   const [termoBusca, setTermoBusca] = useState('');
@@ -23,19 +23,22 @@ const PaginaAdminSistema = ({ aoSelecionarEquipe }) => {
 
   const ITENS_POR_PAGINA = 20;
 
+  // Verifica permissão específica para esta página
+  const podeAcessar = ehRootAdmin || temPermissao('equipes');
+
   // Busca inicial e dinâmica com debounce
   useEffect(() => {
-    if (!ehSuperAdmin) return;
+    if (!podeAcessar) return;
     
     const timer = setTimeout(() => {
       handleBuscarEquipes(true);
     }, 500);
     
     return () => clearTimeout(timer);
-  }, [termoBusca, cidadeBusca, modalidadeBusca, letraFiltro, ehSuperAdmin]);
+  }, [termoBusca, cidadeBusca, modalidadeBusca, letraFiltro, podeAcessar]);
 
   const handleBuscarEquipes = async (novaBusca = false) => {
-    if (!ehSuperAdmin) return;
+    if (!podeAcessar) return;
     setBuscando(true);
     
     const novaPagina = novaBusca ? 0 : pagina + 1;
@@ -103,12 +106,13 @@ const PaginaAdminSistema = ({ aoSelecionarEquipe }) => {
     if (aoSelecionarEquipe) aoSelecionarEquipe();
   };
 
-  if (!ehSuperAdmin) {
+  if (!podeAcessar) {
     return (
       <div className="pagina-servico-vazia">
         <Shield size={48} color="#f43f5e" />
         <h2>Acesso Restrito</h2>
-        <p>Esta página é exclusiva para administradores do sistema.</p>
+        <p>Você não tem permissão para gerenciar as equipes do sistema.</p>
+        <p style={{ fontSize: '0.85rem', color: '#64748b', marginTop: '0.5rem' }}>Entre em contato com o Super Admin Root para solicitar acesso.</p>
       </div>
     );
   }

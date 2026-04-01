@@ -28,9 +28,18 @@ const EquipeConfiguracoesTab = () => {
 
     const handleChange = (e) => {
         const { name, value, type, checked } = e.target;
+        
+        let valorTratado = value;
+        if (type === 'checkbox') {
+            valorTratado = checked;
+        } else if (type === 'number') {
+            // Se for número e estiver vazio, mandamos 0 ou null para evitar erro de sintaxe no DB
+            valorTratado = value === '' ? 0 : Number(value);
+        }
+        
         setRegras(prev => ({
             ...prev,
-            [name]: type === 'checkbox' ? checked : Number(value)
+            [name]: valorTratado
         }));
     };
 
@@ -229,7 +238,7 @@ const EquipeConfiguracoesTab = () => {
                         <input
                             type="number"
                             name="vencimento_dia"
-                            value={regras.vencimento_dia || ''}
+                            value={regras.vencimento_dia ?? ''}
                             onChange={handleChange}
                             min="1"
                             max="31"
@@ -242,7 +251,7 @@ const EquipeConfiguracoesTab = () => {
                         <input
                             type="number"
                             name="horas_limite_pagamento"
-                            value={regras.horas_limite_pagamento || ''}
+                            value={regras.horas_limite_pagamento ?? ''}
                             onChange={handleChange}
                             min="0"
                             style={{ width: '100%', padding: '12px', borderRadius: '8px', background: 'rgba(15,23,42,0.8)', border: '1px solid rgba(255,255,255,0.1)', color: '#f1f5f9', outline: 'none' }}

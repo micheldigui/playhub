@@ -3,6 +3,7 @@ import { X, Calendar, MapPin, Clock, Users, Star, DollarSign, MessageCircle } fr
 import { usarPartidas } from '../../../../contextos/PartidasContexto';
 import { usarEquipe } from '../../../../contextos/EquipeContexto';
 import { usarAutenticacao } from '../../../../contextos/AutenticacaoContexto';
+import { usarFinanceiro } from '../../../../contextos/FinanceiroContexto';
 import Botao from '../../../../componentes/Botao/Botao';
 import '../../../../componentes/Modal/Modal.css';
 
@@ -10,6 +11,7 @@ const ModalDetalhesPartida = ({ isOpen, onClose, partida }) => {
     const { usuario } = usarAutenticacao();
     const { buscarPresencas, confirmarPresenca, cancelarPresenca, lancarFrequencia, removerInscricaoAdmin, adicionarInscricaoAdmin, alternarPagamentoAvulso, buscarPagamentosAvulsosPartida, registrarPagamentoAvulso, removerPagamentoAvulso, buscarPunicoesPartida } = usarPartidas();
     const { equipeAtiva, carregarMembrosEquipe, temPermissaoEquipe, getLabelVinculo } = usarEquipe();
+    const { verificarSituacaoFinanceiraAtleta } = usarFinanceiro();
 
     const [presencas, setPresencas] = useState([]);
     const [membros, setMembros] = useState([]);
@@ -138,6 +140,14 @@ const ModalDetalhesPartida = ({ isOpen, onClose, partida }) => {
             if (window.confirm(mzg)) {
                 setProcessandoAcao(true);
                 // INJETANDO O OBJETO E NÃO APENAS O ID (Erro do Null resolvido)
+                // Novo: Bloqueio Financeiro para Mensalistas
+                const fin = await verificarSituacaoFinanceiraAtleta(partida.equipe_id, usuario?.id);
+                if (fin.bloqueio) {
+                    alert(`⚠️ INSCRIÇÃO BLOQUEADA\n\nVocê possui a mensalidade de ${fin.ciclo} em atraso.\n\nPor favor, procure o capitão ou vice-capitão da equipe para regularizar sua situação financeira.`);
+                    setProcessandoAcao(false);
+                    return;
+                }
+
                 const result = await confirmarPresenca(partida, novoStatus, vinculoAtual);
                 if (result.sucesso) {
                     await carregarDados();

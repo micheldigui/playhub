@@ -3,7 +3,7 @@ import { supabase } from '../../servicos/supabase';
 import { usarAutenticacao } from '../../contextos/AutenticacaoContexto';
 import Botao from '../../componentes/Botao/Botao';
 import Tooltip from '../../componentes/Tooltip/Tooltip';
-import { User, Calendar, Mail, Phone, MapPin, Search, AlertCircle, CheckCircle2, ArrowLeft, Camera, Trophy, Plus, Trash2, Eye, EyeOff } from 'lucide-react';
+import { User, Calendar, Mail, Phone, MapPin, Search, AlertCircle, CheckCircle2, ArrowLeft, Camera, Trophy, Plus, Trash2, Eye, EyeOff, HelpCircle } from 'lucide-react';
 import './PaginaPerfil.css';
 
 const GENEROS = ['Masculino', 'Feminino', 'Não-binário', 'Prefiro não informar'];
@@ -391,7 +391,7 @@ const PaginaPerfil = ({ aoVoltar }) => {
             </div>
           </div>
 
-          <div className="grupo-checkbox" style={{ marginTop: '0.5rem' }}>
+          <div className="grupo-checkbox">
             <label className="checkbox-label">
               <input 
                 type="checkbox" 
@@ -400,13 +400,13 @@ const PaginaPerfil = ({ aoVoltar }) => {
               />
               <span className="checkbox-texto">
                 {form.perfil_publico ? <Eye size={18} color="#0ea5e9"/> : <EyeOff size={18} color="#64748b"/>}
-                Perfil Público Módulo Seleção
+                Visibilidade no Matchmaking
               </span>
-              <Tooltip texto="Ativando esta opção, as equipes poderão encontrar seu perfil pela busca da plataforma (Diga sim ao Matchmaking!)." />
+              <Tooltip texto="Ativando esta opção, seu perfil aparecerá na busca de atletas e capitães de outras equipes poderão te encontrar." />
             </label>
           </div>
 
-          <div className="grupo-checkbox" style={{ marginTop: '0.5rem' }}>
+          <div className="grupo-checkbox">
             <label className="checkbox-label">
               <input 
                 type="checkbox" 
@@ -414,10 +414,10 @@ const PaginaPerfil = ({ aoVoltar }) => {
                 onChange={(e) => setForm(prev => ({ ...prev, compartilhar_whatsapp_match: e.target.checked }))} 
               />
               <span className="checkbox-texto">
-                {form.compartilhar_whatsapp_match ? <Phone size={18} color="#25D366"/> : <Phone size={18} color="#64748b"/>}
-                Compartilhar WhatsApp em caso de Match
+                {form.compartilhar_whatsapp_match ? <Phone size={18} color="#22c55e"/> : <Phone size={18} color="#64748b"/>}
+                Privacidade do WhatsApp
               </span>
-              <Tooltip texto="Seu número só será exibido para atletas que você também passou a bola e que sejam maiores de 18 anos." />
+              <Tooltip texto="Seu número só será exibido para jogadores que você também 'deu match' e que tenham mais de 18 anos." />
             </label>
           </div>
         </div>

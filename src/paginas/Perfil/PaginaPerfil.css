@@ -454,6 +454,12 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
+@media (max-width: 480px) {
+  .auth-grade-uf, .grade-cep {
+    grid-template-columns: 1fr !important;
+  }
+}
+
 @media (max-width: 768px) {
   .grade-add-modalidade {
     grid-template-columns: 1fr;

@@ -10,8 +10,8 @@ import CardsDadosAtleta from '../Equipe/componentes/CardsDadosAtleta';
 import {
     Calendar, Users, DollarSign, Globe, Lock, MapPin,
     CheckCircle, AlertCircle, Activity, ChevronRight,
-    Settings, User, Trophy, Search, Swords, BarChart2,
-    ShieldCheck, Bell, Plus, X, GripHorizontal, Download, Phone, Crown, Wallet, Star, Unlock
+    Settings, User, UserCircle, Trophy, Search, Swords, BarChart2,
+    Shield, ShieldCheck, Bell, Plus, X, GripHorizontal, Download, Phone, Crown, Wallet, Star, Unlock
 } from 'lucide-react';
 import InfoTooltip from '../../componentes/Tooltip/InfoTooltip';
 import './Dashboard.css';
@@ -21,24 +21,24 @@ import './Dashboard.css';
 // permissao: null = visível a todos do papel | 'nome_perm' = vice precisa ter essa permissão
 const CATALOGO_ATALHOS = [
     // PESSOAIS (todos os usuários, sempre visíveis)
-    { id: 'perfil',           categoria: 'pessoal', label: 'Meu Perfil',      emoji: '👤', icone: User,       tela: 'perfil',           roles: [],                   permissao: null },
-    { id: 'perfil_esportivo', categoria: 'pessoal', label: 'Dados Atleta',    emoji: '🏆', icone: Trophy,     tela: 'perfil_esportivo', roles: [],                   permissao: null },
-    { id: 'explorar',         categoria: 'pessoal', label: 'Explorar Times',  emoji: '🔍', icone: Search,     tela: 'explorar',         roles: [],                   permissao: null },
+    { id: 'perfil',           categoria: 'pessoal', label: 'Meu Perfil',      emoji: '👤', icone: UserCircle, tela: 'perfil',           roles: [],                   permissao: null },
+    { id: 'perfil_esportivo', categoria: 'pessoal', label: 'Perfil Esportivo', emoji: '🏆', icone: Trophy,     tela: 'perfil_esportivo', roles: [],                   permissao: null },
+    { id: 'explorar',         categoria: 'pessoal', label: 'Explorar',         emoji: '🔍', icone: Globe,      tela: 'explorar',         roles: [],                   permissao: null },
     { id: 'perfil_pub',       categoria: 'pessoal', label: 'Perfil Público',   emoji: '🌍', icone: Globe,      action: (nav) => { nav('perfil'); }, roles: [],  permissao: null },
     { id: 'notificacoes_globais', categoria: 'pessoal', label: 'Notificações', emoji: '🔔', icone: Bell,       tela: 'notificacoes', roles: [], permissao: null },
     
     // EQUIPE (filtrados por papel/permissão)
-    { id: 'partidas',         categoria: 'equipe',  label: 'Próximos Jogos',  emoji: '📅', icone: Calendar,   action: (nav, set) => { set('agenda'); nav('equipe'); },           roles: [],                   permissao: null },
-    { id: 'var_atleta',       categoria: 'equipe',  label: 'Histórico VAR',    emoji: '⚖️', icone: ShieldCheck, action: (nav, set) => { set('disciplina'); nav('equipe'); },        roles: [],                   permissao: null },
-    { id: 'solicitacoes_eq',  categoria: 'equipe',  label: 'Solicitações',    emoji: '📥', icone: AlertCircle,action: (nav, set) => { set('solicitacoes'); nav('equipe'); },       roles: ['admin','sub_admin'],permissao: 'gerenciar_membros' },
+    { id: 'partidas',         categoria: 'equipe',  label: 'Partidas',         emoji: '📅', icone: Calendar,   action: (nav, set) => { set('agenda'); nav('equipe'); },           roles: [],                   permissao: null },
+    { id: 'var_atleta',       categoria: 'equipe',  label: 'Fair Play',        emoji: '⚖️', icone: Shield,     action: (nav, set) => { set('disciplina'); nav('equipe'); },        roles: [],                   permissao: null },
+    { id: 'solicitacoes_eq',  categoria: 'equipe',  label: 'Solicitações G.',  emoji: '📥', icone: Bell,       action: (nav, set) => { set('solicitacoes'); nav('equipe'); },       roles: ['admin','sub_admin'],permissao: 'gerenciar_membros' },
     { id: 'meus_pagamentos',  categoria: 'equipe',  label: 'Mensalistas',     emoji: '💰', icone: DollarSign, action: (nav, set) => { set('financeiro-mensal'); nav('equipe'); },  roles: [],                   permissao: null },
     { id: 'financas_avulso',  categoria: 'equipe',  label: 'Avulsos',         emoji: '💸', icone: Wallet,     action: (nav, set) => { set('financeiro-avulsos'); nav('equipe'); }, roles: [],                   permissao: null },
     { id: 'criar_partida',    categoria: 'equipe',  label: 'Marcar Jogo',     emoji: '⚽', icone: Swords,     action: (nav, set) => { set('agenda'); nav('equipe'); },           roles: ['admin','sub_admin'], permissao: 'gerenciar_partidas' },
-    { id: 'gerenciar_membros',categoria: 'equipe',  label: 'Membros',         emoji: '👥', icone: Users,      action: (nav, set) => { set('membros'); nav('equipe'); },           roles: ['admin','sub_admin'], permissao: 'gerenciar_membros' },
-    { id: 'relatorios_eq',    categoria: 'equipe',  label: 'Análise & Rels',  emoji: '📊', icone: BarChart2,  action: (nav, set) => { set('financeiro-relatorios'); nav('equipe'); }, roles: ['admin','sub_admin'], permissao: 'ver_relatorios' },
+    { id: 'gerenciar_membros',categoria: 'equipe',  label: 'Membros & Cargos', emoji: '👥', icone: Users,      action: (nav, set) => { set('membros'); nav('equipe'); },           roles: ['admin','sub_admin'], permissao: 'gerenciar_membros' },
+    { id: 'relatorios_eq',    categoria: 'equipe',  label: 'Relatórios',       emoji: '📊', icone: BarChart2,  action: (nav, set) => { set('financeiro-relatorios'); nav('equipe'); }, roles: ['admin','sub_admin'], permissao: 'ver_relatorios' },
     { id: 'regras_eq',        categoria: 'equipe',  label: 'Regras & Config', emoji: '⚙️', icone: Settings,   action: (nav, set) => { set('regras-config'); nav('equipe'); },    roles: ['admin','sub_admin'], permissao: 'gerenciar_equipe' },
     { id: 'descobrir_atletas',categoria: 'equipe',  label: 'Buscar Atletas',  emoji: '🔍', icone: Globe,      action: (nav, set) => { set('descobrir'); nav('equipe'); },        roles: ['admin','sub_admin'], permissao: 'gerenciar_membros' },
-    { id: 'permissoes_eq',    categoria: 'equipe',  label: 'Permissões',      emoji: '🛡️', icone: Crown,      action: (nav, set) => { set('permissoes'); nav('equipe'); },        roles: ['admin','sub_admin'], permissao: 'gerenciar_gestores' },
+    { id: 'permissoes_eq',    categoria: 'equipe',  label: 'Permissões (Gestores)', emoji: '🛡️', icone: Crown,      action: (nav, set) => { set('permissoes'); nav('equipe'); },        roles: ['admin','sub_admin'], permissao: 'gerenciar_gestores' },
 ];
 
 const STORAGE_PESSOAL  = 'playhub_atalhos_pessoal';

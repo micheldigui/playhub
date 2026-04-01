@@ -28,12 +28,12 @@ const BarraLateral = ({ ativo, setAtivo, abaEquipe, setAbaEquipe }) => {
     setModalCriacaoAberto
   } = usarEquipe();
   const { contagemNaoLidas: bolasRecebidas } = usarNotificacoes();
-  const { ehSuperAdmin, dadosUsuario, logout } = usarAutenticacao();
+  const { ehSuperAdmin, ehRootAdmin, temPermissao, dadosUsuario, logout } = usarAutenticacao();
   
   // O usuário pediu para que solicitações de ingresso não fiquem na aba de equipe, mas sim na aba de Notificações Gerais.
   const totalNotificacoesEquipe = (convitesPendentesGlobais || 0) + (transferenciasPendentesGlobais || 0);
 
-  const temPermissao = (perm) => {
+  const temPermissaoEquipe = (perm) => {
     if (ehSuperAdmin && equipeAtiva?.gestao_global) return true;
     if (equipeAtiva?.papel === 'admin') return true;
     if (equipeAtiva?.papel === 'sub_admin' && equipeAtiva?.permissoes?.includes(perm)) return true;
@@ -54,24 +54,29 @@ const BarraLateral = ({ ativo, setAtivo, abaEquipe, setAbaEquipe }) => {
       subItens: equipeAtiva ? [
         { id: 'minha-equipe', label: 'Minha Equipe', icone: Trophy },
         { id: 'agenda',       label: 'Partidas',      icone: Calendar },
-        ...(equipeAtiva.gestao_financeira && temPermissao('gerenciar_financeiro') ? [{ id: 'financeiro-mensal', label: 'Mensalistas', icone: DollarSign }] : []),
-        ...(equipeAtiva.gestao_financeira && temPermissao('gerenciar_financeiro') ? [{ id: 'financeiro-avulsos', label: 'Avulsos', icone: Wallet }] : []),
-        ...((temPermissao('ver_relatorios') || temPermissao('gerenciar_financeiro')) ? [{ id: 'financeiro-relatorios', label: 'Relatórios', icone: BarChart2 }] : []),
+        ...(equipeAtiva.gestao_financeira && temPermissaoEquipe('gerenciar_financeiro') ? [{ id: 'financeiro-mensal', label: 'Mensalistas', icone: DollarSign }] : []),
+        ...(equipeAtiva.gestao_financeira && temPermissaoEquipe('gerenciar_financeiro') ? [{ id: 'financeiro-avulsos', label: 'Avulsos', icone: Wallet }] : []),
+        ...((temPermissaoEquipe('ver_relatorios') || temPermissaoEquipe('gerenciar_financeiro')) ? [{ id: 'financeiro-relatorios', label: 'Relatórios', icone: BarChart2 }] : []),
         { id: 'membros',      label: 'Membros & Cargos', icone: Users },
-        ...(temPermissao('gerenciar_membros') ? [{ id: 'solicitacoes', label: 'Solicitações G.', icone: Bell }] : []),
+        ...(temPermissaoEquipe('gerenciar_membros') ? [{ id: 'solicitacoes', label: 'Solicitações G.', icone: Bell }] : []),
         { id: 'disciplina', label: 'Fair Play', icone: Shield },
-        ...(temPermissao('gerenciar_equipe') ? [{ id: 'regras-config', label: 'Regras & Config', icone: Settings }] : []),
-        ...(temPermissao('gerenciar_membros') ? [{ id: 'descobrir', label: 'Buscar Atletas', icone: Globe }] : []),
+        ...(temPermissaoEquipe('gerenciar_equipe') ? [{ id: 'regras-config', label: 'Regras & Config', icone: Settings }] : []),
+        ...(temPermissaoEquipe('gerenciar_membros') ? [{ id: 'descobrir', label: 'Buscar Atletas', icone: Globe }] : []),
         ...(equipeAtiva.papel === 'admin' || (ehSuperAdmin && equipeAtiva.gestao_global) ? [{ id: 'permissoes', label: 'Permissões (Gestores)', icone: Crown }] : []),
       ] : []
     },
     { id: 'perfil',           icone: UserCircle,       label: 'Meu Perfil' },
     { id: 'perfil_esportivo', icone: Trophy,           label: 'Perfil Esportivo' },
     { id: 'explorar',         icone: Globe,            label: 'Explorar' },
-    ...(ehSuperAdmin ? [
-      { id: 'sistema', icone: Building2, label: 'Equipes do Sistema' },
+    
+    // Itens Administrativos com checagem de permissão Root ou Granular
+    ...(ehRootAdmin || temPermissao('equipes') ? [
+      { id: 'sistema', icone: Building2, label: 'Equipes do Sistema' }
+    ] : []),
+    ...(ehRootAdmin || temPermissao('usuarios') ? [
       { id: 'usuarios_sistema', icone: Shield, label: 'Usuários do Sistema' }
     ] : []),
+    
     { id: 'configuracoes',    icone: Settings,          label: 'Configurações' },
   ];
 
@@ -211,7 +216,10 @@ const BarraLateral = ({ ativo, setAtivo, abaEquipe, setAbaEquipe }) => {
                 )}
               </div>
               <div className="usuario-info">
-                <span className="usuario-nome">{dadosUsuario.apelido || dadosUsuario.nome_completo?.split(' ')[0]}</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <span className="usuario-nome">{dadosUsuario.apelido || dadosUsuario.nome_completo?.split(' ')[0]}</span>
+                    {ehRootAdmin && <ShieldCheck size={14} color="#fbbf24" title="Super Admin Root" />}
+                </div>
                 <span className="usuario-email">{dadosUsuario.email}</span>
               </div>
             </div>

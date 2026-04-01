@@ -214,6 +214,15 @@ input:-webkit-autofill:focus {
   }
 }
 
+@media (max-width: 400px) {
+  .auth-grade-2, .auth-grade-cep {
+    grid-template-columns: 1fr;
+  }
+  .btn-buscar-cep {
+    width: 100%;
+  }
+}
+
 /* Botão de busca CEP */
 .btn-buscar-cep {
   height: 44px;
