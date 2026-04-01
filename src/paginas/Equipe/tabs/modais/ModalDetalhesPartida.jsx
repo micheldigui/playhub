@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Calendar, MapPin, Clock, Users, Star, DollarSign } from 'lucide-react';
+import { X, Calendar, MapPin, Clock, Users, Star, DollarSign, MessageCircle } from 'lucide-react';
 import { usarPartidas } from '../../../../contextos/PartidasContexto';
 import { usarEquipe } from '../../../../contextos/EquipeContexto';
 import { usarAutenticacao } from '../../../../contextos/AutenticacaoContexto';
@@ -149,6 +149,54 @@ const ModalDetalhesPartida = ({ isOpen, onClose, partida }) => {
         setProcessandoAcao(false);
     };
 
+    const handleShareWhatsApp = () => {
+        if (!partida) return;
+
+        const dataFormatada = formatarData(partida.data);
+        const horaFormatada = partida.hora.substring(0, 5);
+        const local = partida.local_nome || 'Local a definir';
+        const equipeNome = equipeAtiva?.nome || 'Equipe';
+
+        let mensagem = `*🏐 LISTA DE PRESENÇA - ${equipeNome.toUpperCase()}*\n`;
+        mensagem += `📅 *DATA:* ${dataFormatada}\n`;
+        mensagem += `⏰ *HORA:* ${horaFormatada}\n`;
+        mensagem += `📍 *LOCAL:* ${local}\n`;
+        mensagem += `---------------------------\n\n`;
+
+        mensagem += `*✅ CONFIRMADOS (${listaConfirmados.length}/${limite === 999 ? '∞' : limite})*\n`;
+        if (listaConfirmados.length > 0) {
+            listaConfirmados.forEach((p, index) => {
+                const u = p.usuarios;
+                const vinculo = getVinculoUsuario(u?.id);
+                // Pegar primeiro nome e inicial do sobrenome ou apenas primeiro nome
+                const nomes = u?.nome_completo?.split(' ') || ['Jogador'];
+                const nomeExibir = nomes.length > 1 ? `${nomes[0]} ${nomes[1][0]}.` : nomes[0];
+                
+                mensagem += `${index + 1}. ${nomeExibir}${vinculo === 'mensalista' ? ' 👑' : ''}\n`;
+            });
+        } else {
+            mensagem += `_(Vazio)_\n`;
+        }
+
+        if (listaEspera.length > 0) {
+            mensagem += `\n*⏳ LISTA DE ESPERA (${listaEspera.length})*\n`;
+            listaEspera.forEach((p, index) => {
+                const u = p.usuarios;
+                const nomes = u?.nome_completo?.split(' ') || ['Jogador'];
+                const nomeExibir = nomes.length > 1 ? `${nomes[0]} ${nomes[1][0]}.` : nomes[0];
+                mensagem += `${index + 1}. ${nomeExibir}\n`;
+            });
+        }
+
+        mensagem += `\n---------------------------\n`;
+        mensagem += `_Gerado por playhubapp.com.br_ 🚀`;
+
+        const encodedMessage = encodeURIComponent(mensagem);
+        const whatsappUrl = `https://api.whatsapp.com/send?text=${encodedMessage}`;
+
+        window.open(whatsappUrl, '_blank');
+    };
+
     const handleTogglePagamentoAvulso = async (usuarioId) => {
         if (!isAdmin) return;
         setProcessandoAcao(true); 
@@ -236,6 +284,27 @@ const ModalDetalhesPartida = ({ isOpen, onClose, partida }) => {
                             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><MapPin size={16} /> {partida.local_nome || 'A definir'}</div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><DollarSign size={16} /> Avulso: {partida.valor_avulso ? `R$ ${partida.valor_avulso.toFixed(2).replace('.', ',')}` : 'Grátis'}</div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><Users size={16} /> Vagas: {limite === 999 ? 'Ilimitadas' : limite}</div>
+                        </div>
+
+                        {/* Botão de Compartilhamento (WhatsApp) */}
+                        <div style={{ marginTop: '16px', display: 'flex', justifyContent: 'flex-end' }}>
+                            <Botao 
+                                onClick={handleShareWhatsApp}
+                                variant="secundario"
+                                style={{ 
+                                    background: '#25D366', 
+                                    color: '#fff', 
+                                    border: 'none',
+                                    padding: '8px 16px',
+                                    fontSize: '0.85rem',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px',
+                                    fontWeight: '700'
+                                }}
+                            >
+                                <MessageCircle size={18} /> Enviar Lista para WhatsApp
+                            </Botao>
                         </div>
                     </div>
 
