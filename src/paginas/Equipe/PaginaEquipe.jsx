@@ -68,7 +68,7 @@ const PaginaEquipe = ({ abaAtiva, setAbaAtiva, aoVoltar }) => {
         const total = membros.length;
         const mensalistas = membros.filter(m => m.vinculo === 'mensalista').length;
         const avulsos = membros.filter(m => m.vinculo === 'avulso').length;
-        const viceCapitaes = membros.filter(m => m.papel === 'sub_admin').map(m => m.usuarios.apelido || m.usuarios.nome_completo.split(' ')[0]);
+        const viceCapitaes = membros.filter(m => m.papel === 'sub_admin' && m.usuarios).map(m => m.usuarios.apelido || m.usuarios.nome_completo.split(' ')[0]);
         
         return { total, mensalistas, avulsos, viceCapitaes };
     }, [membros]);
@@ -251,7 +251,7 @@ const PaginaEquipe = ({ abaAtiva, setAbaAtiva, aoVoltar }) => {
                             </div>
 
                             <div className="grid-atletas-social">
-                                {membros.slice(0, 8).map(membro => {
+                                {membros.slice(0, 8).filter(membro => membro.usuarios).map(membro => {
                                     const u = membro.usuarios;
                                     const p = u.perfil_esportivo?.[0] || {};
                                     return (

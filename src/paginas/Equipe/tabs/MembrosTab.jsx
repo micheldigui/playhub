@@ -116,7 +116,7 @@ const MembrosTab = ({ membrosIniciais = [], recarregar }) => {
                         </tr>
                     </thead>
                     <tbody>
-                        {membros.map(m => {
+                        {membros.filter(m => m.usuarios).map(m => {
                             const idade = calcularIdade(m.usuarios.data_nascimento);
                             return (
                                 <tr key={m.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)', opacity: processando === m.id ? 0.5 : 1 }}>
@@ -218,7 +218,7 @@ const MembrosTab = ({ membrosIniciais = [], recarregar }) => {
                                                                 onClick={async () => {
                                                                     if(window.confirm(`Tem certeza que deseja passar a bola para ${m.usuarios.nome_completo}? Você deixará de ser o Capitão.`)) {
                                                                         const res = await transferirTitularidade(equipeAtiva.id, m.id);
-                                                                        if(res.sucesso) window.location.reload();
+                                                                        if(res.sucesso) setTimeout(() => window.location.reload(), 800);
                                                                         else alert(res.erro);
                                                                     }
                                                                 }}
@@ -268,7 +268,7 @@ const MembrosTab = ({ membrosIniciais = [], recarregar }) => {
 
             {/* Versão MOBILE: Cards */}
             <div className="grade-membros-mobile">
-                {membros.map(m => {
+                {membros.filter(m => m.usuarios).map(m => {
                     const idade = calcularIdade(m.usuarios.data_nascimento);
                     return (
                         <div key={m.id} className="card-membro-mobile" style={{ opacity: processando === m.id ? 0.5 : 1 }}>
@@ -337,7 +337,7 @@ const MembrosTab = ({ membrosIniciais = [], recarregar }) => {
                                                         onClick={async () => {
                                                             if(window.confirm(`Passar a bola para ${m.usuarios.nome_completo}?`)) {
                                                                 const res = await transferirTitularidade(equipeAtiva.id, m.id);
-                                                                if(res.sucesso) window.location.reload();
+                                                                if(res.sucesso) setTimeout(() => window.location.reload(), 800);
                                                                 else alert(res.erro);
                                                             }
                                                         }}
