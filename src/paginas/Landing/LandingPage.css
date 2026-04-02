@@ -22,7 +22,7 @@
   color: var(--text-main);
   min-height: 100vh;
   font-family: 'Outfit', sans-serif;
-  overflow-x: hidden;
+  /* overflow-x: hidden; */ /* Removido para permitir que tooltips e outros elementos flutuantes não sejam cortados */
   display: flex;
   flex-direction: column;
 }
@@ -76,6 +76,7 @@
   line-height: 1.2;
   margin-bottom: 2rem;
   text-align: center;
+  width: 100%;
 }
 
 /* ── Hero ── */
@@ -117,7 +118,7 @@
   color: var(--text-muted);
   max-width: 650px;
   line-height: 1.6;
-  margin-bottom: 3rem;
+  margin: 0 auto 3rem; /* Adicionado auto nas laterais para centralizar */
 }
 
 .hero-cta-group {
@@ -171,6 +172,7 @@
   padding: 6rem 5%;
   max-width: 1200px;
   margin: 0 auto;
+  text-align: center; /* Centraliza a section-tag e o layout base */
 }
 
 .features-grid {
@@ -178,6 +180,7 @@
   grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
   gap: 2rem;
   margin-top: 4rem;
+  overflow: visible; /* Adicionado para garantir que tooltips atravessem a grade */
 }
 
 .feature-card {
@@ -187,13 +190,19 @@
   border: 1px solid rgba(255, 255, 255, 0.03);
   transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   position: relative;
-  overflow: hidden;
+  overflow: visible; /* Mantido visível para não cortar tooltips */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
 }
 
-.feature-card:hover {
+.feature-card:hover,
+.feature-card:has(.tooltip-visivel) {
   transform: translateY(-10px);
   border-color: rgba(56, 189, 248, 0.2);
   background: rgba(15, 23, 42, 0.8);
+  z-index: 10000; /* Garante que o card e seus tooltips fiquem acima de todos os outros cards */
 }
 
 .feature-icon-box {
@@ -212,9 +221,9 @@
   font-size: 1.5rem;
   font-weight: 700;
   margin-bottom: 1rem;
-  display: flex;
-  align-items: center;
-  gap: 12px;
+  text-align: center;
+  display: block; /* Volta para block para que o ícone 'i' siga o texto */
+  width: 100%;
 }
 
 .feature-card p {
@@ -232,9 +241,17 @@
 .install-content {
   max-width: 1100px;
   margin: 0 auto;
-  display: grid;
-  grid-template-columns: 1.2fr 0.8fr;
-  gap: 6rem;
+  display: flex; /* Mudando de grid para flex para facilitar centralização global */
+  flex-direction: column;
+  align-items: center;
+  gap: 4rem;
+  text-align: center;
+}
+
+.install-text {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
   align-items: center;
 }
 
@@ -247,6 +264,7 @@
   color: var(--text-muted);
   margin-bottom: 2.5rem;
   line-height: 1.7;
+  max-width: 600px; /* Evita que o parágrafo centralizado fique muito largo */
 }
 
 .install-benefits {
@@ -319,6 +337,9 @@
   padding: 10rem 5%;
   text-align: center;
   background: radial-gradient(circle at bottom, rgba(56, 189, 248, 0.05) 0%, transparent 70%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 /* ── Footer ── */

@@ -87,8 +87,8 @@ const MembrosTab = ({ membrosIniciais = [], recarregar }) => {
                 <p style={{ color: '#94a3b8', fontSize: '0.9rem' }}>Gerencie os atletas da sua equipe e atribua responsabilidades.</p>
             </header>
 
-            <div className="tabela-membros-container" style={{ background: 'rgba(15, 23, 42, 0.6)', borderRadius: '16px', border: '1px solid rgba(255, 255, 255, 0.05)', overflow: 'hidden' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+            <div className="tabela-membros-wrapper">
+                <table className="tabela-membros">
                     <thead>
                         <tr style={{ background: 'rgba(255,255,255,0.02)' }}>
                             <th style={{ padding: '16px', color: '#64748b', fontSize: '0.75rem', fontWeight: 'bold', textTransform: 'uppercase' }}>Atleta</th>
@@ -250,9 +250,22 @@ const MembrosTab = ({ membrosIniciais = [], recarregar }) => {
             </div>
 
             <style>{`
+                .tabela-membros-wrapper {
+                    background: rgba(15, 23, 42, 0.6);
+                    border-radius: 16px;
+                    border: 1px solid rgba(255, 255, 255, 0.05);
+                    overflow-x: auto;
+                    -webkit-overflow-scrolling: touch;
+                }
+                .tabela-membros { width: 100%; border-collapse: collapse; min-width: 600px; }
                 .btn-membro-acao { background: none; border: 1px solid rgba(255,255,255,0.05); color: #64748b; padding: 8px; border-radius: 8px; cursor: pointer; transition: all 0.2s; }
                 .btn-membro-acao:hover { background: rgba(255,255,255,0.05); color: #f1f5f9; border-color: rgba(255,255,255,0.1); }
                 .btn-membro-acao.perigo:hover { background: rgba(239, 68, 68, 0.1); color: #ef4444; border-color: rgba(239, 68, 68, 0.2); }
+                
+                @media (max-width: 640px) {
+                    .tabela-membros-wrapper { margin: 0 -1rem; border-radius: 0; border-left: none; border-right: none; }
+                    .tabela-membros th, .tabela-membros td { padding: 12px 10px; }
+                }
             `}</style>
         </div>
     );

@@ -65,8 +65,16 @@ const ModalRegrasEquipe = ({ isOpen, onClose }) => {
                         <div>
                             <h4 style={{ color: '#f8fafc', fontWeight: '700', fontSize: '1.05rem', marginBottom: '6px' }}>Investimento por Partida</h4>
                             <div style={{ color: '#94a3b8', fontSize: '0.9rem', lineHeight: '1.5' }}>
-                                <div>{getLabelVinculo('mensalista')}: <strong>R$ {regras.mensalidade || '0,00'}</strong> / mês</div>
-                                <div>{getLabelVinculo('avulso')}: <strong>{regras.valor_avulso ? `R$ ${regras.valor_avulso}` : 'Consulte um administrador'}</strong></div>
+                                <div>Custo da Quadra: <strong>R$ {regras.custo_quadra?.toFixed(2).replace('.', ',') || '0,00'}</strong></div>
+                                <div style={{ fontSize: '0.8rem', fontStyle: 'italic', marginBottom: '8px' }}>Este valor é dividido entre os {getLabelVinculo('mensalista').toLowerCase()}s.</div>
+                                
+                                <div style={{ marginTop: '8px' }}>{getLabelVinculo('mensalista')}: <strong>R$ {regras.mensalidade || '0,00'}</strong> / mês</div>
+                                <div>{getLabelVinculo('avulso')}: <strong>{regras.valor_avulso ? `R$ ${regras.valor_avulso.toFixed(2).replace('.', ',')}` : 'Consulte o Capitão ou Vice'}</strong></div>
+                                
+                                <p style={{ fontSize: '0.8rem', marginTop: '8px', color: '#64748b' }}>
+                                    O valor dos {getLabelVinculo('avulso').toLowerCase()}s é utilizado para repor o custo da quadra, comprar bolas, coletes e organizar confraternizações.
+                                </p>
+
                                 {temFinanceiro && regras.vencimento_dia && (
                                     <div style={{ color: '#f43f5e', fontSize: '0.8rem', marginTop: '6px', fontWeight: '600' }}>
                                         ⚠️ Bloqueio automático após o dia {regras.vencimento_dia} caso não pago.
@@ -82,7 +90,7 @@ const ModalRegrasEquipe = ({ isOpen, onClose }) => {
                         <div>
                             <h4 style={{ color: '#f8fafc', fontWeight: '700', fontSize: '1.05rem', marginBottom: '6px' }}>Janela de Inscrição</h4>
                             <p style={{ color: '#94a3b8', fontSize: '0.9rem', lineHeight: '1.5' }}>
-                                As inscrições abrem <strong>{regras.dias_antes || '2'} dias</strong> antes de cada evento agendado.
+                                As inscrições abrem <strong>{regras.dias_abertura_inscricao || '7'} dias</strong> antes e fecham <strong>{regras.horas_limite_inscricao || '1'}h</strong> antes do jogo.
                             </p>
                         </div>
                     </div>
@@ -91,21 +99,27 @@ const ModalRegrasEquipe = ({ isOpen, onClose }) => {
                     <div style={{ display: 'flex', gap: '16px' }}>
                         <div style={{ color: '#fbbf24', marginTop: '2px' }}><Users size={22} /></div>
                         <div>
-                            <h4 style={{ color: '#f8fafc', fontWeight: '700', fontSize: '1.05rem', marginBottom: '6px' }}>Prioridade {getLabelVinculo('mensalista')}</h4>
+                            <h4 style={{ color: '#f8fafc', fontWeight: '700', fontSize: '1.05rem', marginBottom: '6px' }}>Prioridade de Vaga</h4>
                             <p style={{ color: '#94a3b8', fontSize: '0.9rem', lineHeight: '1.5' }}>
-                                {getLabelVinculo('mensalista')}s têm prioridade de vaga. Em caso de lotação, confirmados {getLabelVinculo('avulso')}s podem ser movidos para a lista de espera.
+                                {regras.prioridade_mensalista ? (
+                                    <>{getLabelVinculo('mensalista')}s têm prioridade. Em caso de lotação, {getLabelVinculo('avulso')}s confirmados podem ser movidos para a espera para dar lugar a um {getLabelVinculo('mensalista')}.</>
+                                ) : (
+                                    <>As vagas são preenchidas estritamente por <strong>ordem de chegada</strong> na lista, sem prioridade por vínculo.</>
+                                )}
                             </p>
                         </div>
                     </div>
 
-                    {/* 4. Política de Faltas */}
+                    {/* 4. Política de Faltas e Cartões */}
                     <div style={{ display: 'flex', gap: '16px' }}>
                         <div style={{ color: '#f43f5e', marginTop: '2px' }}><ShieldAlert size={22} /></div>
                         <div>
-                            <h4 style={{ color: '#f8fafc', fontWeight: '700', fontSize: '1.05rem', marginBottom: '6px' }}>Política de Faltas</h4>
-                            <p style={{ color: '#94a3b8', fontSize: '0.9rem', lineHeight: '1.5' }}>
-                                Cancelamentos feitos com menos de <strong>{regras.horas_limite || '5'} horas</strong> de antecedência ou faltas injustificadas geram 1 advertência. Com <strong>{regras.limite_faltas || '2'} punições</strong>, o cadastro é bloqueado.
-                            </p>
+                            <h4 style={{ color: '#f8fafc', fontWeight: '700', fontSize: '1.05rem', marginBottom: '6px' }}>Fair Play e Punições</h4>
+                            <div style={{ color: '#94a3b8', fontSize: '0.9rem', lineHeight: '1.5', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                <div>• Cancelar com menos de <strong>{regras.horas_limite_cancelamento || '2'}h</strong> gera falta automática.</div>
+                                <div>• Acúmulo de <strong>{regras.suspenso_amarelos || '3'} Amarelos</strong> = 1 jogo de suspensão.</div>
+                                <div>• <strong>Cartão Vermelho</strong> = {regras.redCardSuspension || '1'} jogo(s) de suspensão imediata.</div>
+                            </div>
                         </div>
                     </div>
 

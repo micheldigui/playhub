@@ -6,12 +6,12 @@ import Botao from '../../../../componentes/Botao/Botao';
 const EquipeConfiguracoesTab = () => {
     const { equipeAtiva, atualizarRegrasEquipe } = usarEquipe();
     const [regras, setRegras] = useState({
-        maxStrikes: 3,
-        redCardSuspension: 1,
-        cancelDeadlineHours: 2,
-        registrationCloseHours: 1,
-        registrationOpenDays: 7,
-        mensalistaPriority: false,
+        suspenso_amarelos: 3,
+        redCardSuspension: 1, // Mantendo esse pois não vi substituto direto em RegrasTab, mas verei depois
+        horas_limite_cancelamento: 2,
+        horas_limite_inscricao: 1,
+        dias_abertura_inscricao: 7,
+        prioridade_mensalista: false,
         mensalidade: 0,
         custo_quadra: 0,
         vencimento_dia: 10,
@@ -87,8 +87,8 @@ const EquipeConfiguracoesTab = () => {
                         </label>
                         <input
                             type="number"
-                            name="maxStrikes"
-                            value={regras.maxStrikes || ''}
+                            name="suspenso_amarelos"
+                            value={regras.suspenso_amarelos || ''}
                             onChange={handleChange}
                             min="1"
                             style={{ width: '100%', padding: '12px', borderRadius: '8px', background: 'rgba(15,23,42,0.8)', border: '1px solid rgba(255,255,255,0.1)', color: '#f1f5f9', outline: 'none' }}
@@ -119,8 +119,8 @@ const EquipeConfiguracoesTab = () => {
                         </label>
                         <input
                             type="number"
-                            name="cancelDeadlineHours"
-                            value={regras.cancelDeadlineHours || ''}
+                            name="horas_limite_cancelamento"
+                            value={regras.horas_limite_cancelamento || ''}
                             onChange={handleChange}
                             min="0"
                             style={{ width: '100%', padding: '12px', borderRadius: '8px', background: 'rgba(15,23,42,0.8)', border: '1px solid rgba(255,255,255,0.1)', color: '#f1f5f9', outline: 'none' }}
@@ -135,8 +135,8 @@ const EquipeConfiguracoesTab = () => {
                         </label>
                         <input
                             type="number"
-                            name="registrationCloseHours"
-                            value={regras.registrationCloseHours || ''}
+                            name="horas_limite_inscricao"
+                            value={regras.horas_limite_inscricao || ''}
                             onChange={handleChange}
                             min="0"
                             style={{ width: '100%', padding: '12px', borderRadius: '8px', background: 'rgba(15,23,42,0.8)', border: '1px solid rgba(255,255,255,0.1)', color: '#f1f5f9', outline: 'none' }}
@@ -151,8 +151,8 @@ const EquipeConfiguracoesTab = () => {
                         </label>
                         <input
                             type="number"
-                            name="registrationOpenDays"
-                            value={regras.registrationOpenDays || ''}
+                            name="dias_abertura_inscricao"
+                            value={regras.dias_abertura_inscricao || ''}
                             onChange={handleChange}
                             min="0"
                             style={{ width: '100%', padding: '12px', borderRadius: '8px', background: 'rgba(15,23,42,0.8)', border: '1px solid rgba(255,255,255,0.1)', color: '#f1f5f9', outline: 'none' }}
@@ -162,26 +162,28 @@ const EquipeConfiguracoesTab = () => {
 
                     {/* Prioridade Mensalista */}
                     <div style={{ background: 'rgba(255,255,255,0.02)', padding: '16px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }} onClick={() => setRegras(prev => ({ ...prev, mensalistaPriority: !prev.mensalistaPriority }))}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }} onClick={() => setRegras(prev => ({ ...prev, prioridade_mensalista: !prev.prioridade_mensalista }))}>
                             <div
                                 style={{
                                     width: '44px',
                                     height: '24px',
                                     borderRadius: '20px',
-                                    background: regras.mensalistaPriority ? 'var(--primaria)' : 'rgba(255,255,255,0.1)',
+                                    background: regras.prioridade_mensalista ? 'var(--primaria)' : 'rgba(255,255,255,0.1)',
                                     position: 'relative',
                                     transition: 'all 0.3s'
                                 }}
                             >
-                                <div style={{ width: '18px', height: '18px', borderRadius: '50%', background: 'white', position: 'absolute', top: '3px', left: regras.mensalistaPriority ? '23px' : '3px', transition: 'all 0.3s' }} />
+                                <div style={{ width: '18px', height: '18px', borderRadius: '50%', background: 'white', position: 'absolute', top: '3px', left: regras.prioridade_mensalista ? '23px' : '3px', transition: 'all 0.3s' }} />
                             </div>
                             <span style={{ fontSize: '14px', fontWeight: '600', color: '#f1f5f9', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <CheckSquare size={18} color={regras.mensalistaPriority ? 'var(--primaria)' : '#94a3b8'} />
-                                Prioridade para Mensalistas
+                                <CheckSquare size={18} color={regras.prioridade_mensalista ? 'var(--primaria)' : '#94a3b8'} />
+                                {equipeAtiva?.gestao_financeira ? 'Prioridade para Mensalistas' : 'Prioridade para Fixos'}
                             </span>
                         </div>
                         <p style={{ fontSize: '11px', color: '#64748b', marginTop: '12px' }}>
-                            Se ativado, os mensalistas terão preferência de vaga quando a lista ficar cheia (fura-fila).
+                            {equipeAtiva?.gestao_financeira 
+                                ? 'Se ativado, os mensalistas terão preferência de vaga quando a lista ficar cheia (fura-fila).'
+                                : 'Se ativado, os jogadores fixos terão preferência de vaga quando a lista ficar cheia (fura-fila).'}
                         </p>
                     </div>
                 </div>

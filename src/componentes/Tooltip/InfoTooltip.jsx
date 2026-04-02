@@ -9,7 +9,7 @@ const InfoTooltip = ({ texto, posicao = 'top', size = 14 }) => {
       texto={texto} 
       posicao={posicao} 
       gatilho={
-        <div className="info-icon-wrapper" style={{ display: 'inline-flex', marginLeft: '4px', cursor: 'help', color: 'var(--primaria)', opacity: 0.8 }}>
+        <div className="info-icon-wrapper" style={{ display: 'inline-flex', marginLeft: '10px', cursor: 'help', color: 'var(--primaria)', opacity: 0.8 }}>
           <Info size={size} />
         </div>
       }

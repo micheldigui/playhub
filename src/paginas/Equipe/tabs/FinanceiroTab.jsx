@@ -20,7 +20,8 @@ import {
     Wallet,
     CreditCard,
     Coins,
-    Eye
+    Eye,
+    MessageCircle
 } from 'lucide-react';
 import { usarFinanceiro } from '../../../contextos/FinanceiroContexto';
 import { usarEquipe } from '../../../contextos/EquipeContexto';
@@ -44,7 +45,7 @@ const FinanceiroTab = ({ abaExterna, modoLeitura = false, membrosIniciais = [] }
         formatarPeriodoParaExibicao
     } = usarFinanceiro();
     
-    const { equipeAtiva, atualizarRegrasEquipe } = usarEquipe();
+    const { equipeAtiva, atualizarRegrasEquipe, getLabelVinculo } = usarEquipe();
     
     // Estado principal
     const [periodoAtivo, setPeriodoAtivo] = useState('');
@@ -83,12 +84,12 @@ const FinanceiroTab = ({ abaExterna, modoLeitura = false, membrosIniciais = [] }
                     const cfg = await carregarConfiguracao(equipeAtiva.id);
                     if (cfg) {
                         setConfigLocal({
-                            valor_mensalidade: cfg.valor_mensalidade || 50,
-                            dia_vencimento: cfg.dia_vencimento || 10,
+                            valor_mensalidade: cfg.valor_mensalidade || equipeAtiva.regras?.mensalidade || 50,
+                            dia_vencimento: cfg.dia_vencimento || equipeAtiva.regras?.vencimento_dia || 10,
                             dia_tolerancia: cfg.dia_tolerancia || 15,
-                            custo_quadra: cfg.custo_quadra || 0,
-                            limite_vencimento_horas: cfg.limite_vencimento_horas || 24,
-                            chave_pix: cfg.chave_pix || ''
+                            custo_quadra: cfg.custo_quadra || equipeAtiva.regras?.custo_quadra || 0,
+                            limite_vencimento_horas: cfg.limite_vencimento_horas || equipeAtiva.regras?.horas_limite_pagamento || 24,
+                            chave_pix: cfg.chave_pix || equipeAtiva.regras?.chave_pix || ''
                         });
                         setPeriodoAtivo(obterCicloAtual(cfg.dia_vencimento || 10));
                     } else {
@@ -322,14 +323,58 @@ const FinanceiroTab = ({ abaExterna, modoLeitura = false, membrosIniciais = [] }
     const mensalistasDisponiveis = todosMembros.filter(m => m.vinculo === 'mensalista');
 
     const compartilharWhatsApp = () => {
-        let msg = `*📊 RELATÓRIO FINANCEIRO - ${equipeAtiva.nome}*\n`;
-        msg += `📅 *Ciclo:* ${formatarPeriodoParaExibicao(periodoAtivo)}\n`;
-        msg += `💰 *Recebido:* ${formatarMoeda(resumo.totalRecebido)}\n`;
+        const custoQuadra = dadosCiclo?.custo_quadra_snapshot || configLocal.custo_quadra || 0;
+        const saldo = resumo.totalRecebido - custoQuadra;
+        const faltam = custoQuadra - resumo.totalRecebido;
+        const labelVinculo = getLabelVinculo('mensalista');
+
+        // Lógica de vencimento
+        const hoje = new Date();
+        const diaAtual = hoje.getDate();
+        const mesAtual = hoje.getMonth() + 1;
+        const anoAtual = hoje.getFullYear();
+        const [anoCiclo, mesCiclo] = periodoAtivo.split('-').map(Number);
+        
+        const diaVencimento = configLocal.dia_vencimento || 10;
+        const jaVenceu = (anoAtual > anoCiclo) || (anoAtual === anoCiclo && mesAtual > mesCiclo) || (anoAtual === anoCiclo && mesAtual === mesCiclo && diaAtual > diaVencimento);
+
+        let msg = `*📊 RELATÓRIO FINANCEIRO - ${equipeAtiva.nome.toUpperCase()}*\n`;
+        msg += `📅 *Ciclo:* ${formatarPeriodoParaExibicao(periodoAtivo)}\n\n`;
+        
+        msg += `🏟️ *Custo da Quadra:* ${formatarMoeda(custoQuadra)}\n`;
+        msg += `💰 *Total Arrecadado:* ${formatarMoeda(resumo.totalRecebido)}\n`;
+        
+        if (saldo >= 0) {
+            msg += `📈 *Saldo Atual:* ${formatarMoeda(saldo)}\n`;
+        } else {
+            msg += `📉 *Falta Arrecadar:* ${formatarMoeda(faltam)}\n`;
+        }
+        
         msg += `---------------------------\n\n`;
-        mensalidades.forEach((p, i) => {
-            msg += `${i + 1}. ${p.usuarios?.nome_completo || 'Usuário'} - ${p.status === 'pago' ? '✅ Pago' : '⚠️ Pendente'}\n`;
+
+        const pagos = mensalidades.filter(m => m.status === 'pago');
+        const pendentes = mensalidades.filter(m => m.status === 'pendente');
+
+        msg += `*${labelVinculo.toUpperCase()}S (${mensalidades.length})*\n`;
+        
+        // Ordenar: pagos primeiro, depois o resto
+        const listaOrdenada = [...mensalidades].sort((a, b) => {
+            if (a.status === 'pago' && b.status !== 'pago') return -1;
+            if (a.status !== 'pago' && b.status === 'pago') return 1;
+            return 0;
         });
-        msg += `\n_Gerado por PlayHub_ 🚀`;
+
+        listaOrdenada.forEach((p) => {
+            let icon = '⚠️';
+            if (p.status === 'pago') icon = '✅';
+            else if (jaVenceu) icon = '🔴';
+            
+            msg += `${icon} ${p.usuarios?.nome_completo || 'Atleta'}\n`;
+        });
+
+        msg += `\n---------------------------\n`;
+        msg += `👉 _Relatório enviado via playhubapp.com.br_ 🚀`;
+
         window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`, '_blank');
     };
 
@@ -381,13 +426,32 @@ const FinanceiroTab = ({ abaExterna, modoLeitura = false, membrosIniciais = [] }
                     </div>
                 )}
 
-                {mensalidades.length > 0 && (
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px' }}>
-                        <div className="card-financeiro"><TrendingUp size={20} color="#10b981" /><div><span className="label">Recebido</span><p className="valor">{formatarMoeda(resumo.totalRecebido)}</p></div></div>
-                        <div className="card-financeiro"><AlertCircle size={20} color="#f59e0b" /><div><span className="label">Pendente</span><p className="valor">{formatarMoeda(resumo.totalPendente)}</p></div></div>
-                        <div className="card-financeiro" title={`Custo salvo para este mês: R$ ${dadosCiclo?.custo_quadra_snapshot || configLocal.custo_quadra}`}><Plus size={20} color="#38bdf8" /><div><span className="label">Lucro do Ciclo</span><p className="valor">{formatarMoeda(resumo.totalRecebido - (dadosCiclo?.custo_quadra_snapshot || configLocal.custo_quadra))}</p></div></div>
-                    </div>
-                )}
+                {(() => {
+                    const hoje = new Date();
+                    const diaAtual = hoje.getDate();
+                    const mesAtual = hoje.getMonth() + 1;
+                    const anoAtual = hoje.getFullYear();
+                    const [anoCiclo, mesCiclo] = periodoAtivo.split('-').map(Number);
+                    const diaVencimento = configLocal.dia_vencimento || 10;
+                    
+                    const jaVenceu = (anoAtual > anoCiclo) || 
+                                    (anoAtual === anoCiclo && mesAtual > mesCiclo) || 
+                                    (anoAtual === anoCiclo && mesAtual === mesCiclo && diaAtual > diaVencimento);
+
+                    return mensalidades.length > 0 && (
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px' }}>
+                            <div className="card-financeiro"><TrendingUp size={20} color="#10b981" /><div><span className="label">Recebido</span><p className="valor">{formatarMoeda(resumo.totalRecebido)}</p></div></div>
+                            <div className="card-financeiro">
+                                <AlertCircle size={20} color={jaVenceu ? "#ef4444" : "#f59e0b"} />
+                                <div>
+                                    <span className="label">{jaVenceu ? 'Vencido' : 'Pendente'}</span>
+                                    <p className="valor" style={{ color: jaVenceu ? "#ef4444" : "#f8fafc" }}>{formatarMoeda(resumo.totalPendente)}</p>
+                                </div>
+                            </div>
+                            <div className="card-financeiro" title={`Custo salvo para este mês: R$ ${dadosCiclo?.custo_quadra_snapshot || configLocal.custo_quadra}`}><Plus size={20} color="#38bdf8" /><div><span className="label">Lucro do Ciclo</span><p className="valor">{formatarMoeda(resumo.totalRecebido - (dadosCiclo?.custo_quadra_snapshot || configLocal.custo_quadra))}</p></div></div>
+                        </div>
+                    );
+                })()}
 
                 <div style={{ background: 'rgba(15,23,42,0.6)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)', overflow: 'hidden' }}>
                     <div style={{ padding: '16px 20px', borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
@@ -398,6 +462,12 @@ const FinanceiroTab = ({ abaExterna, modoLeitura = false, membrosIniciais = [] }
                         {!modoLeitura && (
                             mensalidades.length > 0 ? (
                                 <div style={{ display: 'flex', gap: '8px' }}>
+                                    <button 
+                                        onClick={compartilharWhatsApp} 
+                                        onMouseEnter={() => setHoverBotao('Compartilhar p/ Grupo')}
+                                        onMouseLeave={() => setHoverBotao(null)}
+                                        style={{ background: '#25D366', border: 'none', color: '#fff', padding: '6px 14px', borderRadius: '10px', fontSize: '0.8rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: '600' }}
+                                    ><MessageCircle size={16} fill="white" /> Compartilhar</button>
                                     <button 
                                         onClick={() => setModalImportarAberto(true)} 
                                         onMouseEnter={() => setHoverBotao('Adicionar Atleta')}
@@ -451,8 +521,28 @@ const FinanceiroTab = ({ abaExterna, modoLeitura = false, membrosIniciais = [] }
                                         </div>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
                                             <div style={{ textAlign: 'right' }}>
-                                                <p style={{ color: pag.status === 'pago' ? '#10b981' : '#f59e0b', fontWeight: '600', fontSize: '0.9rem' }}>{pag.status === 'pago' ? 'Pago' : 'Pendente'}</p>
-                                                <p style={{ color: '#64748b', fontSize: '0.75rem' }}>{formatarMoeda(pag.valor_configurado)}</p>
+                                                {(() => {
+                                                    const hoje = new Date();
+                                                    const diaAtual = hoje.getDate();
+                                                    const mesAtual = hoje.getMonth() + 1;
+                                                    const anoAtual = hoje.getFullYear();
+                                                    const [anoCiclo, mesCiclo] = periodoAtivo.split('-').map(Number);
+                                                    const diaVencimento = configLocal.dia_vencimento || 10;
+                                                    
+                                                    const jaVenceu = (anoAtual > anoCiclo) || 
+                                                                    (anoAtual === anoCiclo && mesAtual > mesCiclo) || 
+                                                                    (anoAtual === anoCiclo && mesAtual === mesCiclo && diaAtual > diaVencimento);
+                                                    
+                                                    const statusTexto = pag.status === 'pago' ? 'Pago' : (jaVenceu ? 'Vencido' : 'Pendente');
+                                                    const statusCor = pag.status === 'pago' ? '#10b981' : (jaVenceu ? '#ef4444' : '#f59e0b');
+
+                                                    return (
+                                                        <>
+                                                            <p style={{ color: statusCor, fontWeight: '700', fontSize: '0.9rem' }}>{statusTexto}</p>
+                                                            <p style={{ color: '#64748b', fontSize: '0.75rem' }}>{formatarMoeda(pag.valor_configurado)}</p>
+                                                        </>
+                                                    );
+                                                })()}
                                             </div>
                                             {!modoLeitura && (
                                                 <div style={{ display: 'flex', gap: '10px' }}>

@@ -109,7 +109,7 @@ const CardsDadosAtleta = ({ equipeIdOpcional, esconderIcones = false }) => {
 
     return (
         <div className="grade-cards-atleta" style={{
-            display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+            display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
             gap: '16px', marginBottom: '32px'
         }}>
             {/* CARD: PERFIL */}
@@ -125,8 +125,8 @@ const CardsDadosAtleta = ({ equipeIdOpcional, esconderIcones = false }) => {
                 )}
                 <div className="card-atleta-info">
                     <span className="card-atleta-label">
-                        Perfil
-                        <InfoTooltip texto="Seu vínculo com esta equipe. Mensalistas pagam mensalidade fixa, Avulsos pagam por cada jogo que participam." />
+                        Perfil {getLabelVinculo(vinculoAtleta)}
+                        <InfoTooltip texto={`Seu vínculo com esta equipe. ${getLabelVinculo('mensalista')}s pagam um valor fixo, ${getLabelVinculo('avulso')}s pagam por cada jogo que participam.`} />
                     </span>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <strong className="card-atleta-valor" style={{ fontSize: '1rem' }}>{getLabelVinculo(vinculoAtleta)}</strong>
@@ -171,9 +171,11 @@ const CardsDadosAtleta = ({ equipeIdOpcional, esconderIcones = false }) => {
                         </div>
                     )}
                     <div className="card-atleta-info">
-                        <span className="card-atleta-label">Financeiro mensal</span>
+                        <span className="card-atleta-label">Financeiro {getLabelVinculo('mensalista')}</span>
                         <strong className="card-atleta-valor" style={{ 
                             fontSize: '0.95rem',
+                            whiteSpace: 'normal',
+                            lineHeight: '1.2',
                             color: fin.status === 'vencido' ? '#ef4444' : 
                                    fin.status === 'pendente' ? '#f59e0b' : 
                                    fin.status === 'pago' ? '#10b981' : '#94a3b8' 
@@ -246,7 +248,7 @@ const CardsDadosAtleta = ({ equipeIdOpcional, esconderIcones = false }) => {
                         </div>
                     )}
                     <div className="card-atleta-info" style={{ flex: 1 }}>
-                        <span className="card-atleta-label">Pagar Mensalidade</span>
+                        <span className="card-atleta-label">Pagar {getLabelVinculo('mensalista')}</span>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                             <strong className="card-atleta-valor" style={{ fontSize: '0.85rem', maxWidth: '160px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                 {regras.chave_pix}

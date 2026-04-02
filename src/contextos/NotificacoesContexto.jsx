@@ -131,21 +131,33 @@ export const NotificacoesProvedor = ({ children }) => {
 
     const limparNotificacoes = useCallback(async () => {
         if (!usuario) return;
+        setContagemNaoLidas(0); // Feedback instantâneo
+        
         try {
-            // Utilizamos LocalStorage para ocultar as interacoes do usuário localmente.
-            // Isso evita erro de Row-Level Security do Supabase ao tentar dar UPDATE, além de não DELETAR o registro, 
-            // preservando firmemente os "Matches" e histórico para a lógica de contato.
+            // 1. Identifica quais notificações são do tipo 'bola' (Interações)
+            const idsParaArquivar = notificacoes
+                .filter(n => n.tipo === 'bola' || n.tipo === 'interacao')
+                .map(n => n.id);
+
+            if (idsParaArquivar.length > 0) {
+                // 2. Atualiza no banco de dados para o status arquivado
+                // Isso garante que elas sumam permanentemente da UI, mas preservem o Match
+                const { error } = await supabase
+                    .from('interacoes')
+                    .update({ tipo: 'bola_arquivada' })
+                    .in('id', idsParaArquivar);
+
+                if (error) throw error;
+            }
+
+            // 3. Para outros tipos (convites, etc), mantemos o backup no LocalStorage por enquanto
             const apagadasAtuais = JSON.parse(localStorage.getItem(`playhub_arquivadas_${usuario.id}`) || '[]');
+            const outrosIds = notificacoes.filter(n => !idsParaArquivar.includes(n.id)).map(n => n.id);
+            localStorage.setItem(`playhub_arquivadas_${usuario.id}`, JSON.stringify([...apagadasAtuais, ...outrosIds]));
             
-            // Pega os IDs de todas as interações de passadas de bola atuais e manda pro "limbo" visual
-            const idsParaEsconder = notificacoes.filter(n => n.tipo === 'bola' || n.tipo === 'interacao').map(n => n.id);
-            
-            localStorage.setItem(`playhub_arquivadas_${usuario.id}`, JSON.stringify([...apagadasAtuais, ...idsParaEsconder]));
-            
-            carregarNotificacoes();
+            await carregarNotificacoes();
         } catch (error) {
             console.error('Erro ao limpar notificações:', error);
-            alert('Erro ao limpar notificações.');
         }
     }, [usuario, carregarNotificacoes, notificacoes]);
 

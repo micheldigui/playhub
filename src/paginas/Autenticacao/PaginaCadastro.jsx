@@ -10,6 +10,16 @@ import Tooltip from '../../componentes/Tooltip/Tooltip';
 
 const validarEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
+const calcularIdade = (dataNasc) => {
+  if (!dataNasc) return null;
+  const hoje = new Date();
+  const nasc = new Date(dataNasc);
+  let idade = hoje.getFullYear() - nasc.getFullYear();
+  const m = hoje.getMonth() - nasc.getMonth();
+  if (m < 0 || (m === 0 && hoje.getDate() < nasc.getDate())) idade--;
+  return idade;
+};
+
 const GENEROS = ['Masculino', 'Feminino', 'Não-binário', 'Prefiro não informar'];
 
 const mascaraCep = (valor) => {
@@ -41,11 +51,28 @@ const PaginaCadastro = ({ aoIrParaLogin }) => {
     email: '', telefone: '',
     cep: '', rua: '', numero: '', complemento: '', bairro: '', cidade: '', estado: '',
     senha: '', confirmarSenha: '',
-    perfil_publico: true,
+    perfil_publico: false,
     compartilhar_whatsapp_match: false,
   });
 
-  const set = (campo) => (e) => setForm(prev => ({ ...prev, [campo]: e.target.value }));
+  const idadeAtual = calcularIdade(form.data_nascimento);
+  const ehMenorDeIdade = idadeAtual !== null && idadeAtual < 18;
+
+  const set = (campo) => (e) => {
+    const novoValor = e.target.value;
+    setForm(prev => {
+      const novoForm = { ...prev, [campo]: novoValor };
+      // Se mudou a data de nascimento, forçar privacidade para menores
+      if (campo === 'data_nascimento') {
+        const idade = calcularIdade(novoValor);
+        if (idade !== null && idade < 18) {
+          novoForm.perfil_publico = false;
+          novoForm.compartilhar_whatsapp_match = false;
+        }
+      }
+      return novoForm;
+    });
+  };
 
   // Busca automática do CEP quando atinge 8 dígitos
   useEffect(() => {
@@ -260,18 +287,24 @@ const PaginaCadastro = ({ aoIrParaLogin }) => {
             Visibilidade do Perfil
             <Tooltip texto="Permite que capitães de outras equipes te encontrem na busca de atletas." />
           </label>
-          <div className="auth-perfil-toggle-container" style={{ marginTop: '8px' }}>
-            <label className="auth-toggle" style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
+          {ehMenorDeIdade && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: '8px', marginTop: '8px', fontSize: '0.8rem', color: '#fca5a5' }}>
+              🔒 Opções de privacidade bloqueadas para menores de 18 anos.
+            </div>
+          )}
+          <div className="auth-perfil-toggle-container" style={{ marginTop: '8px', opacity: ehMenorDeIdade ? 0.4 : 1 }}>
+            <label className="auth-toggle" style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: ehMenorDeIdade ? 'not-allowed' : 'pointer' }}>
               <input 
                 type="checkbox" 
                 checked={form.perfil_publico} 
-                onChange={(e) => setForm(prev => ({ ...prev, perfil_publico: e.target.checked }))}
+                onChange={(e) => !ehMenorDeIdade && setForm(prev => ({ ...prev, perfil_publico: e.target.checked }))}
+                disabled={ehMenorDeIdade}
                 tabIndex="8"
                 style={{ width: 'auto', margin: 0 }}
               />
               <span style={{ fontSize: '0.9rem', color: 'var(--texto-cor)', display: 'flex', alignItems: 'center', gap: '6px' }}>
                 {form.perfil_publico ? <Eye size={16} color="#0ea5e9" /> : <EyeOff size={16} color="#64748b" />}
-                {form.perfil_publico ? 'Perfil Público (Padrão)' : 'Perfil Privado'}
+                {form.perfil_publico ? 'Perfil Público' : 'Perfil Privado (Obrigatório para menores)'}
               </span>
             </label>
           </div>
@@ -282,12 +315,13 @@ const PaginaCadastro = ({ aoIrParaLogin }) => {
             Privacidade do WhatsApp
             <Tooltip texto="Seu número só será exibido para jogadores que derem match com você e que sejam maiores de 18 anos." />
           </label>
-          <div className="auth-perfil-toggle-container" style={{ marginTop: '8px' }}>
-            <label className="auth-toggle" style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
+          <div className="auth-perfil-toggle-container" style={{ marginTop: '8px', opacity: ehMenorDeIdade ? 0.4 : 1 }}>
+            <label className="auth-toggle" style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: ehMenorDeIdade ? 'not-allowed' : 'pointer' }}>
               <input 
                 type="checkbox" 
                 checked={form.compartilhar_whatsapp_match} 
-                onChange={(e) => setForm(prev => ({ ...prev, compartilhar_whatsapp_match: e.target.checked }))}
+                onChange={(e) => !ehMenorDeIdade && setForm(prev => ({ ...prev, compartilhar_whatsapp_match: e.target.checked }))}
+                disabled={ehMenorDeIdade}
                 tabIndex="8"
                 style={{ width: 'auto', margin: 0 }}
               />

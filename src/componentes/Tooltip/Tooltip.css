@@ -2,7 +2,6 @@
   position: relative;
   display: inline-flex;
   align-items: center;
-  margin-left: 5px;
 }
 
 .tooltip-botao {
@@ -26,7 +25,7 @@
 
 .tooltip-balao {
   position: absolute;
-  z-index: 100;
+  z-index: 9999; /* Elevado para garantir visibilidade */
   background: #1e293b;
   border: 1px solid rgba(255,255,255,0.1);
   border-radius: 8px;

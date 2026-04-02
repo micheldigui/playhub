@@ -315,7 +315,8 @@ export const EquipeProvedor = ({ children }) => {
                     latitude: coords.lat,
                     longitude: coords.lon,
                     gestao_financeira: dadosDaEquipe.gestao_financeira ?? true,
-                    aceitando_membros: dadosDaEquipe.aceitando_membros ?? true
+                    aceitando_membros: dadosDaEquipe.aceitando_membros ?? true,
+                    regras: dadosDaEquipe.regras || {}
                 })
                 .select()
                 .single();
@@ -408,7 +409,8 @@ export const EquipeProvedor = ({ children }) => {
                     latitude: coords.lat,
                     longitude: coords.lon,
                     gestao_financeira: dadosDaEquipe.gestao_financeira,
-                    aceitando_membros: dadosDaEquipe.aceitando_membros
+                    aceitando_membros: dadosDaEquipe.aceitando_membros,
+                    regras: dadosDaEquipe.regras
                 })
                 .eq('id', equipeId);
 

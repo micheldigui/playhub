@@ -16,8 +16,9 @@
 @media (max-width: 768px) {
   .modal-overlay {
     align-items: flex-start;
-    padding-top: 60px;
+    padding: 20px 0; /* Menos padding no topo para aparecer mais alto */
     overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
 }
 
@@ -25,12 +26,20 @@
   background-color: var(--fundo-cartao);
   border: var(--borda-suave);
   border-radius: var(--raio-g);
-  width: 90%;
+  width: 92%; /* Ligeiramente mais largo no mobile */
   max-width: 500px;
   max-height: 90vh;
+  margin: auto; /* Centraliza horizontalmente se houver espaço */
   overflow-y: auto;
   box-shadow: var(--sombra-premium);
   animation: slideUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@media (max-width: 768px) {
+  .modal-content {
+    max-height: none; /* Deixa o modal crescer livremente no overlay que já tem scroll */
+    margin-bottom: 40px; /* Margem extra no fundo para não colar na borda */
+  }
 }
 
 .modal-header {

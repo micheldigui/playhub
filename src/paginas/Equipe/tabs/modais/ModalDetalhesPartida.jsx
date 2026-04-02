@@ -69,13 +69,13 @@ const ModalDetalhesPartida = ({ isOpen, onClose, partida }) => {
     // Calcula filas dinamicamente com base nas regras de prioridade
     let todosInscritos = [...presencas].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
 
-    if (equipeAtiva?.regras?.mensalistaPriority) {
+    if (equipeAtiva?.regras?.prioridade_mensalista) {
         todosInscritos.sort((a, b) => {
             const vinculoA = getVinculoUsuario(a.usuarios.id);
             const vinculoB = getVinculoUsuario(b.usuarios.id);
             if (vinculoA === 'mensalista' && vinculoB !== 'mensalista') return -1;
             if (vinculoB === 'mensalista' && vinculoA !== 'mensalista') return 1;
-            return 0; // se ambos forem iguais, mantém a cronológica
+            return 0; // se ambos forem iguais, mantém a cronológica por inscrição
         });
     }
 
@@ -97,9 +97,9 @@ const ModalDetalhesPartida = ({ isOpen, onClose, partida }) => {
     // Regras de Tempo (Novo)
     const isAdmin = equipeAtiva?.papel === 'admin' || temPermissaoEquipe('gerenciar_partidas') || temPermissaoEquipe('gerenciar_punicoes');
     const regras = equipeAtiva?.regras || {};
-    const openDays = regras.registrationOpenDays || 7;
-    const closeHours = regras.registrationCloseHours || 1;
-    const cancelHours = regras.cancelDeadlineHours || 2;
+    const openDays = regras.dias_abertura_inscricao || 7;
+    const closeHours = regras.horas_limite_inscricao || 1;
+    const cancelHours = regras.horas_limite_cancelamento || 2;
 
     const eventDateTime = new Date(`${partida.data}T${partida.hora}`);
     const now = new Date();
@@ -167,7 +167,7 @@ const ModalDetalhesPartida = ({ isOpen, onClose, partida }) => {
         const local = partida.local_nome || 'Local a definir';
         const equipeNome = equipeAtiva?.nome || 'Equipe';
 
-        let mensagem = `*🏐 LISTA DE PRESENÇA - ${equipeNome.toUpperCase()}*\n`;
+        let mensagem = `*🏟️ JOGO CONFIRMADO - ${equipeNome.toUpperCase()}*\n`;
         mensagem += `📅 *DATA:* ${dataFormatada}\n`;
         mensagem += `⏰ *HORA:* ${horaFormatada}\n`;
         mensagem += `📍 *LOCAL:* ${local}\n`;
@@ -178,28 +178,29 @@ const ModalDetalhesPartida = ({ isOpen, onClose, partida }) => {
             listaConfirmados.forEach((p, index) => {
                 const u = p.usuarios;
                 const vinculo = getVinculoUsuario(u?.id);
-                // Pegar primeiro nome e inicial do sobrenome ou apenas primeiro nome
                 const nomes = u?.nome_completo?.split(' ') || ['Jogador'];
                 const nomeExibir = nomes.length > 1 ? `${nomes[0]} ${nomes[1][0]}.` : nomes[0];
-                
-                mensagem += `${index + 1}. ${nomeExibir}${vinculo === 'mensalista' ? ' 👑' : ''}\n`;
+                const label = getLabelVinculo(vinculo);
+                mensagem += `${index + 1}. ${nomeExibir}${vinculo === 'mensalista' ? ' 👑' : ''} (_${label}_)\n`;
             });
         } else {
-            mensagem += `_(Vazio)_\n`;
+            mensagem += `_Nenhum confirmado_\n`;
         }
 
         if (listaEspera.length > 0) {
             mensagem += `\n*⏳ LISTA DE ESPERA (${listaEspera.length})*\n`;
             listaEspera.forEach((p, index) => {
                 const u = p.usuarios;
+                const vinculo = getVinculoUsuario(u?.id);
                 const nomes = u?.nome_completo?.split(' ') || ['Jogador'];
                 const nomeExibir = nomes.length > 1 ? `${nomes[0]} ${nomes[1][0]}.` : nomes[0];
-                mensagem += `${index + 1}. ${nomeExibir}\n`;
+                const label = getLabelVinculo(vinculo);
+                mensagem += `${index + 1}. ${nomeExibir}${vinculo === 'mensalista' ? ' 👑' : ''} (_${label}_)\n`;
             });
         }
 
         mensagem += `\n---------------------------\n`;
-        mensagem += `_Gerado por playhubapp.com.br_ 🚀`;
+        mensagem += `👉 _Garanta sua vaga em playhubapp.com.br_ 🚀`;
 
         const encodedMessage = encodeURIComponent(mensagem);
         const whatsappUrl = `https://api.whatsapp.com/send?text=${encodedMessage}`;
@@ -406,9 +407,9 @@ const ModalDetalhesPartida = ({ isOpen, onClose, partida }) => {
                                                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden' }}>
                                                             <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{u?.nome_completo || 'Desconhecido'}</span>
                                                             {vinculo === 'mensalista' ? (
-                                                                <Star size={14} fill="#fbbf24" color="#fbbf24" title="Mensalista" />
+                                                                <Star size={14} fill="#fbbf24" color="#fbbf24" title={getLabelVinculo('mensalista')} />
                                                             ) : (
-                                                                <Star size={14} fill="#94a3b8" color="#94a3b8" title="Avulso" />
+                                                                <Star size={14} fill="#94a3b8" color="#94a3b8" title={getLabelVinculo('avulso')} />
                                                             )}
                                                         </div>
 
@@ -547,29 +548,40 @@ const ModalDetalhesPartida = ({ isOpen, onClose, partida }) => {
                                     </div>
                                 )}
                                 
-                                {/* ADIÇÃO MANUAL ADMINISTRATIVA */}
-                                {isAdmin && (() => {
-                                    const membrosElegiveis = membros.filter(m => m.status === 'ativo' && !todosInscritos.some(p => p.usuarios?.id === m.usuarios?.id));
-                                    if (membrosElegiveis.length === 0) return null;
-                                    return (
-                                        <div style={{ marginTop: '12px', padding: '12px', background: 'rgba(255,255,255,0.02)', borderRadius: '8px', border: '1px dashed rgba(255,255,255,0.1)' }}>
-                                            <h4 style={{ fontSize: '0.85rem', color: '#94a3b8', marginBottom: '8px' }}>Adicionar Jogador Manualmente (Admin)</h4>
-                                            <select 
-                                                onChange={handleAdicionarManual}
-                                                value=""
-                                                disabled={processandoAcao}
-                                                style={{ width: '100%', padding: '8px', borderRadius: '4px', background: 'rgba(15,23,42,0.8)', color: '#f8fafc', border: '1px solid rgba(255,255,255,0.1)' }}
-                                            >
-                                                <option value="" disabled>-- Selecione um membro da equipe --</option>
-                                                {membrosElegiveis.map(m => (
-                                                    <option key={m.usuarios.id} value={m.usuarios.id} data-vinculo={m.vinculo}>
-                                                        {m.usuarios.nome_completo} ({getLabelVinculo(m.vinculo)})
-                                                    </option>
-                                                ))}
-                                            </select>
-                                        </div>
-                                    );
-                                })()}
+                                 {/* ADIÇÃO MANUAL ADMINISTRATIVA */}
+                                 {isAdmin && (() => {
+                                     // Filtra membros da equipe que não estão removidos (pegando ativo, pendente, etc)
+                                     // e que NÃO estão na lista de inscrções da partida
+                                     const membrosElegiveis = membros.filter(m => 
+                                         m.status?.toLowerCase() !== 'removido' && 
+                                         !todosInscritos.some(p => String(p.usuario_id) === String(m.usuario_id))
+                                     );
+
+                                     return (
+                                         <div style={{ marginTop: '12px', padding: '12px', background: 'rgba(255,255,255,0.02)', borderRadius: '8px', border: '1px dashed rgba(255,255,255,0.1)' }}>
+                                             <h4 style={{ fontSize: '0.85rem', color: '#94a3b8', marginBottom: '8px' }}>Adicionar Jogador Manualmente (Capitão ou Vice)</h4>
+                                             {membrosElegiveis.length > 0 ? (
+                                                 <select 
+                                                     onChange={handleAdicionarManual}
+                                                     value=""
+                                                     disabled={processandoAcao}
+                                                     style={{ width: '100%', padding: '8px', borderRadius: '4px', background: 'rgba(15,23,42,0.8)', color: '#f8fafc', border: '1px solid rgba(255,255,255,0.1)' }}
+                                                 >
+                                                     <option value="" disabled>-- Selecione um membro da equipe --</option>
+                                                     {membrosElegiveis.map(m => (
+                                                         <option key={m.id} value={m.usuario_id} data-vinculo={m.vinculo}>
+                                                             {m.usuarios?.nome_completo || m.usuarios?.id || 'Membro'} ({getLabelVinculo(m.vinculo)})
+                                                         </option>
+                                                     ))}
+                                                 </select>
+                                             ) : (
+                                                 <p style={{ fontSize: '0.8rem', color: '#64748b', fontStyle: 'italic' }}>
+                                                     Todos os membros disponíveis já estão na lista.
+                                                 </p>
+                                             )}
+                                         </div>
+                                     );
+                                 })()}
                             </div>
 
                             {/* FILA DE ESPERA */}
@@ -591,9 +603,9 @@ const ModalDetalhesPartida = ({ isOpen, onClose, partida }) => {
                                                     <div style={{ flex: 1, color: '#e2e8f0', display: 'flex', alignItems: 'center', gap: '8px' }}>
                                                         {u?.nome_completo || 'Desconhecido'}
                                                         {vinculo === 'mensalista' ? (
-                                                            <Star size={14} fill="#fbbf24" color="#fbbf24" title="Mensalista" />
+                                                            <Star size={14} fill="#fbbf24" color="#fbbf24" title={getLabelVinculo('mensalista')} />
                                                         ) : (
-                                                            <Star size={14} fill="#94a3b8" color="#94a3b8" title="Avulso" />
+                                                            <Star size={14} fill="#94a3b8" color="#94a3b8" title={getLabelVinculo('avulso')} />
                                                         )}
                                                     </div>
                                                 </div>

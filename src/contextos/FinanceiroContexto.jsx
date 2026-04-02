@@ -345,13 +345,13 @@ export const FinanceiroProvider = ({ children }) => {
                 return { status: 'ocultar' };
             }
 
-            // 2. Buscar todas as mensalidades do usuário
+            // 2. Buscar todas as mensalidades do usuário (ordem antiga -> nova)
             const { data: mensalidades, error: errMens } = await supabase
                 .from('mensalidades')
                 .select('*')
                 .eq('equipe_id', equipeId)
                 .eq('usuario_id', usuarioId)
-                .order('periodo', { ascending: false });
+                .order('periodo', { ascending: true }); // MAIS ANTIGO PRIMEIRO
 
             if (errMens) throw errMens;
             if (!mensalidades || mensalidades.length === 0) return { status: 'ocultar' };
@@ -373,28 +373,25 @@ export const FinanceiroProvider = ({ children }) => {
 
             const hoje = new Date();
             let statusFinal = 'pago';
-            let cicloReferencia = mensalidades[0].periodo;
+            let cicloReferencia = mensalidades[mensalidades.length - 1].periodo; // Último como fallback
             let bloqueio = false;
 
-            // Percorremos para achar o status mais crítico (Vencido > Pendente > Pago)
-            for (const m of mensalidades) {
-                if (m.status === 'pago') continue;
+            // Encontramos a PRIMEIRA (mais antiga) não paga
+            const primeiraNaoPaga = mensalidades.find(m => m.status !== 'pago');
 
-                const [ano, mes] = m.periodo.split('-').map(Number);
-                const cicData = mapaCiclos[m.periodo];
+            if (primeiraNaoPaga) {
+                const [ano, mes] = primeiraNaoPaga.periodo.split('-').map(Number);
+                const cicData = mapaCiclos[primeiraNaoPaga.periodo];
                 const diaVenc = cicData?.dia_vencimento_snapshot || config.dia_vencimento;
                 const dataVencimento = new Date(ano, mes - 1, diaVenc, 23, 59, 59);
 
+                cicloReferencia = primeiraNaoPaga.periodo;
+
                 if (hoje > dataVencimento) {
                     statusFinal = 'vencido';
-                    cicloReferencia = m.periodo;
                     bloqueio = true;
-                    break; 
                 } else {
-                    if (statusFinal !== 'vencido') {
-                        statusFinal = 'pendente';
-                        cicloReferencia = m.periodo;
-                    }
+                    statusFinal = 'pendente';
                 }
             }
 

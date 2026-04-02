@@ -4,7 +4,7 @@ import Botao from '../Botao/Botao';
 import { 
   Globe, Lock, MapPin, Search, Camera, User, 
   Image as ImageIcon, Home, Hash, Map, Building2, Flag, Link,
-  Settings, DollarSign, Users
+  Settings, DollarSign, Users, Calendar, CreditCard, Clock
 } from 'lucide-react';
 import { usarEquipe } from '../../contextos/EquipeContexto';
 import './ModalCriacaoEquipe.css';
@@ -39,7 +39,13 @@ const ModalCriacaoEquipe = ({ isOpen, onClose, aoSucesso, equipeParaEditar = nul
     local_mapa_link: equipeParaEditar?.local_mapa_link || '',
     link_grupo: equipeParaEditar?.link_grupo || '',
     gestao_financeira: equipeParaEditar?.gestao_financeira ?? true,
-    aceitando_membros: equipeParaEditar?.aceitando_membros ?? true
+    aceitando_membros: equipeParaEditar?.aceitando_membros ?? true,
+    // Novos campos financeiros (dentro de regras)
+    mensalidade: equipeParaEditar?.regras?.mensalidade || 50,
+    vencimento_dia: equipeParaEditar?.regras?.vencimento_dia || 10,
+    chave_pix: equipeParaEditar?.regras?.chave_pix || '',
+    custo_quadra: equipeParaEditar?.regras?.custo_quadra || 0,
+    horas_limite_pagamento: equipeParaEditar?.regras?.horas_limite_pagamento || 24
   });
 
   const [arquivoLogo, setArquivoLogo] = useState(null);
@@ -74,7 +80,12 @@ const ModalCriacaoEquipe = ({ isOpen, onClose, aoSucesso, equipeParaEditar = nul
           local_mapa_link: equipeParaEditar.local_mapa_link || '',
           link_grupo: equipeParaEditar.link_grupo || '',
           gestao_financeira: equipeParaEditar.gestao_financeira ?? true,
-          aceitando_membros: equipeParaEditar.aceitando_membros ?? true
+          aceitando_membros: equipeParaEditar.aceitando_membros ?? true,
+          mensalidade: equipeParaEditar.regras?.mensalidade || 50,
+          vencimento_dia: equipeParaEditar.regras?.vencimento_dia || 10,
+          chave_pix: equipeParaEditar.regras?.chave_pix || '',
+          custo_quadra: equipeParaEditar.regras?.custo_quadra || 0,
+          horas_limite_pagamento: equipeParaEditar.regras?.horas_limite_pagamento || 24
         });
         setPreviewLogo(equipeParaEditar.logo_url || null);
       } else {
@@ -100,7 +111,12 @@ const ModalCriacaoEquipe = ({ isOpen, onClose, aoSucesso, equipeParaEditar = nul
           local_mapa_link: '',
           link_grupo: '',
           gestao_financeira: true,
-          aceitando_membros: true
+          aceitando_membros: true,
+          mensalidade: 50,
+          vencimento_dia: 10,
+          chave_pix: '',
+          custo_quadra: 0,
+          horas_limite_pagamento: 24
         });
         setPreviewLogo(null);
       }
@@ -179,10 +195,27 @@ const ModalCriacaoEquipe = ({ isOpen, onClose, aoSucesso, equipeParaEditar = nul
     setCarregando(true);
     let result;
     
+    const dadosParaSalvar = {
+      ...form,
+      regras: {
+        ...(equipeParaEditar?.regras || {}),
+        mensalidade: Number(form.mensalidade),
+        vencimento_dia: Number(form.vencimento_dia),
+        chave_pix: form.chave_pix,
+        custo_quadra: Number(form.custo_quadra || 0),
+        horas_limite_pagamento: Number(form.horas_limite_pagamento || 24),
+        prioridade_mensalista: equipeParaEditar?.regras?.prioridade_mensalista || false,
+        dias_abertura_inscricao: equipeParaEditar?.regras?.dias_abertura_inscricao || 7,
+        horas_limite_inscricao: equipeParaEditar?.regras?.horas_limite_inscricao || 2,
+        horas_limite_cancelamento: equipeParaEditar?.regras?.horas_limite_cancelamento || 24,
+        suspenso_amarelos: equipeParaEditar?.regras?.suspenso_amarelos || 3
+      }
+    };
+
     if (equipeParaEditar) {
-      result = await editarEquipe(equipeParaEditar.id, form, arquivoLogo);
+      result = await editarEquipe(equipeParaEditar.id, dadosParaSalvar, arquivoLogo);
     } else {
-      result = await criarEquipe(form, arquivoLogo);
+      result = await criarEquipe(dadosParaSalvar, arquivoLogo);
     }
     
     setCarregando(false);
@@ -495,6 +528,78 @@ const ModalCriacaoEquipe = ({ isOpen, onClose, aoSucesso, equipeParaEditar = nul
                 <span className="slider round"></span>
               </label>
             </div>
+
+            {/* Campos Financeiros Adicionais quando habilitado */}
+            {form.gestao_financeira && (
+              <div className="campos-financeiros-adicionais anima-entrada">
+                <div className="fila-campos">
+                  <div className="campo">
+                    <label>Mensalidade (R$)</label>
+                    <div className="campo-valida">
+                      <span className="icone-input"><DollarSign size={18} /></span>
+                      <input 
+                        type="number" 
+                        placeholder="Ex: 50" 
+                        value={form.mensalidade}
+                        onChange={(e) => handleMudanca('mensalidade', e.target.value)}
+                      />
+                    </div>
+                  </div>
+                  <div className="campo">
+                    <label>Dia Vencimento</label>
+                    <div className="campo-valida">
+                      <span className="icone-input"><Calendar size={18} /></span>
+                      <input 
+                        type="number" 
+                        placeholder="Ex: 10" 
+                        min="1" max="31"
+                        value={form.vencimento_dia}
+                        onChange={(e) => handleMudanca('vencimento_dia', e.target.value)}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="fila-campos">
+                  <div className="campo">
+                    <label>Custo da Quadra (R$)</label>
+                    <div className="campo-valida">
+                      <span className="icone-input"><DollarSign size={18} /></span>
+                      <input 
+                        type="number" 
+                        placeholder="Ex: 150" 
+                        value={form.custo_quadra}
+                        onChange={(e) => handleMudanca('custo_quadra', e.target.value)}
+                      />
+                    </div>
+                  </div>
+                  <div className="campo">
+                    <label>Limite Pagamento (h)</label>
+                    <div className="campo-valida">
+                      <span className="icone-input"><Clock size={18} /></span>
+                      <input 
+                        type="number" 
+                        placeholder="Ex: 24" 
+                        value={form.horas_limite_pagamento}
+                        onChange={(e) => handleMudanca('horas_limite_pagamento', e.target.value)}
+                      />
+                    </div>
+                  </div>
+                </div>
+                <div className="campo">
+                  <label>Chave PIX para Recebimento</label>
+                  <div className="campo-valida">
+                    <span className="icone-input"><CreditCard size={18} /></span>
+                    <input 
+                      type="text" 
+                      placeholder="CPF, E-mail, Celular..." 
+                      value={form.chave_pix}
+                      onChange={(e) => handleMudanca('chave_pix', e.target.value)}
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
 
             <div className="item-toggle">
               <div className="toggle-info">

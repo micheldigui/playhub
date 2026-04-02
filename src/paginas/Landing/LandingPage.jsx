@@ -50,7 +50,7 @@ const LandingPage = ({ aoLogin }) => {
 
         <div className="features-grid">
           <div className="feature-card">
-            <div className="feature-icon-box">
+            <div className="feature-icon-box" style={{ color: '#38bdf8', background: 'rgba(56, 189, 248, 0.1)' }}>
               <Users size={32} />
             </div>
             <h3>
@@ -94,7 +94,7 @@ const LandingPage = ({ aoLogin }) => {
           </div>
 
           <div className="feature-card">
-            <div className="feature-icon-box">
+            <div className="feature-icon-box" style={{ color: '#a855f7', background: 'rgba(168, 85, 247, 0.1)' }}>
               <Star size={32} />
             </div>
             <h3>Perfil do Jogador</h3>
@@ -102,7 +102,7 @@ const LandingPage = ({ aoLogin }) => {
           </div>
 
           <div className="feature-card">
-            <div className="feature-icon-box">
+            <div className="feature-icon-box" style={{ color: '#ec4899', background: 'rgba(236, 72, 153, 0.1)' }}>
               <Calendar size={32} />
             </div>
             <h3>Agenda de Partidas</h3>
@@ -116,7 +116,7 @@ const LandingPage = ({ aoLogin }) => {
         <div className="install-content">
           <div className="install-text">
             <span className="section-tag">Acesso Rápido</span>
-            <h2 className="section-title" style={{ textAlign: 'left' }}>Leve o PlayHub para a Partida</h2>
+            <h2 className="section-title">Leve o PlayHub para a Partida</h2>
             <p>
               O PlayHub é um <strong>Web App</strong>. Você instala ele direto na tela do seu celular 
               sem baixar nada pesado. Sem frescura.

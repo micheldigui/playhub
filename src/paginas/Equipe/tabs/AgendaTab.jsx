@@ -111,7 +111,11 @@ const AgendaTab = () => {
                             onClick={() => setPartidaSelecionada(partida)}
                         >
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1 }}>
-                                <div style={{ fontSize: '1.1rem', fontWeight: '600', color: '#f8fafc' }}>
+                                <div style={{ 
+                                    fontSize: '1.1rem', 
+                                    fontWeight: '600', 
+                                    color: new Date(partida.data + 'T' + partida.hora) < new Date() ? '#f43f5e' : '#f8fafc' 
+                                }}>
                                     {formatarData(partida.data)} às {partida.hora.substring(0, 5)}
                                 </div>
                                 <div style={{ display: 'flex', gap: '16px', color: '#94a3b8', fontSize: '0.85rem' }}>

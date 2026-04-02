@@ -11,6 +11,16 @@ import './ModalEdicaoUsuario.css';
 
 const GENEROS = ['Masculino', 'Feminino', 'Não-binário', 'Prefiro não informar'];
 
+const calcularIdade = (dataNasc) => {
+  if (!dataNasc) return null;
+  const hoje = new Date();
+  const nasc = new Date(dataNasc);
+  let idade = hoje.getFullYear() - nasc.getFullYear();
+  const m = hoje.getMonth() - nasc.getMonth();
+  if (m < 0 || (m === 0 && hoje.getDate() < nasc.getDate())) idade--;
+  return idade;
+};
+
 const ModalEdicaoUsuario = ({ usuario, aoFechar }) => {
   const { ehRootAdmin: euSouRoot, dadosUsuario: eu } = usarAutenticacao();
   
@@ -63,7 +73,24 @@ const ModalEdicaoUsuario = ({ usuario, aoFechar }) => {
     carregarPerfilEsportivo();
   }, [usuario.id]);
 
-  const set = (campo) => (e) => setForm(prev => ({ ...prev, [campo]: e.target.value }));
+  const idadeAtual = calcularIdade(form.data_nascimento);
+  const ehMenorDeIdade = idadeAtual !== null && idadeAtual < 18;
+
+  const set = (campo) => (e) => {
+    const novoValor = e.target.value;
+    setForm(prev => {
+      const novoForm = { ...prev, [campo]: novoValor };
+      // Se mudou a data de nascimento, forçar privacidade para menores
+      if (campo === 'data_nascimento') {
+        const idade = calcularIdade(novoValor);
+        if (idade !== null && idade < 18) {
+          novoForm.perfil_publico = false;
+          novoForm.compartilhar_whatsapp_match = false;
+        }
+      }
+      return novoForm;
+    });
+  };
 
   const togglePermissao = (chave) => {
     setForm(prev => ({
@@ -75,33 +102,36 @@ const ModalEdicaoUsuario = ({ usuario, aoFechar }) => {
     }));
   };
 
-  const salvarAlteracoes = async (e) => {
-    e.preventDefault();
+  const salvarAlteracoes = async () => {
     setCarregando(true);
     setMensagem({ tipo: '', texto: '' });
 
+    // Garantir que menores de 18 sempre tenham privacidade forçada
+    const perfilPublicoFinal = ehMenorDeIdade ? false : form.perfil_publico;
+    const whatsappFinal = ehMenorDeIdade ? false : form.compartilhar_whatsapp_match;
+
     try {
-      const { error } = await supabase
-        .from('usuarios')
-        .update({
-          nome_completo: form.nome_completo,
-          apelido: form.apelido,
-          telefone: form.telefone,
-          data_nascimento: form.data_nascimento || null,
-          genero: form.genero || null,
-          cep: form.cep,
-          rua: form.rua,
-          numero: form.numero,
-          complemento: form.complemento,
-          bairro: form.bairro,
-          cidade: form.cidade,
-          estado: form.estado,
-          perfil_publico: form.perfil_publico,
-          compartilhar_whatsapp_match: form.compartilhar_whatsapp_match,
-          eh_super_admin: form.eh_super_admin,
-          admin_permissoes: form.admin_permissoes
-        })
-        .eq('id', usuario.id);
+      // Usa RPC com SECURITY DEFINER para contornar RLS e
+      // permitir que o Root Admin atualize campos de outros usuários
+      const { error } = await supabase.rpc('admin_atualizar_usuario', {
+        p_usuario_id: usuario.id,
+        p_nome_completo: form.nome_completo,
+        p_apelido: form.apelido,
+        p_telefone: form.telefone,
+        p_data_nascimento: form.data_nascimento || null,
+        p_genero: form.genero || null,
+        p_cep: form.cep,
+        p_rua: form.rua,
+        p_numero: form.numero,
+        p_complemento: form.complemento,
+        p_bairro: form.bairro,
+        p_cidade: form.cidade,
+        p_estado: form.estado,
+        p_perfil_publico: perfilPublicoFinal,
+        p_compartilhar_whatsapp_match: whatsappFinal,
+        p_eh_super_admin: ehMenorDeIdade ? false : form.eh_super_admin,
+        p_admin_permissoes: ehMenorDeIdade ? { usuarios: false, equipes: false } : form.admin_permissoes
+      });
 
       if (error) throw error;
       setMensagem({ tipo: 'sucesso', texto: 'Usuário atualizado com sucesso!' });
@@ -329,35 +359,48 @@ const ModalEdicaoUsuario = ({ usuario, aoFechar }) => {
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem', marginBottom: '1.5rem' }}>
-              <label className="checkbox-label">
+              <label className="checkbox-label" style={{ opacity: ehMenorDeIdade ? 0.5 : 1, cursor: ehMenorDeIdade ? 'not-allowed' : 'pointer' }}>
                 <input 
                   type="checkbox" 
                   checked={form.perfil_publico}
-                  onChange={(e) => setForm(prev => ({ ...prev, perfil_publico: e.target.checked }))} 
+                  disabled={ehMenorDeIdade}
+                  onChange={(e) => !ehMenorDeIdade && setForm(prev => ({ ...prev, perfil_publico: e.target.checked }))} 
                 />
                 <div className="checkbox-texto">Perfil Público na plataforma</div>
                 <Tooltip texto="Se ativado, o jogador aparece na busca global de atletas." />
               </label>
 
-              <label className="checkbox-label">
+              <label className="checkbox-label" style={{ opacity: ehMenorDeIdade ? 0.5 : 1, cursor: ehMenorDeIdade ? 'not-allowed' : 'pointer' }}>
                 <input 
                   type="checkbox" 
                   checked={form.compartilhar_whatsapp_match}
-                  onChange={(e) => setForm(prev => ({ ...prev, compartilhar_whatsapp_match: e.target.checked }))} 
+                  disabled={ehMenorDeIdade}
+                  onChange={(e) => !ehMenorDeIdade && setForm(prev => ({ ...prev, compartilhar_whatsapp_match: e.target.checked }))} 
                 />
                 <div className="checkbox-texto">Compartilhar WhatsApp no Match</div>
                 <Tooltip texto="Ativa a visibilidade do número para matches confirmados." />
               </label>
 
+              {ehMenorDeIdade && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)', borderRadius: '8px', fontSize: '0.8rem', color: '#fca5a5' }}>
+                  🔒 Privacidade bloqueada: usuário menor de 18 anos. Nem o Super Admin pode ativar essas opções.
+                </div>
+              )}
+
               {/* Seção de Administrador - Somente Root pode atribuir cargos administrativos */}
               {euSouRoot && (
                 <div style={{ marginTop: '0.5rem', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '12px', padding: '1rem', background: 'rgba(255,255,255,0.01)' }}>
-                  <label className="checkbox-label" style={{ border: 'none', background: 'transparent', padding: 0, marginBottom: form.eh_super_admin ? '1rem' : 0 }}>
+                  {ehMenorDeIdade && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)', borderRadius: '8px', fontSize: '0.8rem', color: '#fca5a5', marginBottom: '0.75rem' }}>
+                      🔒 Menores de 18 anos não podem ser administradores do sistema.
+                    </div>
+                  )}
+                  <label className="checkbox-label" style={{ border: 'none', background: 'transparent', padding: 0, marginBottom: form.eh_super_admin ? '1rem' : 0, opacity: ehMenorDeIdade ? 0.4 : 1, cursor: ehMenorDeIdade ? 'not-allowed' : 'pointer' }}>
                     <input 
                       type="checkbox" 
                       checked={form.eh_super_admin}
-                      disabled={usuarioEditadoEhRoot} // Root não pode ser desativado por aqui
-                      onChange={(e) => setForm(prev => ({ ...prev, eh_super_admin: e.target.checked }))} 
+                      disabled={usuarioEditadoEhRoot || ehMenorDeIdade}
+                      onChange={(e) => !ehMenorDeIdade && setForm(prev => ({ ...prev, eh_super_admin: e.target.checked }))} 
                     />
                     <div className="checkbox-texto" style={{ color: form.eh_super_admin ? '#fbbf24' : 'inherit', fontWeight: form.eh_super_admin ? 'bold' : 'normal' }}>
                       <Shield size={16} /> 
@@ -444,8 +487,8 @@ const ModalEdicaoUsuario = ({ usuario, aoFechar }) => {
               <Key size={18} /> Recuperar Senha
             </Botao>
             <Botao 
-              type="submit" 
-              form="form-edicao-usuario"
+              type="button"
+              onClick={salvarAlteracoes}
               disabled={carregando} 
               style={{ flex: 1, minWidth: '150px' }}
             >

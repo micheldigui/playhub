@@ -119,7 +119,7 @@ export const PartidasProvider = ({ children }) => {
             const { data, error } = await supabase
                 .from('partidas_presencas')
                 .select(`
-                    id, status, frequencia, created_at,
+                    id, status, frequencia, created_at, usuario_id,
                     usuarios ( id, nome_completo, apelido, foto_url )
                 `)
                 .eq('partida_id', partidaId)
