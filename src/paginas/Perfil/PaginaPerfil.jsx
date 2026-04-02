@@ -315,20 +315,17 @@ const PaginaPerfil = ({ aoVoltar }) => {
 
   return (
     <div className="perfil-container animacao-entrada">
-
-      <div className="perfil-cabecalho">
-        <h2>Meu Perfil</h2>
-        <p>Gerencie suas informações pessoais e de contato.</p>
-      </div>
-
       {mensagem.texto && (
-        <div className={`mensagem-alerta ${mensagem.tipo}`}>
-          {mensagem.tipo === 'sucesso' ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
-          <span>{mensagem.texto}</span>
+        <div style={{ padding: '1rem 1.5rem 0 1.5rem' }}>
+          <div className={`mensagem-alerta ${mensagem.tipo}`} style={{ marginBottom: 0 }}>
+            {mensagem.tipo === 'sucesso' ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
+            <span>{mensagem.texto}</span>
+          </div>
         </div>
       )}
 
-      <form className="perfil-form" onSubmit={salvarPerfil}>
+      <div className="perfil-body">
+        <form id="perfil-form" className="perfil-form" onSubmit={salvarPerfil}>
         <div className="perfil-cartao">
           <span className="cartao-titulo">Dados Pessoais</span>
           
@@ -535,13 +532,14 @@ const PaginaPerfil = ({ aoVoltar }) => {
             </div>
           </div>
         </div>
+        </form>
+      </div>
 
-        <div className="rodape-form">
-          <Botao type="submit" disabled={carregando}>
-            {carregando ? 'Salvando...' : 'Salvar Alterações'}
-          </Botao>
-        </div>
-      </form>
+      <div className="perfil-footer">
+        <Botao type="submit" form="perfil-form" disabled={carregando}>
+          {carregando ? 'Salvando...' : 'Salvar Alterações'}
+        </Botao>
+      </div>
     </div>
   );
 };

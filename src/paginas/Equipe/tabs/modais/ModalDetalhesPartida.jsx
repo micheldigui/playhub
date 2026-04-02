@@ -5,7 +5,7 @@ import { usarEquipe } from '../../../../contextos/EquipeContexto';
 import { usarAutenticacao } from '../../../../contextos/AutenticacaoContexto';
 import { usarFinanceiro } from '../../../../contextos/FinanceiroContexto';
 import Botao from '../../../../componentes/Botao/Botao';
-import '../../../../componentes/Modal/Modal.css';
+import Modal from '../../../../componentes/Modal/Modal';
 
 const ModalDetalhesPartida = ({ isOpen, onClose, partida }) => {
     const { usuario } = usarAutenticacao();
@@ -278,14 +278,13 @@ const ModalDetalhesPartida = ({ isOpen, onClose, partida }) => {
     };
 
     return (
-        <div className="modal-overlay">
-            <div className="modal-content" style={{ maxWidth: '600px', width: '95%' }}>
-                <div className="modal-header">
-                    <h2>Detalhes da Partida</h2>
-                    <button className="btn-fechar" onClick={onClose}><X size={24} /></button>
-                </div>
-
-                <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+        <Modal 
+            isOpen={isOpen} 
+            onClose={onClose} 
+            title="Detalhes da Partida"
+            maxWidth="600px"
+        >
+            <div className="anima-entrada" style={{ display: 'flex', flexDirection: 'column', gap: window.innerWidth < 768 ? '16px' : '24px' }}>
                     {/* INFO PARTIDA */}
                     <div style={{ background: 'rgba(255,255,255,0.03)', padding: '16px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
                         <h3 style={{ fontSize: '1.2rem', marginBottom: '12px', color: '#f8fafc' }}>
@@ -398,14 +397,29 @@ const ModalDetalhesPartida = ({ isOpen, onClose, partida }) => {
                                             const u = p.usuarios;
                                             const vinculo = getVinculoUsuario(u.id);
                                             return (
-                                                <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', background: 'rgba(255,255,255,0.02)', padding: '8px 12px', borderRadius: '8px', borderLeft: '3px solid #10b981' }}>
+                                                <div key={p.id} style={{ 
+                                                    display: 'flex', 
+                                                    alignItems: 'center', 
+                                                    gap: window.innerWidth < 768 ? '8px' : '12px', 
+                                                    background: 'rgba(255,255,255,0.02)', 
+                                                    padding: window.innerWidth < 768 ? '6px 10px' : '8px 12px', 
+                                                    borderRadius: '8px', 
+                                                    borderLeft: '3px solid #10b981' 
+                                                }}>
                                                     <span style={{ width: '20px', color: '#64748b', fontSize: '0.85rem' }}>{index + 1}.</span>
                                                     <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'rgba(255,255,255,0.1)', overflow: 'hidden' }}>
                                                         {u?.foto_url ? <img src={u.foto_url} alt="avatar" style={{width:'100%', height:'100%', objectFit:'cover'}}/> : <Users size={16} style={{margin:'8px'}}/>}
                                                     </div>
                                                     <div style={{ flex: 1, color: '#f8fafc', fontWeight: '500', display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'space-between' }}>
-                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden' }}>
-                                                            <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{u?.nome_completo || 'Desconhecido'}</span>
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', overflow: 'hidden', flex: 1, minWidth: 0 }}>
+                                                            <span style={{ 
+                                                                whiteSpace: 'nowrap', 
+                                                                overflow: 'hidden', 
+                                                                textOverflow: 'ellipsis',
+                                                                flex: 1
+                                                            }} title={u?.nome_completo}>
+                                                                {u?.nome_completo || 'Desconhecido'}
+                                                            </span>
                                                             {vinculo === 'mensalista' ? (
                                                                 <Star size={14} fill="#fbbf24" color="#fbbf24" title={getLabelVinculo('mensalista')} />
                                                             ) : (
@@ -414,7 +428,7 @@ const ModalDetalhesPartida = ({ isOpen, onClose, partida }) => {
                                                         </div>
 
                                                         {/* ÁREA DE FREQUÊNCIA (Visível para todos, editável apenas p/ Admin) */}
-                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
                                                                 
                                                             {isAdmin ? (
                                                                 <>
@@ -428,10 +442,10 @@ const ModalDetalhesPartida = ({ isOpen, onClose, partida }) => {
                                                                             color: p.frequencia === 'P' ? '#fff' : '#10b981',
                                                                             border: p.frequencia === 'P' ? '1px solid #10b981' : '1px solid rgba(16, 185, 129, 0.3)', 
                                                                             cursor: 'pointer',
-                                                                            padding: '4px 8px',
+                                                                            padding: window.innerWidth < 768 ? '4px 6px' : '4px 8px',
                                                                             borderRadius: '4px',
                                                                             display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                                            fontWeight: 'bold', fontSize: '0.8rem', opacity: processandoAcao ? 0.5 : 1
+                                                                            fontWeight: 'bold', fontSize: window.innerWidth < 768 ? '0.75rem' : '0.8rem', opacity: processandoAcao ? 0.5 : 1
                                                                         }}
                                                                     >
                                                                         P
@@ -595,13 +609,29 @@ const ModalDetalhesPartida = ({ isOpen, onClose, partida }) => {
                                             const u = p.usuarios;
                                             const vinculo = getVinculoUsuario(u.id);
                                             return (
-                                                <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', background: 'rgba(255,255,255,0.02)', padding: '8px 12px', borderRadius: '8px', borderLeft: '3px solid #fbbf24', opacity: 0.8 }}>
+                                                <div key={p.id} style={{ 
+                                                    display: 'flex', 
+                                                    alignItems: 'center', 
+                                                    gap: window.innerWidth < 768 ? '8px' : '12px', 
+                                                    background: 'rgba(255,255,255,0.02)', 
+                                                    padding: window.innerWidth < 768 ? '6px 10px' : '8px 12px', 
+                                                    borderRadius: '8px', 
+                                                    borderLeft: '3px solid #fbbf24', 
+                                                    opacity: 0.8 
+                                                }}>
                                                     <span style={{ width: '20px', color: '#64748b', fontSize: '0.85rem' }}>{index + 1}.</span>
                                                     <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'rgba(255,255,255,0.1)', overflow: 'hidden' }}>
                                                         {u?.foto_url ? <img src={u.foto_url} alt="avatar" style={{width:'100%', height:'100%', objectFit:'cover'}}/> : <Users size={16} style={{margin:'8px'}}/>}
                                                     </div>
-                                                    <div style={{ flex: 1, color: '#e2e8f0', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                        {u?.nome_completo || 'Desconhecido'}
+                                                    <div style={{ flex: 1, color: '#e2e8f0', display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden', minWidth: 0 }}>
+                                                        <span style={{ 
+                                                            whiteSpace: 'nowrap', 
+                                                            overflow: 'hidden', 
+                                                            textOverflow: 'ellipsis',
+                                                            flex: 1
+                                                        }}>
+                                                            {u?.nome_completo || 'Desconhecido'}
+                                                        </span>
                                                         {vinculo === 'mensalista' ? (
                                                             <Star size={14} fill="#fbbf24" color="#fbbf24" title={getLabelVinculo('mensalista')} />
                                                         ) : (
@@ -616,9 +646,8 @@ const ModalDetalhesPartida = ({ isOpen, onClose, partida }) => {
                             )}
                         </>
                     )}
-                </div>
             </div>
-        </div>
+        </Modal>
     );
 };
 

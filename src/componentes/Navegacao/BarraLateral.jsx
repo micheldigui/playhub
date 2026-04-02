@@ -1,9 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   LayoutDashboard, Users, Settings, LogOut, Menu, X, 
   ChevronRight, UserCircle, Trophy, Globe, Building2, Shield, Bell,
   Calendar, DollarSign, ChevronDown, ShieldCheck, Wallet, BarChart2,
-  Plus, SquarePlus, CircleHelp, Crown
+  Plus, SquarePlus, CircleHelp, Crown, MessageCircle
 } from 'lucide-react';
 import './BarraLateral.css';
 import { supabase } from '../../servicos/supabase';
@@ -17,6 +17,7 @@ const BarraLateral = ({ ativo, setAtivo, abaEquipe, setAbaEquipe }) => {
   const [aberta, setAberta] = useState(false);
   const [menuEquipeExpandido, setMenuEquipeExpandido] = useState(true);
   const [modalTutorialAberto, setModalTutorialAberto] = useState(false);
+  const [abaTutorialInicial, setAbaTutorialInicial] = useState('atleta');
   const { 
     equipeAtiva, 
     equipes,
@@ -29,6 +30,16 @@ const BarraLateral = ({ ativo, setAtivo, abaEquipe, setAbaEquipe }) => {
   } = usarEquipe();
   const { contagemNaoLidas: bolasRecebidas } = usarNotificacoes();
   const { ehSuperAdmin, ehRootAdmin, temPermissao, dadosUsuario, logout } = usarAutenticacao();
+
+  useEffect(() => {
+    const handleAbrirGuia = (e) => {
+      const abaDesejada = e.detail?.aba || 'atleta';
+      setAbaTutorialInicial(abaDesejada);
+      setModalTutorialAberto(true);
+    };
+    window.addEventListener('abrir-guia-playhub', handleAbrirGuia);
+    return () => window.removeEventListener('abrir-guia-playhub', handleAbrirGuia);
+  }, []);
   
   // O usuário pediu para que solicitações de ingresso não fiquem na aba de equipe, mas sim na aba de Notificações Gerais.
   const totalNotificacoesEquipe = (convitesPendentesGlobais || 0) + (transferenciasPendentesGlobais || 0);
@@ -233,6 +244,7 @@ const BarraLateral = ({ ativo, setAtivo, abaEquipe, setAbaEquipe }) => {
       <ModalTutorial 
         isOpen={modalTutorialAberto} 
         onClose={() => setModalTutorialAberto(false)} 
+        abaInicial={abaTutorialInicial}
       />
     </>
   );

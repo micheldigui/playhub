@@ -32,7 +32,6 @@ const PaginaPerfilEsportivo = ({ aoVoltar }) => {
   const [modalidades, setModalidades] = useState([]);
   const [interesses, setInteresses] = useState([]);
   const [carregandoModalidades, setCarregandoModalidades] = useState(true);
-  const [salvandoInteresses, setSalvandoInteresses] = useState(false);
   const [novaModalidade, setNovaModalidade] = useState({ modalidade: '', posicao: '', nivel_habilidade: '' });
   const [adicionando, setAdicionando] = useState(false);
   const [mensagem, setMensagem] = useState({ tipo: '', texto: '' });
@@ -78,7 +77,6 @@ const PaginaPerfilEsportivo = ({ aoVoltar }) => {
       : [...interesses, esporte];
 
     setInteresses(novosInteresses);
-    setSalvandoInteresses(true);
     try {
       const { error } = await supabase
         .from('usuarios')
@@ -88,11 +86,9 @@ const PaginaPerfilEsportivo = ({ aoVoltar }) => {
       if (error) throw error;
     } catch (err) {
       console.error('Erro ao salvar interesse:', err);
-      // rollback
+      // rollback em caso de erro
       setInteresses(interesses);
-      setMensagem({ tipo: 'erro', texto: 'Erro ao salvar interesse.' });
-    } finally {
-      setSalvandoInteresses(false);
+      setMensagem({ tipo: 'erro', texto: 'Erro ao sincronizar interesses.' });
     }
   };
 
@@ -130,6 +126,7 @@ const PaginaPerfilEsportivo = ({ aoVoltar }) => {
   };
 
   const removerModalidade = async (id) => {
+    if (!window.confirm('Remover esta modalidade do seu perfil?')) return;
     try {
       const { error } = await supabase.from('jogador_modalidades').delete().eq('id', id);
       if (error) throw error;
@@ -148,135 +145,132 @@ const PaginaPerfilEsportivo = ({ aoVoltar }) => {
 
   return (
     <div className="perfil-esportivo-container animacao-entrada">
-
-      <div className="perfil-cabecalho">
-        <h2>Perfil Esportivo</h2>
-        <p>Mostre suas habilidades para as equipes e receba convites incríveis!</p>
-      </div>
-
       {mensagem.texto && (
-        <div className={`mensagem-alerta ${mensagem.tipo}`}>
-          <span>{mensagem.texto}</span>
+        <div style={{ padding: '1rem 1.5rem 0 1.5rem' }}>
+          <div className={`mensagem-alerta ${mensagem.tipo}`} style={{ marginBottom: 0 }}>
+            <span>{mensagem.texto}</span>
+          </div>
         </div>
       )}
 
-      <div className="perfil-cartao" style={{ marginBottom: '1.5rem' }}>
-        <span className="cartao-titulo"><Trophy size={14} /> ESPORTES DE INTERESSE</span>
-        <p className="cartao-descricao">
-          Selecione os esportes que você curte jogar por diversão.
-          Mesmo sem posições definidas, você será visível para equipes locais na categoria "Casual".
-        </p>
+      <div className="perfil-body">
+        <div className="perfil-cartao" style={{ marginBottom: '1.5rem' }}>
+          <span className="cartao-titulo"><Trophy size={14} /> ESPORTES DE INTERESSE</span>
+          <p className="cartao-descricao">
+            Selecione os esportes que você curte jogar por diversão.
+            Mesmo sem posições definidas, você será visível para equipes locais na categoria "Casual".
+          </p>
 
-        <div className="grade-interesses">
-          {Object.keys(ESPORTES_DATA).map(esporte => (
-            <label key={esporte} className={`interesse-badge ${interesses.includes(esporte) ? 'ativo' : ''}`}>
-              <input
-                type="checkbox"
-                checked={interesses.includes(esporte)}
-                onChange={() => toggleInteresse(esporte)}
-                disabled={salvandoInteresses}
-              />
-              {esporte}
-            </label>
-          ))}
+          <div className="grade-interesses">
+            {Object.keys(ESPORTES_DATA).map(esporte => (
+              <label key={esporte} className={`interesse-badge ${interesses.includes(esporte) ? 'ativo' : ''}`}>
+                <input
+                  type="checkbox"
+                  checked={interesses.includes(esporte)}
+                  onChange={() => toggleInteresse(esporte)}
+                />
+                {esporte}
+              </label>
+            ))}
+          </div>
         </div>
-      </div>
 
-      <div className="perfil-cartao">
-        <span className="cartao-titulo"><Trophy size={14} /> SUAS HABILIDADES DETALHADAS</span>
-        <p className="cartao-descricao">
-          Se você tem experiência competitiva, adicione os esportes, suas posições favoritas e seu nível técnico.
-        </p>
+        <div className="perfil-cartao">
+          <span className="cartao-titulo"><Trophy size={14} /> SUAS HABILIDADES DETALHADAS</span>
+          <p className="cartao-descricao">
+            Se você tem experiência competitiva, adicione os esportes, suas posições favoritas e seu nível técnico.
+          </p>
 
-        <div className="modalidades-lista">
-          {carregandoModalidades ? (
-            <div className="loading-texto">Carregando modalidades...</div>
-          ) : modalidades.length === 0 ? (
-            <div className="estado-vazio">Nenhum esporte cadastrado. Adicione abaixo!</div>
-          ) : (
-            modalidades.map(m => (
-              <div key={m.id} className="modalidade-item">
-                <div className="modalidade-info">
-                  <strong>{m.modalidade}</strong>
-                  {m.posicao && <span> • {m.posicao}</span>}
-                  <span className={`badge-nivel ${NIVEL_CLASSE[m.nivel_habilidade] || 'iniciante'}`}>
-                    {m.nivel_habilidade}
-                  </span>
+          <div className="modalidades-lista">
+            {carregandoModalidades ? (
+              <div className="loading-texto">Carregando modalidades...</div>
+            ) : modalidades.length === 0 ? (
+              <div className="estado-vazio">Nenhum esporte cadastrado. Adicione abaixo!</div>
+            ) : (
+              modalidades.map(m => (
+                <div key={m.id} className="modalidade-item">
+                  <div className="modalidade-info">
+                    <strong>{m.modalidade}</strong>
+                    {m.posicao && <span> • {m.posicao}</span>}
+                    <span className={`badge-nivel ${NIVEL_CLASSE[m.nivel_habilidade] || 'iniciante'}`}>
+                      {m.nivel_habilidade}
+                    </span>
+                  </div>
+                  <button type="button" className="btn-remover-icone" onClick={() => removerModalidade(m.id)}>
+                    <Trash2 size={16} />
+                  </button>
                 </div>
-                <button type="button" className="btn-remover-icone" onClick={() => removerModalidade(m.id)}>
-                  <Trash2 size={16} />
+              ))
+            )}
+          </div>
+
+          <div className="form-add-modalidade">
+            <h4>Adicionar Esporte</h4>
+            <div className="grade-add-modalidade">
+
+              <div className="grupo-input">
+                <label>Modalidade / Esporte *</label>
+                <div className="campo-input">
+                  <select
+                    className="sem-icone"
+                    value={novaModalidade.modalidade}
+                    onChange={(e) => setNovaModalidade(p => ({ ...p, modalidade: e.target.value, posicao: '' }))}
+                  >
+                    <option value="">Selecione o esporte...</option>
+                    {Object.keys(ESPORTES_DATA).map(esp => (
+                      <option key={esp} value={esp}>{esp}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="grupo-input">
+                <label>Posição (Opcional)</label>
+                <div className={`campo-input ${!novaModalidade.modalidade ? 'desabilitado' : ''}`}>
+                  <select
+                    className="sem-icone"
+                    value={novaModalidade.posicao}
+                    onChange={(e) => setNovaModalidade(p => ({ ...p, posicao: e.target.value }))}
+                    disabled={!novaModalidade.modalidade}
+                  >
+                    <option value="">Selecione...</option>
+                    {posicoesDisponiveis && posicoesDisponiveis.map(pos => (
+                      <option key={pos} value={pos}>{pos}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="grupo-input">
+                <label>Nível *</label>
+                <div className="campo-input">
+                  <select
+                    className="sem-icone"
+                    value={novaModalidade.nivel_habilidade}
+                    onChange={(e) => setNovaModalidade(p => ({ ...p, nivel_habilidade: e.target.value }))}
+                  >
+                    <option value="">Selecione...</option>
+                    <option value="Lazer / Sem Experiência">Lazer / Sem Experiência</option>
+                    <option value="Iniciante">Iniciante</option>
+                    <option value="Intermediário">Intermediário</option>
+                    <option value="Avançado">Avançado</option>
+                    <option value="Profissional">Profissional</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grupo-btn-add">
+                <button
+                  type="button"
+                  className="btn-add-modalidade"
+                  onClick={adicionarModalidade}
+                  disabled={adicionando}
+                >
+                  <Plus size={18} /> {adicionando ? 'Adicionando...' : 'Adicionar'}
                 </button>
               </div>
-            ))
-          )}
-        </div>
 
-        <div className="form-add-modalidade">
-          <h4>Adicionar Esporte</h4>
-          <div className="grade-add-modalidade">
-
-            <div className="grupo-input">
-              <label>Modalidade / Esporte *</label>
-              <div className="campo-input">
-                <select
-                  className="sem-icone"
-                  value={novaModalidade.modalidade}
-                  onChange={(e) => setNovaModalidade(p => ({ ...p, modalidade: e.target.value, posicao: '' }))}
-                >
-                  <option value="">Selecione o esporte...</option>
-                  {Object.keys(ESPORTES_DATA).map(esp => (
-                    <option key={esp} value={esp}>{esp}</option>
-                  ))}
-                </select>
-              </div>
             </div>
-
-            <div className="grupo-input">
-              <label>Posição (Opcional)</label>
-              <div className={`campo-input ${!novaModalidade.modalidade ? 'desabilitado' : ''}`}>
-                <select
-                  className="sem-icone"
-                  value={novaModalidade.posicao}
-                  onChange={(e) => setNovaModalidade(p => ({ ...p, posicao: e.target.value }))}
-                  disabled={!novaModalidade.modalidade}
-                >
-                  <option value="">Selecione...</option>
-                  {posicoesDisponiveis && posicoesDisponiveis.map(pos => (
-                    <option key={pos} value={pos}>{pos}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <div className="grupo-input">
-              <label>Nível *</label>
-              <div className="campo-input">
-                <select
-                  className="sem-icone"
-                  value={novaModalidade.nivel_habilidade}
-                  onChange={(e) => setNovaModalidade(p => ({ ...p, nivel_habilidade: e.target.value }))}
-                >
-                  <option value="">Selecione...</option>
-                  <option value="Lazer / Sem Experiência">Lazer / Sem Experiência</option>
-                  <option value="Iniciante">Iniciante</option>
-                  <option value="Intermediário">Intermediário</option>
-                  <option value="Avançado">Avançado</option>
-                  <option value="Profissional">Profissional</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="grupo-btn-add">
-              <button
-                type="button"
-                className="btn-add-modalidade"
-                onClick={adicionarModalidade}
-                disabled={adicionando}
-              >
-                <Plus size={18} /> {adicionando ? 'Adicionando...' : 'Adicionar'}
-              </button>
-            </div>
-
           </div>
         </div>
       </div>

@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import './PaginaAutenticacao.css';
 import { supabase } from '../../servicos/supabase';
-import { Mail, Lock, Eye, EyeOff, AlertCircle } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, AlertCircle, X } from 'lucide-react';
 import Botao from '../../componentes/Botao/Botao';
 
-const PaginaLogin = ({ aoIrParaCadastro }) => {
+const PaginaLogin = ({ aoIrParaCadastro, aoVoltar }) => {
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
   const [mostrarSenha, setMostrarSenha] = useState(false);
@@ -27,22 +27,36 @@ const PaginaLogin = ({ aoIrParaCadastro }) => {
 
   return (
     <div className="auth-cartao">
-      <div className="auth-logo-wrap">
-        <div className="auth-logo" style={{ background: 'transparent', boxShadow: 'none' }}>
-          <img src="/icon_ph_oficial_cf.png" alt="PlayHub" style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: '4px' }} />
+      <div className="auth-header">
+        {aoVoltar && (
+          <button 
+            type="button" 
+            className="btn-fechar-auth" 
+            onClick={aoVoltar} 
+            title="Voltar para o Início"
+            style={{ position: 'absolute', top: '15px', right: '15px', background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', zIndex: 10 }}
+          >
+            <X size={20} />
+          </button>
+        )}
+        <div className="auth-logo-wrap">
+          <div className="auth-logo" style={{ background: 'transparent', boxShadow: 'none' }}>
+            <img src="/icon_ph_oficial_cf.png" alt="PlayHub" style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: '4px' }} />
+          </div>
+          <h2>Bem-vindo de volta!</h2>
+          <p className="auth-subtitulo">Acesse sua conta PlayHub</p>
         </div>
-        <h2>Bem-vindo de volta!</h2>
-        <p className="auth-subtitulo">Acesse sua conta PlayHub</p>
       </div>
 
-      {erro && (
-        <div className="auth-erro">
-          <AlertCircle size={16} />
-          <span>{erro}</span>
-        </div>
-      )}
+      <div className="auth-body">
+        {erro && (
+          <div className="auth-erro">
+            <AlertCircle size={16} />
+            <span>{erro}</span>
+          </div>
+        )}
 
-      <form onSubmit={handleLogin} className="auth-form">
+        <form id="form-login" onSubmit={handleLogin} className="auth-form">
         <div className="auth-grupo">
           <label>E-mail</label>
           <div className="auth-campo">
@@ -68,11 +82,18 @@ const PaginaLogin = ({ aoIrParaCadastro }) => {
         <Botao type="submit" fullWidth disabled={carregando}>
           {carregando ? 'Entrando...' : 'Entrar na conta'}
         </Botao>
-      </form>
+        </form>
+      </div>
 
-      <p className="auth-link">
-        Não tem conta? <button onClick={aoIrParaCadastro}>Cadastre-se grátis</button>
-      </p>
+      <div className="auth-footer">
+        <Botao type="submit" form="form-login" fullWidth disabled={carregando}>
+          {carregando ? 'Entrando...' : 'Entrar na conta'}
+        </Botao>
+
+        <p className="auth-link" style={{ marginTop: '1rem', marginBottom: 0 }}>
+          Não tem conta? <button onClick={aoIrParaCadastro}>Cadastre-se grátis</button>
+        </p>
+      </div>
     </div>
   );
 };

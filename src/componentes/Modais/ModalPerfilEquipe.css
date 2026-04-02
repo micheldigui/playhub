@@ -1,0 +1,150 @@
+/* Perfil de Equipe Pública */
+.equipe-capa {
+    background: linear-gradient(135deg, #0ea5e9 0%, #312e81 100%);
+    height: 100px;
+}
+
+.equipe-capa .perfil-avatar-wrapper {
+    bottom: -40px;
+    width: 80px;
+    height: 80px;
+    border-radius: 12px;
+}
+
+.equipe-capa .perfil-foto {
+    border-radius: 10px;
+}
+
+.lideranca-lista {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.lider-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 14px;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.lider-card:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(14, 165, 233, 0.3);
+    transform: translateX(4px);
+}
+
+.lider-avatar {
+    position: relative;
+    width: 44px;
+    height: 44px;
+}
+
+.lider-avatar img {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+.lider-placeholder {
+    width: 100%;
+    height: 100%;
+    background: #334155;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    font-weight: 800;
+}
+
+.badge-p-lead {
+    position: absolute;
+    bottom: -2px;
+    right: -2px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #0f172a;
+}
+
+.badge-p-lead.admin { background: #fbbf24; color: #000; }
+.badge-p-lead.sub_admin { background: #cbd5e1; color: #000; }
+
+.lider-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.lider-info strong {
+    font-size: 0.9rem;
+    color: #f1f5f9;
+}
+
+.lider-info span {
+    font-size: 0.7rem;
+    color: #64748b;
+    text-transform: uppercase;
+    font-weight: 700;
+}
+
+.lideranca-dica {
+    margin-top: 1rem;
+    font-size: 0.75rem;
+    color: #475569;
+    text-align: center;
+    font-style: italic;
+}
+
+/* Reuso de estilos do PerfilAtleta para consistência */
+.perfil-equipe-container .perfil-info-basica {
+    margin-top: 45px;
+}
+
+.perfil-equipe-container .badge-atleta-posicao {
+    background: rgba(14, 165, 233, 0.1);
+    color: #0ea5e9;
+    border-color: rgba(14, 165, 233, 0.2);
+}
+
+.tag-ja-membro {
+    width: 100%;
+    padding: 12px;
+    background: rgba(16, 185, 129, 0.1);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    color: #10b981;
+    text-align: center;
+    border-radius: 12px;
+    font-size: 0.85rem;
+    font-weight: 700;
+}
+
+.tag-pendente {
+    width: 100%;
+    padding: 12px;
+    background: rgba(251, 191, 36, 0.1);
+    border: 1px solid rgba(251, 191, 36, 0.3);
+    color: #fbbf24;
+    text-align: center;
+    border-radius: 12px;
+    font-size: 0.85rem;
+    font-weight: 700;
+}
+
+@media (max-width: 480px) {
+    .lider-card:hover {
+        transform: none;
+    }
+}

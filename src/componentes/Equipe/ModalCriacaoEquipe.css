@@ -58,6 +58,7 @@
   display: flex;
   gap: 1.5rem;
   width: 100%;
+  flex-wrap: wrap; /* Permite que os campos quebrem linha se necessário */
 }
 
 .fila-campos .campo {
@@ -87,6 +88,15 @@
   border-radius: 16px;
   padding: 2rem;
   margin-bottom: 0.5rem;
+}
+
+@media (max-width: 768px) {
+  .secao-upload-logo {
+    padding: 1.25rem;
+    gap: 1.25rem;
+    flex-direction: column;
+    text-align: center;
+  }
 }
 
 .avatar-preview {
@@ -164,17 +174,34 @@
   color: #f1f5f9;
 }
 
-/* Container de Localizacao */
-.container-localizacao {
-  background: rgba(15, 23, 42, 0.4);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  padding: 1.25rem;
-  border-radius: 12px;
+.input-cep {
+  padding-left: 35px !important;
+  width: 100%;
+  height: 42px !important;
+  border-radius: 8px !important;
+  background: rgba(15, 23, 42, 0.4) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  color: white !important;
 }
 
-.grade-cep input {
-  background-color: rgba(15, 23, 42, 0.6) !important;
+.btn-busca-cep {
+  height: 42px !important;
+  min-height: 42px !important;
 }
+
+.grade-cep {
+  display: flex;
+  gap: 0.5rem;
+  width: 100%;
+  align-items: center;
+}
+
+@media (max-width: 640px) {
+  .grade-cep {
+    flex-direction: row; /* Mantém na mesma linha no mobile pois o botão é pequeno */
+  }
+}
+
 
 .opcoes-visibilidade {
   display: grid;
@@ -234,6 +261,18 @@
   width: 100%;
 }
 
+@media (max-width: 640px) {
+  .footer-criacao {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  
+  .footer-criacao button {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
 @keyframes fadeSlideUp {
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
@@ -241,13 +280,46 @@
 
 @media (max-width: 640px) {
   .fila-campos {
-    grid-template-columns: 1fr;
+    flex-direction: column;
+    gap: 1rem;
   }
+  
+  .fila-campos .campo {
+    flex: 1 1 100% !important; /* Força ocupação total no mobile */
+    min-width: 100%;
+  }
+
   .secao-upload-logo {
     flex-direction: column;
     text-align: center;
+    padding: 1.5rem;
+    gap: 1.5rem;
+  }
+
+  .avatar-preview {
+    width: 100%;
+  }
+
+  .grade-cep {
+    flex-direction: column;
+  }
+
+  .grade-cep button {
+    width: 100%;
   }
 }
+
+/* Classes utilitárias para substituir estilos inline e serem responsivas */
+.campo-pequeno { flex: 0 0 120px; }
+.campo-medio { flex: 0 0 150px; }
+.campo-flex-2 { flex: 2; }
+
+@media (max-width: 640px) {
+  .campo-pequeno, .campo-medio, .campo-flex-2 {
+    flex: 1 1 100% !important;
+  }
+}
+
 
 .campos-financeiros-adicionais {
   background: rgba(56, 189, 248, 0.03);
@@ -259,6 +331,13 @@
   display: flex;
   flex-direction: column;
   gap: 1rem;
+}
+
+@media (max-width: 768px) {
+  .campos-financeiros-adicionais {
+    padding: 1rem;
+    gap: 1.25rem;
+  }
 }
 
 .anima-entrada {
@@ -305,6 +384,13 @@
   gap: 1.5rem;
 }
 
+@media (max-width: 768px) {
+  .secao-form {
+    padding: 1.25rem 1rem;
+    border-radius: 12px;
+  }
+}
+
 .campo-toggle-grupo {
   display: flex;
   flex-direction: column;
@@ -318,6 +404,13 @@
   gap: 2rem;
   padding-bottom: 1.25rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+@media (max-width: 640px) {
+  .item-toggle {
+    gap: 1rem;
+    padding-bottom: 1rem;
+  }
 }
 
 .item-toggle:last-child {

@@ -5,7 +5,8 @@ import { usarNotificacoes } from '../../contextos/NotificacoesContexto';
 import { supabase } from '../../servicos/supabase';
 import { Globe, MapPin, Trophy, Users, Search, ArrowLeft, Crown, User, Phone, MessageCircle, Ban } from 'lucide-react';
 import Botao from '../../componentes/Botao/Botao';
-import PerfilAtletaModal from '../../componentes/Modais/PerfilAtletaModal';
+import ModalPerfilAtleta from '../../componentes/Modais/ModalPerfilAtleta';
+import ModalPerfilEquipe from '../../componentes/Modais/ModalPerfilEquipe';
 import './PaginaExplorar.css';
 
 const MODALIDADES = [
@@ -49,8 +50,9 @@ const PaginaExplorar = ({ aoVoltar }) => {
   const ITENS_POR_PAGINA = 12;
   const [buscouUmaVez, setBuscouUmaVez] = useState(false);
   const [solicitadosGatilho, setSolicitadosGatilho] = useState({});
-  const [atletaSelecionado, setAtletaSelecionado] = useState(null);
   const [processando, setProcessando] = useState(null);
+  const [equipeSelecionada, setEquipeSelecionada] = useState(null);
+  const [atletaSelecionado, setAtletaSelecionado] = useState(null);
 
   // IDs de equipes onde o usuario já é membro ou já solicitou
   const idsMinhasEquipes = new Set((minhasEquipes || []).map((e) => e.id));
@@ -385,6 +387,14 @@ const PaginaExplorar = ({ aoVoltar }) => {
                         {processando === equipe.id ? 'Aguarde...' : 'Solicitar Ingresso'}
                       </Botao>
                     )}
+
+                    <Botao 
+                      variant="minimal" 
+                      style={{ width: '100%', padding: '6px', fontSize: '0.75rem', marginTop: '4px', opacity: 0.8 }}
+                      onClick={() => setEquipeSelecionada(equipe)}
+                    >
+                      <Trophy size={12} /> Ver Ficha do Time
+                    </Botao>
                   </div>
                 )
               })
@@ -464,14 +474,25 @@ const PaginaExplorar = ({ aoVoltar }) => {
         )}
       </div>
 
-      {atletaSelecionado && (
-        <PerfilAtletaModal 
-          atleta={atletaSelecionado}
-          aoFechar={() => setAtletaSelecionado(null)}
-          aoPassarBola={handleCutucar}
-          ehEu={atletaSelecionado.id === usuario?.id}
-          ehMatch={matchesConfirmados?.has(atletaSelecionado.id)}
+      {equipeSelecionada && (
+        <ModalPerfilEquipe 
+          isOpen={!!equipeSelecionada}
+          onClose={() => setEquipeSelecionada(null)}
+          idEquipe={equipeSelecionada?.id}
+          aoVerAtleta={(atleta) => {
+            setEquipeSelecionada(null); // Fecha o modal da equipe
+            setTimeout(() => setAtletaSelecionado(atleta), 100); // Abre o do atleta com delay suave
+          }}
         />
+      )}
+
+      {atletaSelecionado && (
+      <ModalPerfilAtleta 
+        isOpen={!!atletaSelecionado}
+        onClose={() => setAtletaSelecionado(null)}
+        idAtleta={atletaSelecionado?.id}
+        aoPassarBola={handleCutucar}
+      />
       )}
     </div>
   );

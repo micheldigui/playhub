@@ -3,7 +3,7 @@ import { Users, Mail, CheckCircle2, XCircle, Trash2, Clock, MapPin, ChevronDown,
 import { supabase } from '../../../servicos/supabase';
 import { usarEquipe } from '../../../contextos/EquipeContexto';
 import { usarAutenticacao } from '../../../contextos/AutenticacaoContexto';
-import PerfilAtletaModal from '../../../componentes/Modais/PerfilAtletaModal';
+import ModalPerfilAtleta from '../../../componentes/Modais/ModalPerfilAtleta';
 
 const calcularIdade = (dataNasc) => {
     if (!dataNasc) return null;
@@ -249,11 +249,11 @@ const SolicitacoesTab = () => {
             `}</style>
 
             {/* MODAL DO PERFIL ESPORTIVO DO JOGADOR CANDIDATO */}
-            <PerfilAtletaModal 
-                atleta={atletaSelecionado} 
-                aoFechar={() => setAtletaSelecionado(null)} 
+            <ModalPerfilAtleta 
+                isOpen={!!atletaSelecionado}
+                onClose={() => setAtletaSelecionado(null)}
+                idAtleta={atletaSelecionado?.id}
                 aoPassarBola={handlePassarBola}
-                ehEu={atletaSelecionado?.id === usuario?.id}
             />
         </div>
     );

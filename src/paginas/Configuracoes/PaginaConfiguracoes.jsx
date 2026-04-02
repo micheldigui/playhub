@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { 
   Settings, ShieldAlert, FileText, ChevronRight, 
-  ArrowLeft, LogOut, UserX, ExternalLink 
+  ArrowLeft, LogOut, UserX, ExternalLink, MessageCircle, Mail
 } from 'lucide-react';
 import Botao from '../../componentes/Botao/Botao';
 import { usarAutenticacao } from '../../contextos/AutenticacaoContexto';
+import { SUPORTE } from '../../config/suporte';
 
 const PaginaConfiguracoes = ({ aoVoltar, aoNavegar }) => {
     const { usuario, dadosUsuario, logout } = usarAutenticacao();
@@ -36,23 +37,10 @@ const PaginaConfiguracoes = ({ aoVoltar, aoNavegar }) => {
     };
 
     return (
-        <div className="animate-fade-in" style={{ padding: '2rem', maxWidth: '800px', margin: '0 auto' }}>
-            <header style={{ marginBottom: '2.5rem', display: 'flex', alignItems: 'center', gap: '16px' }}>
-                <button 
-                    onClick={aoVoltar}
-                    style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', display: 'flex' }}
-                >
-                    <ArrowLeft size={24} />
-                </button>
-                <div>
-                    <h1 style={{ fontSize: '2.2rem', fontWeight: '800', color: '#fff', letterSpacing: '-0.02em' }}>
-                        Configurações
-                    </h1>
-                    <p style={{ color: '#94a3b8' }}>Gerencie sua conta e preferências do sistema.</p>
-                </div>
-            </header>
-
+        <div className="animate-fade-in" style={{ padding: '0 2rem 2rem 2rem', maxWidth: '800px', margin: '0 auto' }}>
             <div style={{ display: 'grid', gap: '2rem' }}>
+                <p style={{ color: '#94a3b8', marginBottom: '1rem' }}>Gerencie sua conta e preferências do sistema.</p>
+
                 
                 {/* SEÇÃO: CONTA */}
                 <section>
@@ -80,6 +68,33 @@ const PaginaConfiguracoes = ({ aoVoltar, aoNavegar }) => {
                             </div>
                             <ChevronRight size={18} color="#475569" />
                         </button>
+                    </div>
+                </section>
+
+                {/* SEÇÃO: SUPORTE */}
+                <section>
+                    <h2 style={{ fontSize: '1.2rem', color: '#64748b', marginBottom: '1rem', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: '700' }}>
+                        Ajuda & Suporte
+                    </h2>
+                    <div style={{ background: 'rgba(15, 23, 42, 0.4)', borderRadius: '20px', border: '1px solid rgba(255, 255, 255, 0.05)', overflow: 'hidden', padding: '1.5rem' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                                <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'rgba(148, 163, 184, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    <Mail size={20} color="#94a3b8" />
+                                </div>
+                                <div style={{ flex: 1 }}>
+                                    <div style={{ color: '#f8fafc', fontWeight: '600', fontSize: '1rem' }}>E-mail Oficial</div>
+                                    <div style={{ color: '#64748b', fontSize: '0.9rem' }}>{SUPORTE.EMAIL}</div>
+                                </div>
+                            </div>
+                            
+                            <Botao 
+                                onClick={() => window.open(SUPORTE.GET_LINK_WHATSAPP('Olá! Preciso de ajuda no PlayHub.'), '_blank')}
+                                style={{ width: '100%', justifyContent: 'center', background: '#25D366', color: '#fff', border: 'none' }}
+                            >
+                                <MessageCircle size={18} /> Conversar no WhatsApp
+                            </Botao>
+                        </div>
                     </div>
                 </section>
 

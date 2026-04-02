@@ -11,7 +11,7 @@ import {
     Calendar, Users, DollarSign, Globe, Lock, MapPin,
     CheckCircle, AlertCircle, Activity, ChevronRight,
     Settings, User, UserCircle, Trophy, Search, Swords, BarChart2,
-    Shield, ShieldCheck, Bell, Plus, X, GripHorizontal, Download, Phone, Crown, Wallet, Star, Unlock
+    Shield, ShieldCheck, Bell, Plus, X, GripHorizontal, Download, Phone, Crown, Wallet, Star, Unlock, CircleHelp, Youtube
 } from 'lucide-react';
 import InfoTooltip from '../../componentes/Tooltip/InfoTooltip';
 import './Dashboard.css';
@@ -26,6 +26,8 @@ const CATALOGO_ATALHOS = [
     { id: 'explorar',         categoria: 'pessoal', label: 'Explorar',         emoji: '🔍', icone: Globe,      tela: 'explorar',         roles: [],                   permissao: null },
     { id: 'perfil_pub',       categoria: 'pessoal', label: 'Perfil Público',   emoji: '🌍', icone: Globe,      action: (nav) => { nav('perfil'); }, roles: [],  permissao: null },
     { id: 'notificacoes_globais', categoria: 'pessoal', label: 'Notificações', emoji: '🔔', icone: Bell,       tela: 'notificacoes', roles: [], permissao: null },
+    { id: 'guia_app',             categoria: 'pessoal', label: 'Guia do App',     emoji: '📖', icone: CircleHelp, action: () => window.dispatchEvent(new CustomEvent('abrir-guia-playhub', { detail: { aba: 'atleta' } })), roles: [], permissao: null },
+    { id: 'tutoriais_video',      categoria: 'pessoal', label: 'Vídeos Tutoriais', emoji: '🎥', icone: Youtube,    action: () => window.dispatchEvent(new CustomEvent('abrir-guia-playhub', { detail: { aba: 'videos' } })), roles: [], permissao: null },
     
     // EQUIPE (filtrados por papel/permissão)
     { id: 'partidas',         categoria: 'equipe',  label: 'Partidas',         emoji: '📅', icone: Calendar,   action: (nav, set) => { set('agenda'); nav('equipe'); },           roles: [],                   permissao: null },
@@ -45,7 +47,7 @@ const STORAGE_PESSOAL  = 'playhub_atalhos_pessoal';
 const STORAGE_EQUIPE   = 'playhub_atalhos_equipe';
 
 // IDs padrão (todos habilitados por categoria)
-const DEFAULTS_PESSOAL = ['perfil','perfil_esportivo','explorar','perfil_pub','notificacoes_globais'];
+const DEFAULTS_PESSOAL = ['perfil','perfil_esportivo','explorar','perfil_pub','notificacoes_globais', 'guia_app', 'tutoriais_video'];
 const DEFAULTS_EQUIPE  = ['partidas','var_atleta','solicitacoes_eq','meus_pagamentos','financas_avulso','criar_partida','gerenciar_membros','relatorios_eq','regras_eq','descobrir_atletas','permissoes_eq'];
 
 const Dashboard = ({ aoNavegar, setAbaEquipe }) => {
@@ -79,8 +81,11 @@ const Dashboard = ({ aoNavegar, setAbaEquipe }) => {
 
     const [atalhosPessoal, setAtalhosPessoal] = useState(() => {
         const dados = lerStorage(STORAGE_PESSOAL, DEFAULTS_PESSOAL);
-        // Garante que o atalho novo 'notificacoes_globais' apareça para quem já tem storage cacheado antigo
-        return (dados || DEFAULTS_PESSOAL).includes('notificacoes_globais') ? dados || DEFAULTS_PESSOAL : [...(dados || DEFAULTS_PESSOAL), 'notificacoes_globais'];
+        // Garante que os novos atalhos apareçam para quem já tem storage cacheado antigo
+        const ids = [...(dados || DEFAULTS_PESSOAL)];
+        if (!ids.includes('guia_app')) ids.push('guia_app');
+        if (!ids.includes('tutoriais_video')) ids.push('tutoriais_video');
+        return ids;
     });
     
     const [atalhosEquipe, setAtalhosEquipe] = useState(() => {

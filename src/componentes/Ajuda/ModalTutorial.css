@@ -117,3 +117,133 @@
     display: none;
   }
 }
+
+/* Estilos para a Aba de Vídeos */
+.lista-videos-tutorial {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 1.5rem;
+  margin-top: 0.5rem;
+}
+
+.video-item-ajuda {
+  display: flex;
+  flex-direction: column;
+  background: rgba(30, 41, 59, 0.4);
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  transition: all 0.2s;
+  text-decoration: none;
+}
+
+.video-item-ajuda:hover {
+  transform: translateY(-4px);
+  background: rgba(30, 41, 59, 0.7);
+  border-color: #38bdf8;
+}
+
+.video-thumbnail {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+}
+
+.video-thumbnail img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.video-play-overlay {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(15, 23, 42, 0.4);
+  color: white;
+  transition: all 0.2s;
+}
+
+.video-item-ajuda:hover .video-play-overlay {
+  background: rgba(56, 189, 248, 0.3);
+  color: #38bdf8;
+  transform: scale(1.1);
+}
+
+.video-info-ajuda {
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.video-info-ajuda h4 {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #f1f5f9;
+  margin: 0;
+  line-height: 1.3;
+}
+
+.video-info-ajuda p {
+  font-size: 0.8rem;
+  color: #94a3b8;
+  margin: 0;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.btn-assistir-yt {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #38bdf8;
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin-top: 0.5rem;
+}
+
+@media (max-width: 640px) {
+  .lista-videos-tutorial {
+    grid-template-columns: 1fr;
+    gap: 1.25rem;
+  }
+  
+  .video-item-ajuda {
+    flex-direction: row;
+    align-items: flex-start;
+    height: auto;
+  }
+
+  .video-thumbnail {
+    width: 120px;
+    height: 90px;
+    min-width: 120px;
+    border-radius: 8px;
+    margin: 12px;
+  }
+
+  .video-info-ajuda {
+    padding: 12px 12px 12px 0;
+  }
+
+  .video-info-ajuda h4 {
+    font-size: 0.85rem;
+  }
+  
+  .video-info-ajuda p {
+    display: none; /* Esconde descrição no mobile para economizar espaço */
+  }
+
+  .btn-assistir-yt {
+    margin-top: 4px;
+  }
+}
+

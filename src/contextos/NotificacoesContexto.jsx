@@ -130,34 +130,41 @@ export const NotificacoesProvedor = ({ children }) => {
     }, [usuario, carregarNotificacoes]);
 
     const limparNotificacoes = useCallback(async () => {
-        if (!usuario) return;
-        setContagemNaoLidas(0); // Feedback instantâneo
+        if (!usuario || notificacoes.length === 0) return;
+        
+        // Cópia para manipulação e redundância de segurança
+        const idsSendoLimpos = notificacoes.map(n => n.id);
+        
+        // Feedback instantâneo para UI (otimista)
+        setNotificacoes([]);
+        setContagemNaoLidas(0);
         
         try {
-            // 1. Identifica quais notificações são do tipo 'bola' (Interações)
-            const idsParaArquivar = notificacoes
-                .filter(n => n.tipo === 'bola' || n.tipo === 'interacao')
+            // 1. Identificar notificações da tabela 'interacoes'
+            const interacoesIds = notificacoes
+                .filter(n => n.tipo === 'bola' || n.tipo === 'interacao' || n.tipo === 'solicitacao_ingresso')
                 .map(n => n.id);
 
-            if (idsParaArquivar.length > 0) {
-                // 2. Atualiza no banco de dados para o status arquivado
-                // Isso garante que elas sumam permanentemente da UI, mas preservem o Match
-                const { error } = await supabase
+            if (interacoesIds.length > 0) {
+                // Tenta atualizar no banco para manter dados históricos mas ocultar do usuário
+                await supabase
                     .from('interacoes')
                     .update({ tipo: 'bola_arquivada' })
-                    .in('id', idsParaArquivar);
-
-                if (error) throw error;
+                    .in('id', interacoesIds);
             }
 
-            // 3. Para outros tipos (convites, etc), mantemos o backup no LocalStorage por enquanto
-            const apagadasAtuais = JSON.parse(localStorage.getItem(`playhub_arquivadas_${usuario.id}`) || '[]');
-            const outrosIds = notificacoes.filter(n => !idsParaArquivar.includes(n.id)).map(n => n.id);
-            localStorage.setItem(`playhub_arquivadas_${usuario.id}`, JSON.stringify([...apagadasAtuais, ...outrosIds]));
+            // 2. Redundância e Fallback (LocalStorage)
+            // Mesmo se o banco falhar ou para tipos que não estão no banco (convites pendentes em outras tabelas)
+            const backupArquivadas = JSON.parse(localStorage.getItem(`playhub_arquivadas_${usuario.id}`) || '[]');
+            const novasArquivadas = Array.from(new Set([...backupArquivadas, ...idsSendoLimpos]));
+            localStorage.setItem(`playhub_arquivadas_${usuario.id}`, JSON.stringify(novasArquivadas));
             
+            // 3. Recarrega para garantir sincronia do estado real
             await carregarNotificacoes();
         } catch (error) {
             console.error('Erro ao limpar notificações:', error);
+            // Reverte em caso de erro crítico para não enganar o usuário se o estado for reiniciado
+            await carregarNotificacoes();
         }
     }, [usuario, carregarNotificacoes, notificacoes]);
 

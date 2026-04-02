@@ -3,10 +3,12 @@ import './PaginaAutenticacao.css';
 import { supabase } from '../../servicos/supabase';
 import {
   Mail, Lock, User, Eye, EyeOff,
-  MapPin, Search, Phone, AlertCircle, Calendar, HelpCircle
+  MapPin, Search, Phone, AlertCircle, Calendar, HelpCircle, X
 } from 'lucide-react';
 import Botao from '../../componentes/Botao/Botao';
 import Tooltip from '../../componentes/Tooltip/Tooltip';
+import Modal from '../../componentes/Modal/Modal';
+import { CONTEUDO_TERMOS, CONTEUDO_PRIVACIDADE } from '../Legal/PaginasLegais';
 
 const validarEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
@@ -35,13 +37,15 @@ const mascaraTelefone = (valor) => {
   return valor;
 };
 
-const PaginaCadastro = ({ aoIrParaLogin }) => {
+const PaginaCadastro = ({ aoIrParaLogin, aoVoltar }) => {
   const [mostrarSenha, setMostrarSenha] = useState(false);
   const [carregando, setCarregando] = useState(false);
   const [buscandoCep, setBuscandoCep] = useState(false);
   const [erro, setErro] = useState('');
   const [foto, setFoto] = useState(null);
   const [fotoPreview, setFotoPreview] = useState(null);
+  const [aceitouTermos, setAceitouTermos] = useState(false);
+  const [modalLegal, setModalLegal] = useState({ aberto: false, tipo: null });
   
   const numeroRef = useRef(null);
   const generoRef = useRef(null);
@@ -169,17 +173,31 @@ const PaginaCadastro = ({ aoIrParaLogin }) => {
 
   return (
     <div className="auth-cartao">
-      <div className="auth-logo-wrap">
-        <div className="auth-logo" style={{ background: 'transparent', boxShadow: 'none' }}>
-          <img src="/icon_ph_oficial_cf.png" alt="PlayHub" style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: '4px' }} />
+      <div className="auth-header">
+        {aoVoltar && (
+          <button 
+            type="button" 
+            className="btn-fechar-auth" 
+            onClick={aoVoltar} 
+            title="Voltar para o Início"
+            style={{ position: 'absolute', top: '15px', right: '15px', background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', zIndex: 10 }}
+          >
+            <X size={20} />
+          </button>
+        )}
+        <div className="auth-logo-wrap">
+          <div className="auth-logo" style={{ background: 'transparent', boxShadow: 'none' }}>
+            <img src="/icon_ph_oficial_cf.png" alt="PlayHub" style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: '4px' }} />
+          </div>
+          <h2>Criar sua conta</h2>
+          <p className="auth-subtitulo">Grátis para sempre · Leva menos de 2 minutos</p>
         </div>
-        <h2>Criar sua conta</h2>
-        <p className="auth-subtitulo">Grátis para sempre · Leva menos de 2 minutos</p>
       </div>
 
-      {erro && <div className="auth-erro"><AlertCircle size={15} /><span>{erro}</span></div>}
-
-      <form onSubmit={handleCadastro} className="auth-form">
+      <div className="auth-body">
+        {erro && <div className="auth-erro"><AlertCircle size={15} /><span>{erro}</span></div>}
+        
+        <form id="form-cadastro" onSubmit={handleCadastro} className="auth-form">
 
         <div className="auth-secao">
           <span className="auth-secao-titulo">Dados Pessoais</span>
@@ -446,14 +464,79 @@ const PaginaCadastro = ({ aoIrParaLogin }) => {
           </div>
         </div>
 
-        <Botao type="submit" fullWidth disabled={carregando} tabIndex="14">
+        </form>
+      </div>
+
+      <div className="auth-footer">
+        <div className="auth-grupo" style={{ marginBottom: '1rem' }}>
+          <label className="auth-toggle" style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', cursor: 'pointer' }}>
+            <input 
+              type="checkbox" 
+              checked={aceitouTermos} 
+              onChange={(e) => setAceitouTermos(e.target.checked)}
+              required
+              style={{ width: '18px', height: '18px', marginTop: '2px' }}
+            />
+            <span style={{ fontSize: '0.875rem', color: '#94a3b8', lineHeight: '1.5' }}>
+              Li e concordo com os{' '}
+              <button 
+                type="button" 
+                onClick={() => setModalLegal({ aberto: true, tipo: 'termos' })}
+                style={{ background: 'none', border: 'none', color: '#38bdf8', padding: 0, font: 'inherit', cursor: 'pointer', textDecoration: 'underline' }}
+              >
+                Termos de Uso
+              </button>
+              {' '}e a{' '}
+              <button 
+                type="button" 
+                onClick={() => setModalLegal({ aberto: true, tipo: 'privacidade' })}
+                style={{ background: 'none', border: 'none', color: '#38bdf8', padding: 0, font: 'inherit', cursor: 'pointer', textDecoration: 'underline' }}
+              >
+                Política de Privacidade
+              </button>
+              {' '}do PlayHub. *
+            </span>
+          </label>
+        </div>
+
+        <Botao type="submit" form="form-cadastro" fullWidth disabled={carregando || !aceitouTermos} tabIndex="14">
           {carregando ? 'Criando conta...' : 'Criar conta grátis'}
         </Botao>
-      </form>
 
-      <p className="auth-link">
-        Já tem conta? <button onClick={aoIrParaLogin} tabIndex="-1">Fazer login</button>
-      </p>
+        <p className="auth-link" style={{ marginTop: '1rem', marginBottom: 0 }}>
+          Já tem conta? <button onClick={aoIrParaLogin} tabIndex="-1">Fazer login</button>
+        </p>
+      </div>
+
+      <Modal 
+        isOpen={modalLegal.aberto} 
+        onClose={() => setModalLegal({ ...modalLegal, aberto: false })}
+        title={modalLegal.tipo === 'termos' ? 'Termos de Uso' : 'Política de Privacidade'}
+        maxWidth="700px"
+        footer={(
+          <div style={{ width: '100%', display: 'flex', justifyContent: 'center' }}>
+            <Botao onClick={() => {
+              setAceitouTermos(true);
+              setModalLegal({ ...modalLegal, aberto: false });
+            }}>
+              Entendido e Aceito
+            </Botao>
+          </div>
+        )}
+      >
+        <div className="conteudo-legal-modal" style={{ 
+          color: '#cbd5e1', lineHeight: '1.7', fontSize: '0.95rem',
+          textAlign: 'left'
+        }}>
+          {modalLegal.tipo === 'termos' ? CONTEUDO_TERMOS : CONTEUDO_PRIVACIDADE}
+        </div>
+        <style>{`
+          .conteudo-legal-modal h2 { color: #f8fafc; font-size: 1.2rem; margin: 1.5rem 0 0.8rem 0; font-weight: 700; text-align: center; }
+          .conteudo-legal-modal p { margin-bottom: 1rem; }
+          .conteudo-legal-modal ul { margin-bottom: 1.5rem; padding-left: 1.2rem; }
+          .conteudo-legal-modal li { margin-bottom: 0.5rem; }
+        `}</style>
+      </Modal>
     </div>
   );
 };

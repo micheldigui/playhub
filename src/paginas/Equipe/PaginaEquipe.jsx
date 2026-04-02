@@ -11,6 +11,7 @@ import { usarEquipe } from '../../contextos/EquipeContexto';
 import { usarAutenticacao } from '../../contextos/AutenticacaoContexto';
 import Botao from '../../componentes/Botao/Botao';
 import ModalCriacaoEquipe from '../../componentes/Equipe/ModalCriacaoEquipe';
+import ModalPerfilAtleta from '../../componentes/Modais/ModalPerfilAtleta';
 
 // Importação das Abas Especializadas
 import AgendaTab from './tabs/AgendaTab';
@@ -37,6 +38,8 @@ const PaginaEquipe = ({ abaAtiva, setAbaAtiva, aoVoltar }) => {
     const [copiado, setCopiado] = useState(false);
     const [confirmandoSair, setConfirmandoSair] = useState(false);
     const [modalRegrasAberto, setModalRegrasAberto] = useState(false);
+    const [idAtletaSelecionado, setIdAtletaSelecionado] = useState(null);
+    const [modalPerfilAberto, setModalPerfilAberto] = useState(false);
     
     // Novas estatísticas
     const [membros, setMembros] = useState([]);
@@ -88,6 +91,11 @@ const PaginaEquipe = ({ abaAtiva, setAbaAtiva, aoVoltar }) => {
         if (!window.confirm('Excluir a equipe removerá permanentemente todos os dados financeiros, membros e partidas. Confirmar?')) return;
         const res = await excluirEquipe(equipeAtiva.id);
         if (!res.sucesso) alert(res.erro);
+    };
+
+    const abrirPerfil = (membro) => {
+        setIdAtletaSelecionado(membro.usuario_id);
+        setModalPerfilAberto(true);
     };
 
     if (!equipeAtiva) {
@@ -247,7 +255,12 @@ const PaginaEquipe = ({ abaAtiva, setAbaAtiva, aoVoltar }) => {
                                     const u = membro.usuarios;
                                     const p = u.perfil_esportivo?.[0] || {};
                                     return (
-                                        <div key={membro.usuario_id} className="card-atleta-social">
+                                        <div 
+                                            key={membro.usuario_id} 
+                                            className="card-atleta-social" 
+                                            onClick={() => abrirPerfil(membro)}
+                                            style={{ cursor: 'pointer' }}
+                                        >
                                             <div className="atleta-avatar-box">
                                                 {u.foto_url ? (
                                                     <img src={u.foto_url} alt={u.apelido || u.nome_completo} />
@@ -305,6 +318,12 @@ const PaginaEquipe = ({ abaAtiva, setAbaAtiva, aoVoltar }) => {
             <ModalRegrasEquipe 
                 isOpen={modalRegrasAberto} 
                 onClose={() => setModalRegrasAberto(false)} 
+            />
+
+            <ModalPerfilAtleta 
+                isOpen={modalPerfilAberto}
+                onClose={() => setModalPerfilAberto(false)}
+                idAtleta={idAtletaSelecionado}
             />
             
             <style>{`

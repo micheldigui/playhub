@@ -5,7 +5,7 @@ import { usarNotificacoes } from '../../../contextos/NotificacoesContexto';
 import { usarAutenticacao } from '../../../contextos/AutenticacaoContexto';
 import Botao from '../../../componentes/Botao/Botao';
 import Modal from '../../../componentes/Modal/Modal';
-import PerfilAtletaModal from '../../../componentes/Modais/PerfilAtletaModal';
+import ModalPerfilAtleta from '../../../componentes/Modais/ModalPerfilAtleta';
 import { supabase } from '../../../servicos/supabase';
 
 const DescobrirTab = () => {
@@ -211,14 +211,12 @@ const DescobrirTab = () => {
             )}
 
             {/* MODAL PERFIL ATLETA */}
-            {atletaSelecionado && (
-                <PerfilAtletaModal 
-                    atleta={atletaSelecionado} 
-                    aoFechar={() => setAtletaSelecionado(null)}
-                    aoPassarBola={(alvo) => handlePassarBola(alvo.id)}
-                    ehEu={atletaSelecionado.id === usuario?.id}
-                />
-            )}
+            <ModalPerfilAtleta 
+                isOpen={!!atletaSelecionado}
+                onClose={() => setAtletaSelecionado(null)}
+                idAtleta={atletaSelecionado?.id}
+                aoPassarBola={(alvo) => handlePassarBola(alvo.id)}
+            />
 
             <style>{`
                 .campo-busca { display: flex; flex-direction: column; gap: 6px; }

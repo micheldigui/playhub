@@ -6,6 +6,7 @@ import ModalCriacaoEquipe from '../Equipe/ModalCriacaoEquipe';
 import ModalInstalacaoApp from '../Pwa/ModalInstalacaoApp';
 import { usarEquipe } from '../../contextos/EquipeContexto';
 import { usarPwa } from '../../contextos/PwaContexto';
+import BotaoSuporteFlutuante from '../Suporte/BotaoSuporteFlutuante';
 
 const TITULOS_CABECALHO = {
   inicio:           'Dashboard',
@@ -71,6 +72,9 @@ const Layout = ({ children, telaAtiva, setTelaAtiva, abaEquipe, setAbaEquipe }) 
       {modalInstalacaoAberto && (
         <ModalInstalacaoApp aoFechar={fecharModalInstalacao} />
       )}
+
+      {/* SUPORTE OFICIAL PLAYHUB */}
+      <BotaoSuporteFlutuante />
     </div>
   );
 };

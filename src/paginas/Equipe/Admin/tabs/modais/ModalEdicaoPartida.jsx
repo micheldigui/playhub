@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Botao from '../../../../../componentes/Botao/Botao';
+import Modal from '../../../../../componentes/Modal/Modal';
 import { X, Calendar, Clock, MapPin, Users, DollarSign } from 'lucide-react';
 import { usarPartidas } from '../../../../../contextos/PartidasContexto';
 import { usarEquipe } from '../../../../../contextos/EquipeContexto';
@@ -55,14 +56,13 @@ const ModalEdicaoPartida = ({ isOpen, onClose, partida }) => {
     };
 
     return (
-        <div className="modal-overlay">
-            <div className="modal-content">
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-                    <h2 style={{ fontSize: '1.5rem', fontWeight: '800', color: '#f8fafc' }}>Editar Partida</h2>
-                    <button onClick={onClose} style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer' }}>
-                        <X size={24} />
-                    </button>
-                </div>
+        <Modal 
+            isOpen={isOpen && !!partida} 
+            onClose={onClose} 
+            title="Editar Partida"
+            maxWidth="500px"
+        >
+            <div className="anima-entrada">
 
                 <form onSubmit={handleSubmit} style={{ display: 'grid', gap: '20px' }}>
                     
@@ -150,7 +150,7 @@ const ModalEdicaoPartida = ({ isOpen, onClose, partida }) => {
                     </Botao>
                 </form>
             </div>
-        </div>
+        </Modal>
     );
 };
 

@@ -6,7 +6,7 @@ import { supabase } from '../../../servicos/supabase';
 import { usarAutenticacao } from '../../../contextos/AutenticacaoContexto';
 import Botao from '../../../componentes/Botao/Botao';
 import Tooltip from '../../../componentes/Tooltip/Tooltip';
-import PerfilAtletaModal from '../../../componentes/Modais/PerfilAtletaModal';
+import ModalPerfilAtleta from '../../../componentes/Modais/ModalPerfilAtleta';
 import './ModalEdicaoUsuario.css';
 
 const GENEROS = ['Masculino', 'Feminino', 'Não-binário', 'Prefiro não informar'];
@@ -507,13 +507,11 @@ const ModalEdicaoUsuario = ({ usuario, aoFechar }) => {
         </div>
       </div>
 
-      {exibindoPerfilAtleta && (
-        <PerfilAtletaModal 
-          atleta={usuario} 
-          aoFechar={() => setExibindoPerfilAtleta(false)} 
-          ehEu={false} 
-        />
-      )}
+      <ModalPerfilAtleta 
+        isOpen={exibindoPerfilAtleta}
+        onClose={() => setExibindoPerfilAtleta(false)}
+        idAtleta={usuario.id}
+      />
     </div>
   );
 };

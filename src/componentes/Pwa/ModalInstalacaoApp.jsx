@@ -1,7 +1,7 @@
 import React from 'react';
 import { 
   X, Share, Smartphone, Monitor, Download, 
-  MoreVertical, PlusSquare, MonitorDown, CheckCircle2 
+  MoreVertical, PlusSquare, MonitorDown, CheckCircle2, Youtube 
 } from 'lucide-react';
 import { usePwaInstall } from '../../hooks/usePwaInstall';
 import './BannerInstalacaoApp.css'; // Reutilizando e estendendo o CSS existente
@@ -13,6 +13,12 @@ const ModalInstalacaoApp = ({ aoFechar }) => {
         if (!isIOS && isInstallable) {
             installApp();
         }
+    };
+
+    const linkPlaylistTutorial = 'https://www.youtube.com/playlist?list=PLL3QBAHD-EYz4Ahj0M-IniOzdVdqWpNS5';
+
+    const handleAssistirPlaylist = () => {
+        window.open(linkPlaylistTutorial, '_blank');
     };
 
     const renderConteudo = () => {
@@ -45,6 +51,10 @@ const ModalInstalacaoApp = ({ aoFechar }) => {
                             </div>
                         </div>
                     </div>
+
+                    <button className="pwa-btn-video" onClick={handleAssistirPlaylist}>
+                        <Youtube size={18} /> Ver Playlist de Tutoriais
+                    </button>
                 </div>
             );
         }
@@ -85,10 +95,14 @@ const ModalInstalacaoApp = ({ aoFechar }) => {
                         <div className="pwa-passo">
                             <div className="pwa-passo-numero">3</div>
                             <div className="pwa-passo-texto">
-                                Pronto! O <strong>PlayHub</strong> agora aparecerá junto aos seus outros aplicativos.
+                                Pronto! O <strong>PlayHub</strong> agora aparecerá na sua tela inicial.
                             </div>
                         </div>
                     </div>
+
+                    <button className="pwa-btn-video" onClick={handleAssistirPlaylist}>
+                        <Youtube size={18} /> Ver Playlist de Tutoriais
+                    </button>
                 </div>
             );
         }
@@ -132,6 +146,10 @@ const ModalInstalacaoApp = ({ aoFechar }) => {
                         </div>
                     </div>
                 </div>
+
+                <button className="pwa-btn-video" onClick={handleAssistirPlaylist}>
+                    <Youtube size={18} /> Ver Playlist de Tutoriais
+                </button>
             </div>
         );
     };

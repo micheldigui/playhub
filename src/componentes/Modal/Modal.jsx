@@ -1,3 +1,5 @@
+import { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import './Modal.css';
 
@@ -8,11 +10,23 @@ const Modal = ({
   children, 
   footer, 
   maxWidth,
-  closeOnOverlayClick = false // Padrão agora é NÃO fechar ao clicar fora, para evitar perda de dados
+  closeOnOverlayClick = false 
 }) => {
+  // Previne o scroll do body quando o modal está aberto
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
-  return (
+  return createPortal(
     <div className="modal-overlay" onClick={() => closeOnOverlayClick && onClose()}>
       <div 
         className="modal-content" 
@@ -30,7 +44,8 @@ const Modal = ({
         </div>
         {footer && <div className="modal-footer">{footer}</div>}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 

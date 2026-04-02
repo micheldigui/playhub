@@ -275,7 +275,7 @@ const ModalCriacaoEquipe = ({ isOpen, onClose, aoSucesso, equipeParaEditar = nul
                 style={{ borderRadius: '12px', width: '140px', height: '140px', objectFit: 'cover' }}
               />
             ) : (
-              <div className="avatar-placeholder" style={{ borderRadius: '12px', background: '#1e293b' }}>
+              <div className="avatar-placeholder">
                 <ImageIcon size={40} color="#475569" />
               </div>
             )}
@@ -362,7 +362,7 @@ const ModalCriacaoEquipe = ({ isOpen, onClose, aoSucesso, equipeParaEditar = nul
 
           <div className="grupo-input">
             <label>CEP (Busca Automática)</label>
-            <div className="grade-cep" style={{ display: 'flex', gap: '0.5rem' }}>
+            <div className="grade-cep">
               <div className="campo-input" style={{ flex: 1, position: 'relative' }}>
                 <span className="icone" style={{ position: 'absolute', left: '10px', top: '12px', color: '#64748b' }}><Search size={16} /></span>
                 <input 
@@ -371,10 +371,10 @@ const ModalCriacaoEquipe = ({ isOpen, onClose, aoSucesso, equipeParaEditar = nul
                   onChange={(e) => handleMudanca('local_cep', mascaraCep(e.target.value))}
                   placeholder="00000-000"
                   maxLength={9}
-                  style={{ paddingLeft: '35px', width: '100%', height: '42px', borderRadius: '8px', background: 'rgba(15,23,42,0.4)', border: '1px solid rgba(255,255,255,0.08)', color: 'white' }}
+                  className="input-cep"
                 />
               </div>
-              <Botao type="button" onClick={buscarCep} disabled={buscandoCep} style={{ height: '42px' }}>
+              <Botao type="button" onClick={buscarCep} disabled={buscandoCep} className="btn-busca-cep">
                 <Search size={15} />
               </Botao>
             </div>
@@ -393,7 +393,7 @@ const ModalCriacaoEquipe = ({ isOpen, onClose, aoSucesso, equipeParaEditar = nul
               />
             </div>
           </div>
-          <div className="campo" style={{ flex: '0 0 120px' }}>
+          <div className="campo campo-pequeno">
             <label>Número *</label>
             <div className="campo-valida">
               <span className="icone-input"><Hash size={18} /></span>
@@ -407,7 +407,7 @@ const ModalCriacaoEquipe = ({ isOpen, onClose, aoSucesso, equipeParaEditar = nul
               />
             </div>
           </div>
-          <div className="campo" style={{ flex: '0 0 150px' }}>
+          <div className="campo campo-medio">
             <label>Complemento</label>
             <div className="campo-valida">
               <span className="icone-input"><Building2 size={18} /></span>
@@ -434,7 +434,7 @@ const ModalCriacaoEquipe = ({ isOpen, onClose, aoSucesso, equipeParaEditar = nul
               />
             </div>
           </div>
-          <div className="campo" style={{ flex: '1.5' }}>
+          <div className="campo campo-flex-2">
             <label>Cidade *</label>
             <div className="campo-valida">
               <span className="icone-input"><Building2 size={18} /></span>
@@ -447,7 +447,7 @@ const ModalCriacaoEquipe = ({ isOpen, onClose, aoSucesso, equipeParaEditar = nul
               />
             </div>
           </div>
-          <div className="campo" style={{ flex: '0 0 110px' }}>
+          <div className="campo campo-pequeno">
             <label>UF *</label>
             <div className="campo-valida">
               <span className="icone-input"><Flag size={18} /></span>

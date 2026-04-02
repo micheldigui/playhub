@@ -5,7 +5,7 @@ import { usarEquipe } from '../../contextos/EquipeContexto';
 import { supabase } from '../../servicos/supabase';
 import { Bell, User, MessageSquare, ArrowLeft, RefreshCw, Trash2, Phone, Shield } from 'lucide-react';
 import Botao from '../../componentes/Botao/Botao';
-import PerfilAtletaModal from '../../componentes/Modais/PerfilAtletaModal';
+import ModalPerfilAtleta from '../../componentes/Modais/ModalPerfilAtleta';
 import PerfilEquipeModal from '../../componentes/Modais/PerfilEquipeModal';
 import './PaginaNotificacoes.css';
 
@@ -16,6 +16,7 @@ const PaginaNotificacoes = ({ aoVoltar, abrirEquipeTab }) => {
     const [atletaSelecionado, setAtletaSelecionado] = useState(null);
     const [equipeSelecionada, setEquipeSelecionada] = useState(null);
     const [processando, setProcessando] = useState(null);
+    const [limpando, setLimpando] = useState(false);
 
     const calcularIdade = (dataNasc) => {
         if (!dataNasc) return 0;
@@ -62,6 +63,19 @@ const PaginaNotificacoes = ({ aoVoltar, abrirEquipeTab }) => {
         setProcessando(null);
     };
 
+    const handleLimparTudo = async () => {
+        if (!window.confirm('Deseja realmente limpar todas as notificações? Esta ação não pode ser desfeita.')) return;
+        
+        setLimpando(true);
+        try {
+            await limparNotificacoes();
+        } catch (err) {
+            console.error('Erro ao limpar:', err);
+        } finally {
+            setLimpando(false);
+        }
+    };
+
     const handleRetribuir = async (destinatarioId) => {
         try {
             const { error } = await supabase
@@ -100,8 +114,13 @@ const PaginaNotificacoes = ({ aoVoltar, abrirEquipeTab }) => {
                             <RefreshCw size={18} />
                         </button>
                         {notificacoes.length > 0 && (
-                            <button className="btn-header-acao btn-limpar" onClick={limparNotificacoes} title="Limpar tudo">
-                                <Trash2 size={18} />
+                            <button 
+                                className={`btn-header-acao btn-limpar ${limpando ? 'carregando' : ''}`} 
+                                onClick={handleLimparTudo} 
+                                title="Limpar tudo"
+                                disabled={limpando}
+                            >
+                                {limpando ? <RefreshCw size={18} className="dash-spinner" /> : <Trash2 size={18} />}
                             </button>
                         )}
                     </div>
@@ -281,14 +300,12 @@ const PaginaNotificacoes = ({ aoVoltar, abrirEquipeTab }) => {
                 )}
             </div>
 
-            {atletaSelecionado && (
-                <PerfilAtletaModal 
-                    atleta={atletaSelecionado}
-                    aoFechar={() => setAtletaSelecionado(null)}
-                    aoPassarBola={handleRetribuir}
-                    ehEu={atletaSelecionado.id === usuario?.id}
-                />
-            )}
+            <ModalPerfilAtleta 
+                isOpen={!!atletaSelecionado}
+                onClose={() => setAtletaSelecionado(null)}
+                idAtleta={atletaSelecionado?.id}
+                aoPassarBola={handleRetribuir}
+            />
 
             {equipeSelecionada && (
                 <PerfilEquipeModal 
