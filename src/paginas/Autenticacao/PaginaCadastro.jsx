@@ -300,6 +300,8 @@ const PaginaCadastro = ({ aoIrParaLogin, aoVoltar }) => {
               tabIndex="7"
             />
           </div>
+        </div>
+
         <div className="auth-grupo">
           <label style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             Visibilidade do Perfil
@@ -349,7 +351,6 @@ const PaginaCadastro = ({ aoIrParaLogin, aoVoltar }) => {
               </span>
             </label>
           </div>
-        </div>
         </div>
 
         {/* ── Endereço ── */}
@@ -464,48 +465,48 @@ const PaginaCadastro = ({ aoIrParaLogin, aoVoltar }) => {
           </div>
         </div>
 
-        </form>
-      </div>
+        <div className="auth-acoes-form">
+          <div className="auth-grupo" style={{ marginBottom: '1.25rem' }}>
+            <label className="auth-toggle" style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', cursor: 'pointer' }}>
+              <input 
+                type="checkbox" 
+                checked={aceitouTermos} 
+                onChange={(e) => setAceitouTermos(e.target.checked)}
+                required
+                style={{ width: '18px', height: '18px', marginTop: '2px' }}
+              />
+              <span style={{ fontSize: '0.875rem', color: '#94a3b8', lineHeight: '1.5' }}>
+                Li e concordo com os{' '}
+                <button 
+                  type="button" 
+                  onClick={() => setModalLegal({ aberto: true, tipo: 'termos' })}
+                  style={{ background: 'none', border: 'none', color: '#38bdf8', padding: 0, font: 'inherit', cursor: 'pointer', textDecoration: 'underline' }}
+                >
+                  Termos de Uso
+                </button>
+                {' '}e a{' '}
+                <button 
+                  type="button" 
+                  onClick={() => setModalLegal({ aberto: true, tipo: 'privacidade' })}
+                  style={{ background: 'none', border: 'none', color: '#38bdf8', padding: 0, font: 'inherit', cursor: 'pointer', textDecoration: 'underline' }}
+                >
+                  Política de Privacidade
+                </button>
+                {' '}do PlayHub. *
+              </span>
+            </label>
+          </div>
 
-      <div className="auth-footer">
-        <div className="auth-grupo" style={{ marginBottom: '1rem' }}>
-          <label className="auth-toggle" style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', cursor: 'pointer' }}>
-            <input 
-              type="checkbox" 
-              checked={aceitouTermos} 
-              onChange={(e) => setAceitouTermos(e.target.checked)}
-              required
-              style={{ width: '18px', height: '18px', marginTop: '2px' }}
-            />
-            <span style={{ fontSize: '0.875rem', color: '#94a3b8', lineHeight: '1.5' }}>
-              Li e concordo com os{' '}
-              <button 
-                type="button" 
-                onClick={() => setModalLegal({ aberto: true, tipo: 'termos' })}
-                style={{ background: 'none', border: 'none', color: '#38bdf8', padding: 0, font: 'inherit', cursor: 'pointer', textDecoration: 'underline' }}
-              >
-                Termos de Uso
-              </button>
-              {' '}e a{' '}
-              <button 
-                type="button" 
-                onClick={() => setModalLegal({ aberto: true, tipo: 'privacidade' })}
-                style={{ background: 'none', border: 'none', color: '#38bdf8', padding: 0, font: 'inherit', cursor: 'pointer', textDecoration: 'underline' }}
-              >
-                Política de Privacidade
-              </button>
-              {' '}do PlayHub. *
-            </span>
-          </label>
+          <Botao type="submit" disabled={carregando || !aceitouTermos} tabIndex="14">
+            {carregando ? 'Criando conta...' : 'Criar conta grátis'}
+          </Botao>
+
+          <p className="auth-link" style={{ marginTop: '1.5rem', marginBottom: '1rem' }}>
+            Já tem conta? <button onClick={aoIrParaLogin} tabIndex="-1">Fazer login</button>
+          </p>
         </div>
 
-        <Botao type="submit" form="form-cadastro" fullWidth disabled={carregando || !aceitouTermos} tabIndex="14">
-          {carregando ? 'Criando conta...' : 'Criar conta grátis'}
-        </Botao>
-
-        <p className="auth-link" style={{ marginTop: '1rem', marginBottom: 0 }}>
-          Já tem conta? <button onClick={aoIrParaLogin} tabIndex="-1">Fazer login</button>
-        </p>
+        </form>
       </div>
 
       <Modal 

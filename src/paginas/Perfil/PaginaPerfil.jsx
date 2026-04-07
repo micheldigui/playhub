@@ -531,14 +531,13 @@ const PaginaPerfil = ({ aoVoltar }) => {
               </div>
             </div>
           </div>
+          <div className="perfil-acoes-form">
+            <Botao type="submit" disabled={carregando}>
+              {carregando ? 'Salvando...' : 'Salvar Alterações'}
+            </Botao>
+          </div>
         </div>
         </form>
-      </div>
-
-      <div className="perfil-footer">
-        <Botao type="submit" form="perfil-form" disabled={carregando}>
-          {carregando ? 'Salvando...' : 'Salvar Alterações'}
-        </Botao>
       </div>
     </div>
   );

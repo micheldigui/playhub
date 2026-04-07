@@ -1,6 +1,6 @@
 import './Botao.css';
 
-const Botao = ({ children, variant = 'primario', onClick, type = 'button', disabled = false, fullWidth = false, style }) => {
+const Botao = ({ children, variant = 'primario', onClick, type = 'button', disabled = false, fullWidth = false, style, ...props }) => {
   return (
     <button 
       type={type}
@@ -8,6 +8,7 @@ const Botao = ({ children, variant = 'primario', onClick, type = 'button', disab
       onClick={onClick}
       disabled={disabled}
       style={style}
+      {...props}
     >
       {children}
     </button>

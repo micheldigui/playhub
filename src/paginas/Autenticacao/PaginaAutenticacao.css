@@ -61,12 +61,24 @@ input:-webkit-autofill:focus {
   padding: 2.5rem 2.5rem 0 2.5rem;
 }
 
+@media (max-width: 480px) {
+  .auth-header {
+    padding: 1.5rem 1.5rem 0 1.5rem;
+  }
+}
+
 .auth-body {
   flex: 1;
   overflow-y: auto;
-  padding: 0 2.5rem;
+  padding: 0 2.5rem 2rem 2.5rem; /* Adicionado padding-bottom para respiro no fim do form */
   scrollbar-width: thin;
   scrollbar-color: rgba(255,255,255,0.1) transparent;
+}
+
+@media (max-width: 480px) {
+  .auth-body {
+    padding: 0 1.5rem 1.5rem 1.5rem;
+  }
 }
 
 /* Scrollbar minimalista para Chrome/Safari/Edge */
@@ -81,8 +93,34 @@ input:-webkit-autofill:focus {
   border-radius: 20px;
 }
 
-.auth-footer {
-  padding: 0.5rem 2.5rem 2.5rem 2.5rem;
+/* Novo: Ações integradas ao formulário */
+.auth-acoes-form {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* Centraliza botões no desktop */
+  gap: 1.25rem;
+}
+
+.auth-acoes-form .botao {
+  width: auto;
+  min-width: 240px;
+  max-width: 320px;
+}
+
+@media (max-width: 480px) {
+  .auth-acoes-form {
+    padding-top: 1rem;
+    margin-top: 1.5rem;
+  }
+  
+  .auth-acoes-form .botao {
+    width: 100%;
+    max-width: none;
+    min-width: auto;
+  }
 }
 
 /* Logo */

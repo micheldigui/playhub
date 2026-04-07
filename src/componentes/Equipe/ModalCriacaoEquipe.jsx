@@ -252,14 +252,6 @@ const ModalCriacaoEquipe = ({ isOpen, onClose, aoSucesso, equipeParaEditar = nul
       onClose={() => { limparForm(); onClose(); }} 
       title={equipeParaEditar ? "Editar Equipe" : "Criar Nova Equipe"}
       maxWidth="800px"
-      footer={
-        <div className="footer-criacao">
-          <Botao variant="secundario" onClick={() => { limparForm(); onClose(); }} disabled={carregando}>Cancelar</Botao>
-          <Botao onClick={handleSubmit} disabled={carregando || !form.nome || !form.modalidade}>
-            {carregando ? (equipeParaEditar ? 'Salvando...' : 'Criando...') : (equipeParaEditar ? 'Salvar Alterações' : 'Criar Equipe')}
-          </Botao>
-        </div>
-      }
     >
       <form className="form-equipe" onSubmit={handleSubmit}>
         
@@ -629,6 +621,15 @@ const ModalCriacaoEquipe = ({ isOpen, onClose, aoSucesso, equipeParaEditar = nul
             onChange={(e) => handleMudanca('observacoes', e.target.value)}
             rows="3"
           />
+        </div>
+
+        <div className="modal-acoes-form">
+          <Botao variant="secundario" type="button" onClick={() => { limparForm(); onClose(); }} disabled={carregando}>
+            Cancelar
+          </Botao>
+          <Botao type="submit" disabled={carregando || !form.nome || !form.modalidade}>
+            {carregando ? (equipeParaEditar ? 'Salvando...' : 'Criando...') : (equipeParaEditar ? 'Salvar Alterações' : 'Criar Equipe')}
+          </Botao>
         </div>
       </form>
     </Modal>

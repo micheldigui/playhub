@@ -79,20 +79,17 @@ const PaginaLogin = ({ aoIrParaCadastro, aoVoltar }) => {
           </div>
         </div>
 
-        <Botao type="submit" fullWidth disabled={carregando}>
-          {carregando ? 'Entrando...' : 'Entrar na conta'}
-        </Botao>
+        <div className="auth-acoes-form">
+          <Botao type="submit" disabled={carregando}>
+            {carregando ? 'Entrando...' : 'Entrar na conta'}
+          </Botao>
+
+          <p className="auth-link" style={{ marginTop: 0, marginBottom: '0.5rem' }}>
+            Não tem conta? <button type="button" onClick={aoIrParaCadastro}>Cadastre-se grátis</button>
+          </p>
+        </div>
+
         </form>
-      </div>
-
-      <div className="auth-footer">
-        <Botao type="submit" form="form-login" fullWidth disabled={carregando}>
-          {carregando ? 'Entrando...' : 'Entrar na conta'}
-        </Botao>
-
-        <p className="auth-link" style={{ marginTop: '1rem', marginBottom: 0 }}>
-          Não tem conta? <button onClick={aoIrParaCadastro}>Cadastre-se grátis</button>
-        </p>
       </div>
     </div>
   );
