@@ -64,8 +64,6 @@ const PaginaNotificacoes = ({ aoVoltar, abrirEquipeTab }) => {
     };
 
     const handleLimparTudo = async () => {
-        if (!window.confirm('Deseja realmente limpar todas as notificações? Esta ação não pode ser desfeita.')) return;
-        
         setLimpando(true);
         try {
             await limparNotificacoes();

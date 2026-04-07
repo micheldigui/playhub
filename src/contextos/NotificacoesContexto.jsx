@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '../servicos/supabase';
 import { usarAutenticacao } from './AutenticacaoContexto';
 
@@ -11,6 +11,9 @@ export const NotificacoesProvedor = ({ children }) => {
 
     const [matches, setMatches] = useState(new Set()); // Para quem eu enviei a bola
     const [matchesConfirmados, setMatchesConfirmados] = useState(new Set()); // Match mútuo
+    
+    // Cache de memória RAM imutável e instantâneo para exclusões
+    const ocultasSessaoRef = useRef(new Set());
 
     const carregarNotificacoes = useCallback(async () => {
         if (!usuario) return;
@@ -88,8 +91,13 @@ export const NotificacoesProvedor = ({ children }) => {
             setMatchesConfirmados(new Set(matchesMutuos));
             
             // Só conta como notificação lida/não-lida pra UI as que NÃO estão arquivadas explicitamente ou via localStorage
-            const apagadasMemoria = new Set(JSON.parse(localStorage.getItem(`playhub_arquivadas_${usuario.id}`) || '[]'));
-            const notificacoesVisiveis = todasNotificacoes.filter(n => n.tipo !== 'bola_arquivada' && !apagadasMemoria.has(n.id));
+            const apagadasMemoriaArr = JSON.parse(localStorage.getItem(`playhub_arquivadas_${usuario.id}`) || '[]');
+            const apagadasMemoria = new Set(apagadasMemoriaArr.map(String));
+            const notificacoesVisiveis = todasNotificacoes.filter(n => 
+                 n.tipo !== 'bola_arquivada' && 
+                 !apagadasMemoria.has(String(n.id)) &&
+                 !ocultasSessaoRef.current.has(String(n.id))
+            );
 
             setNotificacoes(notificacoesVisiveis);
             setContagemNaoLidas(notificacoesVisiveis.length);
@@ -132,38 +140,46 @@ export const NotificacoesProvedor = ({ children }) => {
     const limparNotificacoes = useCallback(async () => {
         if (!usuario || notificacoes.length === 0) return;
         
-        // Cópia para manipulação e redundância de segurança
-        const idsSendoLimpos = notificacoes.map(n => n.id);
+        // Cópia garantida de todos os IDs sendo formatada para String imediatamente
+        const idsSendoLimpos = notificacoes.map(n => String(n.id));
+        
+        // Bloqueio de Sessão: Injeta no useRef para esconder instantaneamente pro React (Anti-Zumbi)
+        idsSendoLimpos.forEach(id => ocultasSessaoRef.current.add(id));
         
         // Feedback instantâneo para UI (otimista)
         setNotificacoes([]);
         setContagemNaoLidas(0);
         
+        // 1. Redundância e Fallback (LocalStorage) - Executado PRIMEIRO, à prova de falhas assíncronas do DB
         try {
-            // 1. Identificar notificações da tabela 'interacoes'
+            const backupArquivadas = JSON.parse(localStorage.getItem(`playhub_arquivadas_${usuario.id}`) || '[]');
+            const backupSetStrings = new Set(backupArquivadas.map(String));
+            idsSendoLimpos.forEach(id => backupSetStrings.add(id));
+            localStorage.setItem(`playhub_arquivadas_${usuario.id}`, JSON.stringify(Array.from(backupSetStrings)));
+        } catch (e) {
+            console.error('Erro no parser do LocalStorage ao limpar:', e);
+        }
+
+        try {
+            // 2. Identificar e atualizar notificações da tabela 'interacoes' no banco central
             const interacoesIds = notificacoes
                 .filter(n => n.tipo === 'bola' || n.tipo === 'interacao' || n.tipo === 'solicitacao_ingresso')
                 .map(n => n.id);
 
             if (interacoesIds.length > 0) {
                 // Tenta atualizar no banco para manter dados históricos mas ocultar do usuário
-                await supabase
+                const { error: erroBanco } = await supabase
                     .from('interacoes')
                     .update({ tipo: 'bola_arquivada' })
                     .in('id', interacoesIds);
+                    
+                if (erroBanco) console.warn('Supabase não atualizou as interações (provável restrição RLS, o cache local resolverá):', erroBanco);
             }
 
-            // 2. Redundância e Fallback (LocalStorage)
-            // Mesmo se o banco falhar ou para tipos que não estão no banco (convites pendentes em outras tabelas)
-            const backupArquivadas = JSON.parse(localStorage.getItem(`playhub_arquivadas_${usuario.id}`) || '[]');
-            const novasArquivadas = Array.from(new Set([...backupArquivadas, ...idsSendoLimpos]));
-            localStorage.setItem(`playhub_arquivadas_${usuario.id}`, JSON.stringify(novasArquivadas));
-            
             // 3. Recarrega para garantir sincronia do estado real
             await carregarNotificacoes();
         } catch (error) {
-            console.error('Erro ao limpar notificações:', error);
-            // Reverte em caso de erro crítico para não enganar o usuário se o estado for reiniciado
+            console.error('Erro crítico ao limpar notificações no banco:', error);
             await carregarNotificacoes();
         }
     }, [usuario, carregarNotificacoes, notificacoes]);
