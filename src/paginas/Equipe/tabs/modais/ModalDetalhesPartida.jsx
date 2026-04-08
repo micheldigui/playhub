@@ -95,12 +95,13 @@ const ModalDetalhesPartida = ({ isOpen, onClose, partida }) => {
 
     // Função auxiliar para buscar o nome do usuário lidando com perfis privados / null
     const getNomeUsuario = (userId, usuarioPayload) => {
-        // Tenta pegar do payload direto da presenca (p.usuarios)
+        // 1. Tenta pegar do payload direto da presenca (p.usuarios)
         if (usuarioPayload?.nome_completo) return formatName(usuarioPayload.nome_completo);
         if (usuarioPayload?.apelido) return formatName(usuarioPayload.apelido);
         
-        // Fallback: se o RLS (perfil privado) ocultou, tenta buscar pelo membro da equipe atrelado
-        const membroRef = membros.find(m => m.usuario_id === userId || m.usuarios?.id === userId);
+        // 2. Fallback: Busca na lista de membros da equipe (que agora vem via RPC Seguro)
+        const membroRef = membros.find(m => String(m.usuario_id) === String(userId) || String(m.usuarios?.id) === String(userId));
+        
         if (membroRef?.usuarios?.nome_completo) return formatName(membroRef.usuarios.nome_completo);
         if (membroRef?.usuarios?.apelido) return formatName(membroRef.usuarios.apelido);
         
@@ -217,9 +218,10 @@ const ModalDetalhesPartida = ({ isOpen, onClose, partida }) => {
         mensagem += `*✅ CONFIRMADOS (${listaConfirmados.length}/${limite === 999 ? '∞' : limite})*\n`;
         if (listaConfirmados.length > 0) {
             listaConfirmados.forEach((p, index) => {
-                const userId = p.usuario_id || p.usuarios?.id;
+                const u = p.usuarios || {};
+                const userId = p.usuario_id || u.id;
                 const vinculo = getVinculoUsuario(userId);
-                const nomeExibir = getNomeUsuario(userId, p.usuarios);
+                const nomeExibir = getNomeUsuario(userId, u);
                 mensagem += `${index + 1}. ${nomeExibir}${getEmojiPapel(userId)}${getEmojiVinculo(vinculo)}\n`;
             });
         } else {
@@ -229,9 +231,10 @@ const ModalDetalhesPartida = ({ isOpen, onClose, partida }) => {
         if (listaEspera.length > 0) {
             mensagem += `\n*⏳ LISTA DE ESPERA (${listaEspera.length})*\n`;
             listaEspera.forEach((p, index) => {
-                const userId = p.usuario_id || p.usuarios?.id;
+                const u = p.usuarios || {};
+                const userId = p.usuario_id || u.id;
                 const vinculo = getVinculoUsuario(userId);
-                const nomeExibir = getNomeUsuario(userId, p.usuarios);
+                const nomeExibir = getNomeUsuario(userId, u);
                 mensagem += `${index + 1}. ${nomeExibir}${getEmojiPapel(userId)}${getEmojiVinculo(vinculo)}\n`;
             });
         }

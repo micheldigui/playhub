@@ -6,12 +6,34 @@ import Botao from '../../../componentes/Botao/Botao';
 import { Shield, AlertTriangle, Scale, Calendar, Trash2, CheckCircle2, Users } from 'lucide-react';
 import InfoTooltip from '../../../componentes/Tooltip/InfoTooltip';
 
-const AbaPunicoes = () => {
+const AbaPunicoes = ({ membrosIniciais = [] }) => {
     const { equipeAtiva, temPermissaoEquipe } = usarEquipe();
     const { usuario } = usarAutenticacao();
     const [punicoes, setPunicoes] = useState([]);
+    const [membros, setMembros] = useState(membrosIniciais);
     const [carregando, setCarregando] = useState(true);
     const [processando, setProcessando] = useState(null);
+
+    // Sincroniza membros se as props mudarem
+    useEffect(() => {
+        setMembros(membrosIniciais);
+    }, [membrosIniciais]);
+
+    const formatName = (fullName) => {
+        if (!fullName) return '';
+        const parts = fullName.trim().toLowerCase().split(/\s+/);
+        if (parts.length === 1) return parts[0].charAt(0).toUpperCase() + parts[0].slice(1);
+        const first = parts[0].charAt(0).toUpperCase() + parts[0].slice(1);
+        const last = parts[parts.length - 1].charAt(0).toUpperCase() + parts[parts.length - 1].slice(1);
+        return `${first} ${last}`;
+    };
+
+    const getNomeUsuario = (userId, usuarioPayload) => {
+        if (usuarioPayload?.nome_completo) return formatName(usuarioPayload.nome_completo);
+        const membroRef = membros.find(m => String(m.usuario_id) === String(userId) || String(m.usuarios?.id) === String(userId));
+        if (membroRef?.usuarios?.nome_completo) return formatName(membroRef.usuarios.nome_completo);
+        return 'Desconhecido';
+    };
 
     const isAdmin = equipeAtiva?.papel === 'admin' || temPermissaoEquipe('gerenciar_membros') || temPermissaoEquipe('gerenciar_punicoes');
 
@@ -265,7 +287,7 @@ const AbaPunicoes = () => {
 
                                     <div style={{ flex: 1 }}>
                                         <div style={{ fontWeight: '700', color: isAtiva ? '#f8fafc' : '#64748b', fontSize: '1rem', marginBottom: '4px', textDecoration: isAtiva ? 'none' : 'line-through' }}>
-                                            {p.usuarios?.nome_completo || 'Desconhecido'}
+                                            {getNomeUsuario(p.usuarios?.id, p.usuarios)}
                                         </div>
                                         <div style={{ fontSize: '0.9rem', color: isAtiva ? '#cbd5e1' : '#475569' }}>
                                             {p.motivo}

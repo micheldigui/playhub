@@ -168,7 +168,12 @@ const PaginaEquipe = ({ abaAtiva, setAbaAtiva, aoVoltar }) => {
                                         {equipeAtiva.visibilidade === 'publica' ? 'Pública' : 'Privada'}
                                     </span>
                                     <span className="badge badge-capitao" title="Dono da Equipe">
-                                        <Crown size={14} /> Capitão: {equipeAtiva.admin?.apelido || equipeAtiva.admin?.nome_completo?.split(' ')[0]}
+                                        <Crown size={14} /> Capitão: {(() => {
+                                            const adminId = equipeAtiva.admin_id;
+                                            const adminMembro = membros.find(m => m.usuario_id === adminId || m.usuarios?.id === adminId);
+                                            const u = adminMembro?.usuarios || equipeAtiva.admin || {};
+                                            return u.apelido || (u.nome_completo ? u.nome_completo.split(' ')[0] : 'Capitão');
+                                        })()}
                                     </span>
                                     {stats.viceCapitaes.length > 0 && (
                                         <span className="badge badge-vice" title="Responsáveis pela organização">
@@ -304,7 +309,7 @@ const PaginaEquipe = ({ abaAtiva, setAbaAtiva, aoVoltar }) => {
 
                 {abaAtiva === 'membros' && <MembrosTab membrosIniciais={membros} recarregar={buscarMembros} />}
                 {abaAtiva === 'solicitacoes' && <SolicitacoesTab />}
-                {abaAtiva === 'disciplina' && <AbaPunicoes />}
+                {abaAtiva === 'disciplina' && <AbaPunicoes membrosIniciais={membros} />}
                 {abaAtiva === 'permissoes' && <EquipePermissoesTab />}
                 
                 {abaAtiva === 'regras-config' && <RegrasTab abrirEdicao={() => setModalEditarAberto(true)} aoExcluir={handlesExcluir} />}

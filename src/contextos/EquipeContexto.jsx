@@ -866,6 +866,29 @@ export const EquipeProvedor = ({ children }) => {
 
     const carregarMembrosEquipe = useCallback(async (equipeId) => {
         try {
+            // Tenta primeiro via RPC para garantir nomes mesmo em perfis privados (Security Definer)
+            const { data: dataRpc, error: errorRpc } = await supabase.rpc('buscar_membros_equipe_seguro', { p_equipe_id: equipeId });
+
+            if (!errorRpc && dataRpc) {
+                // Formata o retorno da RPC para bater com a estrutura esperada (usuarios como sub-objeto)
+                return dataRpc.map(m => ({
+                    id: m.id,
+                    usuario_id: m.usuario_id,
+                    papel: m.papel,
+                    permissoes: m.permissoes,
+                    vinculo: m.vinculo,
+                    status: m.status,
+                    entrou_em: m.entrou_em,
+                    usuarios: {
+                        id: m.usuario_id,
+                        nome_completo: m.nome_completo,
+                        apelido: m.apelido,
+                        foto_url: m.foto_url
+                    }
+                }));
+            }
+
+            // Fallback: Busca padrão via join (respeita RLS original)
             const { data, error } = await supabase
                 .from('membros_equipe')
                 .select(`

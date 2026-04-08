@@ -116,8 +116,9 @@ const MembrosTab = ({ membrosIniciais = [], recarregar }) => {
                         </tr>
                     </thead>
                     <tbody>
-                        {membros.filter(m => m.usuarios).map(m => {
-                            const idade = calcularIdade(m.usuarios.data_nascimento);
+                        {membros.map(m => {
+                            const u = m.usuarios || {};
+                            const idade = calcularIdade(u.data_nascimento);
                             return (
                                 <tr key={m.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)', opacity: processando === m.id ? 0.5 : 1 }}>
                                     <td style={{ padding: '16px' }}>
@@ -139,22 +140,22 @@ const MembrosTab = ({ membrosIniciais = [], recarregar }) => {
                                                     flexShrink: 0 
                                                 }}
                                             >
-                                                {m.usuarios.foto_url ? <img src={m.usuarios.foto_url} alt={m.usuarios.apelido} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <Users size={18} color="#64748b" />}
+                                                {u.foto_url ? <img src={u.foto_url} alt={u.apelido} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <Users size={18} color="#64748b" />}
                                             </div>
                                             <div>
                                                 <div 
                                                     onClick={() => abrirPerfil(m)}
                                                     style={{ fontWeight: '600', color: '#f1f5f9', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', whiteSpace: 'nowrap' }}
                                                 >
-                                                    {m.usuarios.nome_completo}
+                                                    {u.nome_completo || 'Membro'}
                                                     {m.papel === 'admin' && <Crown size={12} color="#fbbf24" style={{ marginLeft: '4px', flexShrink: 0 }} title="Capitão" />}
                                                     {m.papel === 'sub_admin' && <Crown size={12} color="#cbd5e1" style={{ marginLeft: '4px', flexShrink: 0 }} title="Vice-Capitão" />}
                                                 </div>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                                    <div style={{ fontSize: '0.8rem', color: '#64748b', whiteSpace: 'nowrap' }}>@{m.usuarios.apelido}</div>
-                                                    {m.usuarios.telefone && idade >= 18 ? (
+                                                    <div style={{ fontSize: '0.8rem', color: '#64748b', whiteSpace: 'nowrap' }}>{u.apelido ? `@${u.apelido}` : 'Sem apelido'}</div>
+                                                    {u.telefone && idade >= 18 ? (
                                                         <a 
-                                                            href={`https://wa.me/55${m.usuarios.telefone.replace(/\D/g, '')}`} 
+                                                            href={`https://wa.me/55${u.telefone.replace(/\D/g, '')}`} 
                                                             target="_blank" 
                                                             rel="noopener noreferrer"
                                                             style={{ color: '#25D366', display: 'flex', alignItems: 'center' }}
@@ -162,7 +163,7 @@ const MembrosTab = ({ membrosIniciais = [], recarregar }) => {
                                                         >
                                                             <MessageCircle size={12} />
                                                         </a>
-                                                    ) : m.usuarios.telefone && (
+                                                    ) : u.telefone && (
                                                         <span title="Contato restrito para menores" style={{ color: '#64748b', opacity: 0.5, display: 'flex', alignItems: 'center' }}>
                                                             <MessageCircle size={12} />
                                                         </span>
@@ -229,7 +230,7 @@ const MembrosTab = ({ membrosIniciais = [], recarregar }) => {
                                                                 className="btn-membro-acao" 
                                                                 title="Passar a bola (Tornar Capitão)"
                                                                 onClick={async () => {
-                                                                    if(window.confirm(`Tem certeza que deseja passar a bola para ${m.usuarios.nome_completo}? Você deixará de ser o Capitão.`)) {
+                                                                    if(window.confirm(`Tem certeza que deseja passar a bola para ${u.nome_completo || 'este membro'}? Você deixará de ser o Capitão.`)) {
                                                                         const res = await transferirTitularidade(equipeAtiva.id, m.id);
                                                                         if(res.sucesso) setTimeout(() => window.location.reload(), 800);
                                                                         else alert(res.erro);
@@ -261,7 +262,7 @@ const MembrosTab = ({ membrosIniciais = [], recarregar }) => {
 
                                                     {(equipeAtiva.papel === 'admin' || (temPermissaoEquipe('gerenciar_membros') && m.papel === 'jogador')) && (
                                                         <button 
-                                                            onClick={() => handleRemover(m.id, m.usuarios.nome_completo)}
+                                                            onClick={() => handleRemover(m.id, u.nome_completo || 'Membro')}
                                                             className="btn-membro-acao perigo"
                                                             title="Remover da Equipe"
                                                         >
@@ -279,10 +280,10 @@ const MembrosTab = ({ membrosIniciais = [], recarregar }) => {
                 </table>
             </div>
 
-            {/* Versão MOBILE: Cards */}
             <div className="grade-membros-mobile">
-                {membros.filter(m => m.usuarios).map(m => {
-                    const idade = calcularIdade(m.usuarios.data_nascimento);
+                {membros.map(m => {
+                    const u = m.usuarios || {};
+                    const idade = calcularIdade(u.data_nascimento);
                     return (
                         <div key={m.id} className="card-membro-mobile" style={{ opacity: processando === m.id ? 0.5 : 1 }}>
                             <div className="card-membro-topo">
@@ -300,8 +301,8 @@ const MembrosTab = ({ membrosIniciais = [], recarregar }) => {
                                         position: 'relative'
                                     }}
                                 >
-                                    {m.usuarios.foto_url ? (
-                                        <img src={m.usuarios.foto_url} alt={m.usuarios.apelido} style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
+                                    {u.foto_url ? (
+                                        <img src={u.foto_url} alt={u.apelido} style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
                                     ) : (
                                         <div style={{ 
                                             width: '100%', 
@@ -320,13 +321,13 @@ const MembrosTab = ({ membrosIniciais = [], recarregar }) => {
                                 </div>
                                 <div className="card-membro-infos">
                                     <div className="nome-atleta" onClick={() => abrirPerfil(m)} style={{ cursor: 'pointer' }}>
-                                        {m.usuarios.nome_completo}
+                                        {u.nome_completo || 'Membro'}
                                         {m.papel === 'sub_admin' && <ShieldCheck size={14} color="#94a3b8" />}
                                     </div>
                                     <div className="apelido-atleta">
-                                        @{m.usuarios.apelido}
-                                        {m.usuarios.telefone && idade >= 18 && (
-                                            <a href={`https://wa.me/55${m.usuarios.telefone.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" className="btn-zap">
+                                        {u.apelido ? `@${u.apelido}` : 'Sem apelido'}
+                                        {u.telefone && idade >= 18 && (
+                                            <a href={`https://wa.me/55${u.telefone.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" className="btn-zap">
                                                 <MessageCircle size={14} />
                                             </a>
                                         )}
@@ -372,7 +373,7 @@ const MembrosTab = ({ membrosIniciais = [], recarregar }) => {
                                                     <button 
                                                         className="btn-card-icon" 
                                                         onClick={async () => {
-                                                            if(window.confirm(`Passar a bola para ${m.usuarios.nome_completo}?`)) {
+                                                            if(window.confirm(`Passar a bola para ${u.nome_completo || 'este membro'}?`)) {
                                                                 const res = await transferirTitularidade(equipeAtiva.id, m.id);
                                                                 if(res.sucesso) setTimeout(() => window.location.reload(), 800);
                                                                 else alert(res.erro);
@@ -392,7 +393,7 @@ const MembrosTab = ({ membrosIniciais = [], recarregar }) => {
                                             )}
                                             {(equipeAtiva.papel === 'admin' || (temPermissaoEquipe('gerenciar_membros') && m.papel === 'jogador')) && (
                                                 <button 
-                                                    onClick={() => handleRemover(m.id, m.usuarios.nome_completo)}
+                                                    onClick={() => handleRemover(m.id, u.nome_completo || 'Membro')}
                                                     className="btn-card-icon perigo"
                                                 >
                                                     <UserMinus size={20} />

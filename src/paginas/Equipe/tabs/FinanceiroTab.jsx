@@ -384,7 +384,7 @@ const FinanceiroTab = ({ abaExterna, modoLeitura = false, membrosIniciais = [] }
 
 
             {subAba === 'dashboard' ? <FinanceiroDashboard /> : 
-             subAba === 'avulsos' ? <FinanceiroAvulsos /> : (
+             subAba === 'avulsos' ? <FinanceiroAvulsos membrosIniciais={todosMembros} /> : (
             <>
                 <div style={{ background: 'rgba(15,23,42,0.6)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)', padding: '20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>

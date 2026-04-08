@@ -4,13 +4,35 @@ import { usarEquipe } from '../../../contextos/EquipeContexto';
 import { DollarSign, User, CheckCircle2, AlertCircle, XCircle, Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
 import { usarFinanceiro } from '../../../contextos/FinanceiroContexto';
 
-const FinanceiroAvulsos = () => {
+const FinanceiroAvulsos = ({ membrosIniciais = [] }) => {
     const { equipeAtiva, temPermissaoEquipe } = usarEquipe();
     const { obterCicloAtual, formatarPeriodoParaExibicao } = usarFinanceiro();
     const [pagamentos, setPagamentos] = useState([]);
+    const [membros, setMembros] = useState(membrosIniciais);
     const [carregando, setCarregando] = useState(true);
     const [processando, setProcessando] = useState(null);
     const [periodoAtivo, setPeriodoAtivo] = useState(() => obterCicloAtual(10));
+
+    // Sincroniza membros se as props mudarem
+    useEffect(() => {
+        setMembros(membrosIniciais);
+    }, [membrosIniciais]);
+
+    const formatName = (fullName) => {
+        if (!fullName) return '';
+        const parts = fullName.trim().toLowerCase().split(/\s+/);
+        if (parts.length === 1) return parts[0].charAt(0).toUpperCase() + parts[0].slice(1);
+        const first = parts[0].charAt(0).toUpperCase() + parts[0].slice(1);
+        const last = parts[parts.length - 1].charAt(0).toUpperCase() + parts[parts.length - 1].slice(1);
+        return `${first} ${last}`;
+    };
+
+    const getNomeUsuario = (userId, usuarioPayload) => {
+        if (usuarioPayload?.nome_completo) return formatName(usuarioPayload.nome_completo);
+        const membroRef = membros.find(m => String(m.usuario_id) === String(userId) || String(m.usuarios?.id) === String(userId));
+        if (membroRef?.usuarios?.nome_completo) return formatName(membroRef.usuarios.nome_completo);
+        return 'Desconhecido';
+    };
 
     const isAdmin = equipeAtiva?.papel === 'admin' || temPermissaoEquipe('gerenciar_financeiro');
 
@@ -164,7 +186,7 @@ const FinanceiroAvulsos = () => {
                                     {p.usuarios?.foto_url ? <img src={p.usuarios.foto_url} alt="jogador" style={{width:'100%', height:'100%', objectFit:'cover'}}/> : <User size={20} style={{margin:'10px', color:'#94a3b8'}}/>}
                                 </div>
                                 <div style={{ flex: 1 }}>
-                                    <div style={{ fontWeight: '500', color: '#f8fafc', marginBottom: '4px' }}>{p.usuarios?.nome_completo || 'Desconhecido'}</div>
+                                    <div style={{ fontWeight: '500', color: '#f8fafc', marginBottom: '4px' }}>{getNomeUsuario(p.usuarios?.id, p.usuarios)}</div>
                                     <div style={{ display: 'flex', gap: '16px', fontSize: '0.8rem', color: '#94a3b8' }}>
                                         <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><Calendar size={12}/> {p.partidas ? formatarData(p.partidas.data) : 'Partida Excluída'}</span>
                                         <span style={{ color: '#cbd5e1', fontWeight: 'bold' }}>{formatarMoeda(p.valor_pago)}</span>

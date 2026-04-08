@@ -105,7 +105,21 @@ const PerfilEquipeModal = ({ equipeId, aoFechar, convite, aoResponderConvite, pr
                                 </div>
                                 <div style={{ background: 'rgba(255,255,255,0.03)', padding: '12px', borderRadius: '12px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
                                     <span style={{ color: '#64748b', fontSize: '0.75rem', textTransform: 'uppercase', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px' }}><Star size={12}/> Capitão</span>
-                                    <span style={{ color: '#f1f5f9', fontSize: '0.9rem' }}>{equipe.admin?.nome_completo || equipe.admin?.apelido || 'Desconhecido'}</span>
+                                    <span style={{ color: '#f1f5f9', fontSize: '0.9rem' }}>
+                                        {(() => {
+                                            const u = equipe.admin || {};
+                                            if (u.nome_completo) {
+                                                const parts = u.nome_completo.trim().split(/\s+/);
+                                                if (parts.length > 1) {
+                                                    const first = parts[0].charAt(0).toUpperCase() + parts[0].slice(1).toLowerCase();
+                                                    const last = parts[parts.length - 1].charAt(0).toUpperCase() + parts[parts.length - 1].slice(1).toLowerCase();
+                                                    return `${first} ${last}`;
+                                                }
+                                                return parts[0].charAt(0).toUpperCase() + parts[0].slice(1).toLowerCase();
+                                            }
+                                            return u.apelido || 'Capitão';
+                                        })()}
+                                    </span>
                                 </div>
                                 <div style={{ background: 'rgba(255,255,255,0.03)', padding: '12px', borderRadius: '12px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
                                     <span style={{ color: '#64748b', fontSize: '0.75rem', textTransform: 'uppercase', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px' }}><Calendar size={12}/> Fundação</span>

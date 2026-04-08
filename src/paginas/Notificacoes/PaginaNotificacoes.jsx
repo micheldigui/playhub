@@ -57,8 +57,13 @@ const PaginaNotificacoes = ({ aoVoltar, abrirEquipeTab }) => {
         const res = await responderConvite(conviteId, aceitar);
         if (res.sucesso) {
             alert(aceitar ? 'Você aceitou o convite e está na equipe! 🎉' : 'Convite recusado com sucesso.');
+            setEquipeSelecionada(null); // Fecha o modal
+            carregarNotificacoes(); // Atualiza a lista
         } else {
             alert('Falha ao processar o convite: ' + res.erro);
+            // Mesmo se falhar porque já foi processado, atualizamos a lista para remover o item fantasma
+            carregarNotificacoes();
+            setEquipeSelecionada(null);
         }
         setProcessando(null);
     };
