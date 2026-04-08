@@ -2,11 +2,11 @@ import { useState, useEffect } from 'react';
 import { usarEquipe } from '../../contextos/EquipeContexto';
 import { usarAutenticacao } from '../../contextos/AutenticacaoContexto';
 import { supabase } from '../../servicos/supabase';
-import { Globe, MapPin, Trophy, Users, ArrowLeft, Crown } from 'lucide-react';
+import { Globe, MapPin, Trophy, Users, Crown, LogIn, UserPlus, Shield, Star, CheckCircle } from 'lucide-react';
 import Botao from '../../componentes/Botao/Botao';
 import '../Explorar/PaginaExplorar.css';
 
-const PaginaConvite = ({ equipeId, aoVoltar }) => {
+const PaginaConvite = ({ equipeId, aoVoltar, aoNavegar }) => {
   const { solicitarIngresso, equipes: minhasEquipes } = usarEquipe();
   const { usuario } = usarAutenticacao();
 
@@ -14,6 +14,7 @@ const PaginaConvite = ({ equipeId, aoVoltar }) => {
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState('');
   const [solicitado, setSolicitado] = useState(false);
+  const [totalMembros, setTotalMembros] = useState(0);
 
   // IDs de equipes onde o usuario já é membro
   const idsMinhasEquipes = new Set((minhasEquipes || []).map((e) => e.id));
@@ -26,18 +27,38 @@ const PaginaConvite = ({ equipeId, aoVoltar }) => {
         return;
       }
       try {
+        // Busca equipe pelo slug
         const { data, error } = await supabase
           .from('equipes')
-          .select(`
-            *,
-            admin:usuarios!equipes_admin_id_fkey (
-              id, nome_completo, apelido, foto_url
-            )
-          `)
+          .select('*')
           .eq('slug_convite', equipeId)
           .maybeSingle();
 
         if (error) throw error;
+        if (!data) {
+          setErro('Convite inválido ou equipe não encontrada.');
+          setCarregando(false);
+          return;
+        }
+
+        // Busca dados do capitão separadamente (mais robusto)
+        if (data.admin_id) {
+          const { data: admin } = await supabase
+            .from('usuarios')
+            .select('id, nome_completo, apelido, foto_url')
+            .eq('id', data.admin_id)
+            .maybeSingle();
+          data.admin = admin;
+        }
+
+        // Busca contagem de membros ativos
+        const { count } = await supabase
+          .from('membros_equipe')
+          .select('*', { count: 'exact', head: true })
+          .eq('equipe_id', data.id)
+          .eq('status', 'ativo');
+
+        setTotalMembros(count || 0);
         setEquipe(data);
       } catch (err) {
         console.error('Erro ao carregar convite:', err.message);
@@ -50,6 +71,9 @@ const PaginaConvite = ({ equipeId, aoVoltar }) => {
   }, [equipeId]);
 
   const handleSolicitar = async () => {
+    if (!usuario) {
+      return; // não deve chegar aqui, mas segurança extra
+    }
     const result = await solicitarIngresso(equipe.id);
     if (result.sucesso) {
       setSolicitado(true);
@@ -67,84 +91,154 @@ const PaginaConvite = ({ equipeId, aoVoltar }) => {
 
   if (carregando) {
     return (
-      <div className="pagina-explorar" style={{ display: 'flex', justifyContent: 'center', marginTop: '4rem' }}>
-        <p>Carregando convite...</p>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', gap: '1rem', background: '#0f172a' }}>
+        <div style={{ width: '40px', height: '40px', border: '3px solid rgba(56,189,248,0.2)', borderTopColor: '#38bdf8', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+        <p style={{ color: '#64748b' }}>Carregando convite...</p>
       </div>
     );
   }
 
   if (erro || !equipe) {
     return (
-      <div className="pagina-explorar" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: '4rem' }}>
-        <Globe size={48} strokeWidth={1} style={{ marginBottom: '1rem', color: '#64748b' }} />
-        <h2>Ops!</h2>
-        <p>{erro}</p>
-        <div style={{ marginTop: '2rem' }}>
-          <Botao onClick={aoVoltar}>Ir para o Início</Botao>
-        </div>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', gap: '1rem', background: '#0f172a', padding: '2rem' }}>
+        <Globe size={56} strokeWidth={1} style={{ color: '#64748b' }} />
+        <h2 style={{ color: '#f8fafc', margin: 0 }}>Convite não encontrado</h2>
+        <p style={{ color: '#64748b', textAlign: 'center' }}>{erro || 'Este link de convite é inválido ou expirou.'}</p>
+        <Botao onClick={aoVoltar}>Ir para o Início</Botao>
       </div>
     );
   }
 
   const meuStatus = statusEquipe();
-  const nomeAdmin = equipe.admin?.nome_completo || equipe.admin?.apelido || 'Desconhecido';
+  const nomeAdmin = equipe.admin?.nome_completo || equipe.admin?.apelido || 'Capitão';
 
   return (
-    <div className="pagina-explorar" style={{ maxWidth: '600px', margin: '0 auto' }}>
-      <header className="explorar-header">
-        <h1>Convite para Equipe</h1>
-        <p>Você foi convidado(a) para conhecer e ingressar na equipe abaixo.</p>
-      </header>
+    <div style={{ minHeight: '100vh', background: '#0f172a', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '2rem 1rem' }}>
 
-      <div className="grade-explorar" style={{ display: 'flex', flexDirection: 'column', marginTop: '2rem' }}>
-        <div className={`card-explorar ${meuStatus ? 'card-explorar--meu' : ''}`}>
-          {meuStatus && (
-            <div className={`tag-status-meu ${meuStatus === 'dono' ? 'tag-dono' : 'tag-membro'}`}>
-              {meuStatus === 'dono' ? <><Crown size={13} /> Sua Equipe (Capitão)</> : <><Trophy size={13} /> Você é Membro</>}
+      {/* Logo do PlayHub */}
+      <div style={{ marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <Shield size={28} color="#38bdf8" />
+        <span style={{ color: '#f8fafc', fontWeight: '700', fontSize: '1.2rem' }}>PlayHub</span>
+      </div>
+
+      {/* Card Principal */}
+      <div style={{
+        width: '100%', maxWidth: '480px',
+        background: 'rgba(15, 23, 42, 0.95)',
+        border: '1px solid rgba(56, 189, 248, 0.2)',
+        borderRadius: '24px',
+        overflow: 'hidden',
+        boxShadow: '0 25px 50px rgba(0,0,0,0.5)'
+      }}>
+
+        {/* Banner topo com gradiente */}
+        <div style={{
+          background: 'linear-gradient(135deg, rgba(56,189,248,0.15) 0%, rgba(99,102,241,0.15) 100%)',
+          padding: '2rem',
+          textAlign: 'center',
+          borderBottom: '1px solid rgba(255,255,255,0.05)'
+        }}>
+          {/* Logo da equipe */}
+          {equipe.logo_url ? (
+            <img src={equipe.logo_url} alt={equipe.nome} style={{ width: '90px', height: '90px', borderRadius: '50%', border: '3px solid rgba(56,189,248,0.4)', objectFit: 'cover', marginBottom: '1rem' }} />
+          ) : (
+            <div style={{ width: '90px', height: '90px', borderRadius: '50%', background: 'rgba(56,189,248,0.1)', border: '3px solid rgba(56,189,248,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem' }}>
+              <Trophy size={40} color="#38bdf8" />
+            </div>
+          )}
+          <h2 style={{ color: '#f8fafc', margin: '0 0 0.5rem', fontSize: '1.4rem', fontWeight: '700' }}>{equipe.nome}</h2>
+          <span style={{ background: 'rgba(56,189,248,0.15)', color: '#38bdf8', padding: '4px 14px', borderRadius: '20px', fontSize: '0.85rem', fontWeight: '600' }}>
+            {equipe.modalidade}
+          </span>
+        </div>
+
+        {/* Informações da equipe */}
+        <div style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.75rem', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+          {/* Capitão */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            {equipe.admin?.foto_url ? (
+              <img src={equipe.admin.foto_url} alt={nomeAdmin} style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover', border: '2px solid rgba(251,191,36,0.3)' }} />
+            ) : (
+              <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'rgba(251,191,36,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Crown size={18} color="#fbbf24" />
+              </div>
+            )}
+            <div>
+              <div style={{ color: '#94a3b8', fontSize: '0.75rem' }}>Capitão</div>
+              <div style={{ color: '#f8fafc', fontWeight: '600', fontSize: '0.95rem' }}>{nomeAdmin}</div>
+            </div>
+          </div>
+
+          {/* Localização */}
+          {equipe.local_cidade && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#94a3b8' }}>
+              <MapPin size={16} color="#64748b" />
+              <span style={{ fontSize: '0.9rem' }}>{equipe.local_cidade}{equipe.local_estado ? `, ${equipe.local_estado}` : ''}</span>
             </div>
           )}
 
-          <div className="card-explorar-topo">
-            {equipe.logo_url ? (
-              <img src={equipe.logo_url} alt={equipe.nome} className="logo-explorar" style={{ width: '80px', height: '80px' }} />
-            ) : (
-              <div className="logo-explorar-placeholder" style={{ width: '80px', height: '80px' }}>
-                <Trophy size={36} />
-              </div>
-            )}
-            <div className="card-explorar-info">
-              <h4 style={{ fontSize: '1.5rem' }}>{equipe.nome}</h4>
-              <span className="badge-mi" style={{ fontSize: '1rem' }}>{equipe.modalidade}</span>
+          {/* Nível */}
+          {equipe.nivel && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#94a3b8' }}>
+              <Star size={16} color="#64748b" />
+              <span style={{ fontSize: '0.9rem' }}>Nível: <strong style={{ color: '#f8fafc' }}>{equipe.nivel}</strong></span>
             </div>
-          </div>
+          )}
 
-          <div className="card-explorar-meta" style={{ marginTop: '1.5rem', marginBottom: '2rem', gap: '1rem' }}>
-            {equipe.local_cidade && (
-              <span style={{ fontSize: '1rem' }}><MapPin size={16} /> {equipe.local_cidade}{equipe.local_estado ? ` - ${equipe.local_estado}` : ''}</span>
-            )}
-            {equipe.nivel && (
-              <span style={{ fontSize: '1rem' }}><Users size={16} /> {equipe.nivel}</span>
-            )}
-            <span className="admin-do-time" style={{ fontSize: '1rem' }}>
-              <Crown size={16} /> Capitão: {nomeAdmin}
-            </span>
+          {/* Membros */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#94a3b8' }}>
+            <Users size={16} color="#64748b" />
+            <span style={{ fontSize: '0.9rem' }}>{totalMembros} atleta{totalMembros !== 1 ? 's' : ''} na equipe</span>
           </div>
+        </div>
 
-          {meuStatus ? (
-            <div className="tag-ja-membro" style={{ padding: '1rem', fontSize: '1rem' }}>
-              {meuStatus === 'dono' ? '👑 Você administra esta equipe' : '✓ Você já faz parte desta equipe'}
+        {/* Área de ação */}
+        <div style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          {!usuario ? (
+            <>
+              <div style={{ padding: '1rem', background: 'rgba(56,189,248,0.06)', border: '1px solid rgba(56,189,248,0.15)', borderRadius: '12px', color: '#94a3b8', fontSize: '0.9rem', textAlign: 'center', lineHeight: '1.6' }}>
+                👋 Para solicitar ingresso nesta equipe, você precisa ter uma conta no PlayHub. É rápido e gratuito!
+              </div>
+              <Botao
+                onClick={() => aoNavegar ? aoNavegar('cadastro') : aoVoltar()}
+                variant="primario"
+                style={{ width: '100%', justifyContent: 'center', gap: '8px', padding: '14px' }}
+              >
+                <UserPlus size={18} /> Criar Conta Grátis
+              </Botao>
+              <Botao
+                onClick={() => aoNavegar ? aoNavegar('login') : aoVoltar()}
+                variant="secundario"
+                style={{ width: '100%', justifyContent: 'center', gap: '8px' }}
+              >
+                <LogIn size={18} /> Já tenho conta — Fazer Login
+              </Botao>
+            </>
+          ) : meuStatus === 'dono' ? (
+            <div style={{ padding: '1rem', background: 'rgba(251,191,36,0.08)', border: '1px solid rgba(251,191,36,0.2)', borderRadius: '12px', color: '#fbbf24', textAlign: 'center', fontWeight: '600' }}>
+              👑 Você é o Capitão desta equipe
+            </div>
+          ) : meuStatus === 'membro' ? (
+            <div style={{ padding: '1rem', background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.2)', borderRadius: '12px', color: '#10b981', textAlign: 'center', fontWeight: '600' }}>
+              ✓ Você já faz parte desta equipe
             </div>
           ) : solicitado ? (
-            <div className="tag-pendente" style={{ padding: '1rem', fontSize: '1rem' }}>Solicitação Enviada ✓</div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', padding: '1rem', background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.2)', borderRadius: '12px', color: '#10b981', fontWeight: '600' }}>
+              <CheckCircle size={20} /> Solicitação enviada! Aguarde aprovação do Capitão.
+            </div>
           ) : (
             <Botao
               onClick={handleSolicitar}
               variant="primario"
-              style={{ width: '100%', justifyContent: 'center', padding: '1rem', fontSize: '1rem' }}
+              style={{ width: '100%', justifyContent: 'center', padding: '14px', fontSize: '1rem', gap: '8px' }}
             >
-              Solicitar Ingresso
+              <Users size={18} /> Solicitar Ingresso na Equipe
             </Botao>
           )}
+
+          <p style={{ color: '#475569', fontSize: '0.8rem', textAlign: 'center', margin: 0 }}>
+            Powered by PlayHub • Sistema de Gestão Esportiva
+          </p>
         </div>
       </div>
     </div>

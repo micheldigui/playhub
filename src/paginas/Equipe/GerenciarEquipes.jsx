@@ -1,6 +1,6 @@
 import React from 'react';
 import { 
-  Trophy, Star, Shield, Users, Plus, 
+  Trophy, Star, Shield, Users, PlusSquare, 
   ChevronRight, Info, DollarSign, Ban,
   CheckCircle2, AlertCircle, LayoutGrid
 } from 'lucide-react';
@@ -29,12 +29,10 @@ const GerenciarEquipes = ({ aoVoltar, aoNavegar, setAbaEquipe }) => {
         
         {podeCriarEquipe ? (
           <Botao 
-            variant="primario" 
             onClick={() => setModalCriacaoAberto(true)}
-            className="btn-criar-equipe-topo"
+            style={{ padding: '1rem 2.5rem', fontSize: '1.1rem' }}
           >
-            <Plus size={20} />
-            Criar Novo Time
+            <PlusSquare size={22} /> Criar Minha Equipe
           </Botao>
         ) : (
           <div className="limite-equipes-alerta">

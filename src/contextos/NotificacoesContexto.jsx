@@ -167,13 +167,20 @@ export const NotificacoesProvedor = ({ children }) => {
                 .map(n => n.id);
 
             if (interacoesIds.length > 0) {
-                // Tenta atualizar no banco para manter dados históricos mas ocultar do usuário
-                const { error: erroBanco } = await supabase
-                    .from('interacoes')
-                    .update({ tipo: 'bola_arquivada' })
-                    .in('id', interacoesIds);
-                    
-                if (erroBanco) console.warn('Supabase não atualizou as interações (provável restrição RLS, o cache local resolverá):', erroBanco);
+                // By-pass com RPC pq o usuário destinatario não costuma ter privilégio de update na row gerada pelo remetente
+                const { error: erroRpc } = await supabase.rpc('usuario_arquivar_interacoes', {
+                    p_ids: interacoesIds
+                });
+                
+                // Fallback para policy convencional se RPC ainda não estiver criada
+                if (erroRpc) {
+                    console.warn('Tentativa via policy convencional devido à falta de RPC:', erroRpc.message);
+                    const { error } = await supabase
+                        .from('interacoes')
+                        .update({ tipo: 'bola_arquivada' })
+                        .in('id', interacoesIds);
+                    if (error) console.error('Falha dupla ao tentar arquivar notificação:', error);
+                }
             }
 
             // 3. Recarrega para garantir sincronia do estado real

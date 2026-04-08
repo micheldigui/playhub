@@ -83,7 +83,12 @@ const PaginaEquipe = ({ abaAtiva, setAbaAtiva, aoVoltar }) => {
     };
 
     const convidarWhatsApp = () => {
-        const mensagem = encodeURIComponent(`Fala atleta! 🤘\n\nJunte-se à minha equipe *${equipeAtiva.nome}* no PlayHub!\n\nLink:\n${urlConvite}`);
+        const cidade = equipeAtiva.local_cidade ? `📍 ${equipeAtiva.local_cidade}${equipeAtiva.local_estado ? `/${equipeAtiva.local_estado}` : ''}` : '';
+        const nivel = equipeAtiva.nivel ? `⭐ Nível: ${equipeAtiva.nivel}` : '';
+        const infos = [cidade, nivel].filter(Boolean).join('\n');
+        const mensagem = encodeURIComponent(
+            `Fala atleta! 🤘\n\nVocê foi convidado(a) para a equipe *${equipeAtiva.nome}* no PlayHub!\n\n🏆 ${equipeAtiva.modalidade}\n${infos}\n\nAcesse o link, crie sua conta e solicite o ingresso:\n${urlConvite}`
+        );
         window.open(`https://wa.me/?text=${mensagem}`, '_blank');
     };
 

@@ -204,10 +204,10 @@ const ModalCriacaoEquipe = ({ isOpen, onClose, aoSucesso, equipeParaEditar = nul
         chave_pix: form.chave_pix,
         custo_quadra: Number(form.custo_quadra || 0),
         horas_limite_pagamento: Number(form.horas_limite_pagamento || 24),
-        prioridade_mensalista: equipeParaEditar?.regras?.prioridade_mensalista || false,
-        dias_abertura_inscricao: equipeParaEditar?.regras?.dias_abertura_inscricao || 7,
-        horas_limite_inscricao: equipeParaEditar?.regras?.horas_limite_inscricao || 2,
-        horas_limite_cancelamento: equipeParaEditar?.regras?.horas_limite_cancelamento || 24,
+        prioridade_mensalista: equipeParaEditar?.regras?.prioridade_mensalista ?? form.gestao_financeira,
+        dias_abertura_inscricao: equipeParaEditar?.regras?.dias_abertura_inscricao ?? 3,
+        horas_limite_inscricao: equipeParaEditar?.regras?.horas_limite_inscricao ?? 12,
+        horas_limite_cancelamento: equipeParaEditar?.regras?.horas_limite_cancelamento ?? 8,
         suspenso_amarelos: equipeParaEditar?.regras?.suspenso_amarelos || 3
       }
     };

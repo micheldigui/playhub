@@ -362,6 +362,22 @@ export const EquipeProvedor = ({ children }) => {
 
             if (membroErro) throw membroErro;
 
+            // 3.5. Inicializar módulo financeiro integrado (se aplicável/defaults)
+            const configFinanceira = {
+                equipe_id: equipeId,
+                valor_mensalidade: Number(dadosDaEquipe.regras?.mensalidade || 0),
+                dia_vencimento: Number(dadosDaEquipe.regras?.vencimento_dia || 10),
+                custo_quadra: Number(dadosDaEquipe.regras?.custo_quadra || 0),
+                limite_vencimento_horas: Number(dadosDaEquipe.regras?.horas_limite_pagamento || 24),
+                chave_pix: String(dadosDaEquipe.regras?.chave_pix || '')
+            };
+            
+            const { error: errFinanceiro } = await supabase
+                .from('financeiro_config')
+                .upsert(configFinanceira);
+                
+            if (errFinanceiro) console.warn('Aviso: Erro ao preencher configuracao inicial financeira:', errFinanceiro.message);
+
             // 4. Preparar objeto completo da nova equipe para o estado
             const novaEquipeCompleta = {
                 ...equipeNova,
@@ -446,6 +462,26 @@ export const EquipeProvedor = ({ children }) => {
                 ...dadosDaEquipe,
                 logo_url: logoUrl
             };
+            
+            // 4. Sincronizar os dados financeiros preenchidos no form da equipe
+            const configFinanceira = {
+                equipe_id: equipeId,
+                valor_mensalidade: Number(dadosDaEquipe.regras?.mensalidade || 0),
+                dia_vencimento: Number(dadosDaEquipe.regras?.vencimento_dia || 10),
+                custo_quadra: Number(dadosDaEquipe.regras?.custo_quadra || 0),
+                limite_vencimento_horas: Number(dadosDaEquipe.regras?.horas_limite_pagamento || 24),
+                chave_pix: String(dadosDaEquipe.regras?.chave_pix || '')
+            };
+            
+            const ehOutroTime = equipeAtiva && equipeAtiva.id === equipeId && equipeAtiva.admin_id !== usuario.id;
+            const necessitaBypass = ehSuperAdmin && ehOutroTime;
+            
+            if (necessitaBypass) {
+                // By-Pass para o SuperAdmin tbm no sync financeiro do modal
+                 await supabase.rpc('admin_bypass_update_financeiro', { p_equipe_id: equipeId, p_config: configFinanceira });
+            } else {
+                 await supabase.from('financeiro_config').upsert(configFinanceira);
+            }
 
             setEquipes(prev => prev.map(e => e.id === equipeId ? equipeAtualizada : e));
             setEquipeAtiva(equipeAtualizada);
@@ -462,12 +498,28 @@ export const EquipeProvedor = ({ children }) => {
 
     const atualizarConfiguracoesEquipe = async (equipeId, configuracoes) => {
         try {
-            const { error } = await supabase
-                .from('equipes')
-                .update(configuracoes)
-                .eq('id', equipeId);
+            // Se for SuperAdmin acessando uma equipe de terceiro, precisamos burlar RLS (modo manutencao)
+            const ehOutroTime = equipeAtiva && equipeAtiva.id === equipeId && equipeAtiva.admin_id !== usuario.id;
+            const necessitaBypass = ehSuperAdmin && ehOutroTime;
 
-            if (error) throw error;
+            if (necessitaBypass) {
+                // Configurações vem como um objeto ex: { gestao_financeira: false }
+                const chaves = Object.keys(configuracoes);
+                for (const chave of chaves) {
+                    const { error } = await supabase.rpc('admin_bypass_update_equipe', { 
+                        p_equipe_id: equipeId, 
+                        p_campo: chave,
+                        p_valor: configuracoes[chave]
+                    });
+                    if (error) throw error;
+                }
+            } else {
+                const { error } = await supabase
+                    .from('equipes')
+                    .update(configuracoes)
+                    .eq('id', equipeId);
+                if (error) throw error;
+            }
 
             // Atualiza estado local
             setEquipes(prev => prev.map(e => e.id === equipeId ? { ...e, ...configuracoes } : e));
@@ -484,13 +536,24 @@ export const EquipeProvedor = ({ children }) => {
 
     const atualizarRegrasEquipe = async (equipeId, novasRegras) => {
         try {
-            // 1. Atualizar regras no JSONB da equipe
-            const { error: errEquipe } = await supabase
-                .from('equipes')
-                .update({ regras: novasRegras })
-                .eq('id', equipeId);
+            const ehOutroTime = equipeAtiva && equipeAtiva.id === equipeId && equipeAtiva.admin_id !== usuario.id;
+            const necessitaBypass = ehSuperAdmin && ehOutroTime;
 
-            if (errEquipe) throw errEquipe;
+            // 1. Atualizar regras no JSONB da equipe
+            if (necessitaBypass) {
+                const { error: errEquipeRpc } = await supabase.rpc('admin_bypass_update_equipe', {
+                    p_equipe_id: equipeId,
+                    p_campo: 'regras',
+                    p_valor: novasRegras
+                });
+                if (errEquipeRpc) throw errEquipeRpc;
+            } else {
+                const { error: errEquipe } = await supabase
+                    .from('equipes')
+                    .update({ regras: novasRegras })
+                    .eq('id', equipeId);
+                if (errEquipe) throw errEquipe;
+            }
 
             // 2. Sincronizar com financeiro_config (para consistência entre contextos)
             // Extraímos apenas os campos financeiros das regras
@@ -503,13 +566,15 @@ export const EquipeProvedor = ({ children }) => {
                 chave_pix: String(novasRegras.chave_pix || '')
             };
 
-            const { error: errFinanceiro } = await supabase
-                .from('financeiro_config')
-                .upsert(configFinanceira);
-            
-            // Nota: Se a tabela não tiver as novas colunas ainda, o upsert ignorará ou dará erro silencioso 
-            // dependendo da configuração do PostgREST. Aqui tratamos como aviso se falhar.
-            if (errFinanceiro) console.warn('Aviso: Erro ao sincronizar financeiro_config:', errFinanceiro.message);
+            if (necessitaBypass) {
+                const { error: errFinanceiroRpc } = await supabase.rpc('admin_bypass_update_financeiro', { p_equipe_id: equipeId, p_config: configFinanceira });
+                if (errFinanceiroRpc) console.warn('Aviso: Erro ao sincronizar financeiro_config via RPC:', errFinanceiroRpc.message);
+            } else {
+                const { error: errFinanceiro } = await supabase
+                    .from('financeiro_config')
+                    .upsert(configFinanceira);
+                if (errFinanceiro) console.warn('Aviso: Erro ao sincronizar financeiro_config:', errFinanceiro.message);
+            }
 
             setEquipes(prev => prev.map(e => e.id === equipeId ? { ...e, regras: novasRegras } : e));
             setEquipeAtiva(prev => prev.id === equipeId ? { ...prev, regras: novasRegras } : prev);
@@ -523,16 +588,17 @@ export const EquipeProvedor = ({ children }) => {
 
     const excluirEquipe = async (equipeId) => {
         try {
-            // 1. Verificar se a equipe tem OUTROS membros (além do admin atual)
+            // 1. Verificar se a equipe tem OUTROS membros reais (com conta ativa) além do admin atual
+            // O JOIN com usuarios garante que registros fantasmas (de contas deletadas) sejam ignorados
             const { data: membros, error: countError } = await supabase
                 .from('membros_equipe')
-                .select('usuario_id')
+                .select('usuario_id, usuarios!inner(id)')
                 .eq('equipe_id', equipeId)
                 .in('status', ['ativo', 'pendente']);
 
             if (countError) throw countError;
 
-            // Filtramos para ver se existe alguém que não seja o usuário logado
+            // Filtramos para ver se existe alguém que não seja o usuário logado E que ainda tenha conta ativa
             const outrosMembros = membros.filter(m => String(m.usuario_id) !== String(usuario.id));
 
             if (outrosMembros.length > 0) {
@@ -807,7 +873,7 @@ export const EquipeProvedor = ({ children }) => {
                     )
                 `)
                 .eq('equipe_id', equipeId)
-                .neq('status', 'removido');
+                .eq('status', 'ativo');
 
             if (error) throw error;
             return data;

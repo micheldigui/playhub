@@ -5,10 +5,12 @@ import {
 } from 'lucide-react';
 import Botao from '../../componentes/Botao/Botao';
 import { usarAutenticacao } from '../../contextos/AutenticacaoContexto';
+import { usarEquipe } from '../../contextos/EquipeContexto';
 import { SUPORTE } from '../../config/suporte';
 
 const PaginaConfiguracoes = ({ aoVoltar, aoNavegar }) => {
     const { usuario, dadosUsuario, logout } = usarAutenticacao();
+    const { minhasEquipes } = usarEquipe();
     const [processando, setProcessando] = useState(false);
 
     const secaoItemEstilo = {
@@ -19,6 +21,14 @@ const PaginaConfiguracoes = ({ aoVoltar, aoNavegar }) => {
     };
 
     const handleExcluirConta = async () => {
+        // Trava para líderes (Capitães)
+        const equipesLideradas = minhasEquipes?.filter(e => e.admin_id === usuario.id) || [];
+        if (equipesLideradas.length > 0) {
+            const nomesEquipes = equipesLideradas.map(e => e.nome).join(', ');
+            alert(`ATENÇÃO: Não é possível excluir sua conta. Você é capitão (dono) das seguintes equipes: ${nomesEquipes}.\n\nPara continuar, primeiro acesse a "Área da Equipe" e transfira o cargo de Capitão para outro membro ou exclua a equipe permanentemente.`);
+            return;
+        }
+
         const confirmacao = window.confirm(
             "⚠️ ATENÇÃO: Esta ação é permanente!\n\n" +
             "Ao excluir sua conta, você perderá acesso a todas as suas equipes, " +

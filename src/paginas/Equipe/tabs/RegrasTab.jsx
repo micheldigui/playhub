@@ -36,12 +36,12 @@ const RegrasTab = ({ abrirEdicao, aoExcluir }) => {
                 const cfg = await carregarConfiguracao(equipeAtiva.id);
                 if (cfg) {
                     setConfigLocal({
-                        valor_mensalidade: cfg.valor_mensalidade || 50,
-                        dia_vencimento: cfg.dia_vencimento || 10,
+                        valor_mensalidade: (cfg.valor_mensalidade !== 50 && cfg.valor_mensalidade !== 0) ? cfg.valor_mensalidade : (equipeAtiva.regras?.mensalidade || cfg.valor_mensalidade || 50),
+                        dia_vencimento: (cfg.dia_vencimento !== 10) ? cfg.dia_vencimento : (equipeAtiva.regras?.vencimento_dia || 10),
                         dia_tolerancia: cfg.dia_tolerancia || 15,
-                        custo_quadra: cfg.custo_quadra || 0,
-                        limite_vencimento_horas: cfg.limite_vencimento_horas || 24,
-                        chave_pix: cfg.chave_pix || '',
+                        custo_quadra: cfg.custo_quadra ? cfg.custo_quadra : (equipeAtiva.regras?.custo_quadra || 0),
+                        limite_vencimento_horas: cfg.limite_vencimento_horas !== 24 ? cfg.limite_vencimento_horas : (equipeAtiva.regras?.horas_limite_pagamento || 24),
+                        chave_pix: cfg.chave_pix ? cfg.chave_pix : (equipeAtiva.regras?.chave_pix || ''),
                         suspenso_amarelos: equipeAtiva.regras?.suspenso_amarelos || 3,
                         horas_limite_cancelamento: equipeAtiva.regras?.horas_limite_cancelamento || 24,
                         horas_limite_inscricao: equipeAtiva.regras?.horas_limite_inscricao || 2,
@@ -57,6 +57,9 @@ const RegrasTab = ({ abrirEdicao, aoExcluir }) => {
     const handleSalvarRegras = async () => {
         setProcessando('salvando');
         try {
+            const ehOutroTime = equipeAtiva && equipeAtiva.admin_id !== usuario?.id;
+            const necessitaBypass = ehSuperAdmin && ehOutroTime;
+
             // 1. Salva no financeiro_config
             const resFin = await salvarConfiguracao({
                 equipe_id: equipeAtiva.id,
@@ -66,7 +69,7 @@ const RegrasTab = ({ abrirEdicao, aoExcluir }) => {
                 custo_quadra: configLocal.custo_quadra,
                 limite_vencimento_horas: configLocal.limite_vencimento_horas,
                 chave_pix: configLocal.chave_pix
-            });
+            }, necessitaBypass);
             if (!resFin.success) throw new Error(resFin.error);
 
             // 2. Salva nas regras da equipe (JSONB)
@@ -201,6 +204,16 @@ const RegrasTab = ({ abrirEdicao, aoExcluir }) => {
                             <label><Calendar size={14} /> Abre Inscrição (Dias antes do jogo)</label>
                             <input disabled={!podeEditar} type="number" value={configLocal.dias_abertura_inscricao} onChange={e => setConfigLocal({...configLocal, dias_abertura_inscricao: e.target.value})} />
                         </div>
+                        
+                        {podeEditar && (
+                            <Botao 
+                                onClick={handleSalvarRegras} 
+                                disabled={!!processando} 
+                                style={{ marginTop: '10px', width: '100%' }}
+                            >
+                                {processando === 'salvando' ? <Loader2 className="animate-spin" size={18} /> : 'Salvar Configurações do Jogo'}
+                            </Botao>
+                        )}
                     </div>
                 </section>
 
@@ -238,9 +251,9 @@ const RegrasTab = ({ abrirEdicao, aoExcluir }) => {
                             <Botao 
                                 onClick={handleSalvarRegras} 
                                 disabled={!!processando} 
-                                style={{ marginTop: '10px' }}
+                                style={{ marginTop: '10px', width: '100%' }}
                             >
-                                {processando === 'salvando' ? <Loader2 className="animate-spin" size={18} /> : 'Salvar Regras'}
+                                {processando === 'salvando' ? <Loader2 className="animate-spin" size={18} /> : 'Salvar Financeiro'}
                             </Botao>
                         )}
                     </div>

@@ -44,31 +44,27 @@ const PaginaAdminUsuarios = () => {
     const ate = de + ITENS_POR_PAGINA - 1;
 
     try {
-      let query = supabase
-        .from('usuarios')
-        .select('*', { count: 'exact' })
-        .order('nome_completo', { ascending: true })
-        .range(de, ate);
+      // Usa RPC com SECURITY DEFINER para bypassar RLS e ver TODOS os usuários,
+      // incluindo perfis privados e menores de 18 anos
+      const { data, error } = await supabase.rpc('admin_listar_usuarios', {
+        p_busca: termoBusca || null,
+        p_letra: letraFiltro || null,
+        p_de: de,
+        p_ate: ate
+      });
 
-      if (termoBusca) {
-        query = query.or(`nome_completo.ilike.%${termoBusca}%,apelido.ilike.%${termoBusca}%,email.ilike.%${termoBusca}%`);
-      }
-
-      if (letraFiltro) {
-        query = query.ilike('nome_completo', `${letraFiltro}%`);
-      }
-
-      const { data, error, count } = await query;
       if (error) throw error;
       
+      const lista = data || [];
+
       if (novaBusca) {
-        setUsuarios(data || []);
+        setUsuarios(lista);
       } else {
-        setUsuarios(prev => [...prev, ...(data || [])]);
+        setUsuarios(prev => [...prev, ...lista]);
       }
       
       setPagina(novaPagina);
-      setTemMais(count > (de + (data?.length || 0)));
+      setTemMais(lista.length === ITENS_POR_PAGINA);
     } catch (error) {
       console.error('Erro ao buscar usuários:', error.message);
     } finally {

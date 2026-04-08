@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  X, User, Mail, Phone, MapPin, Shield, CheckCircle2, AlertCircle, Save, Trash2, Key, Activity, Eye, Calendar, Users, ShieldCheck
+  X, User, Mail, Phone, MapPin, Shield, CheckCircle2, AlertCircle, Save, Trash2, Key, Activity, Eye, Calendar, Users, ShieldCheck, Camera
 } from 'lucide-react';
 import { supabase } from '../../../servicos/supabase';
 import { usarAutenticacao } from '../../../contextos/AutenticacaoContexto';
@@ -49,6 +49,7 @@ const ModalEdicaoUsuario = ({ usuario, aoFechar }) => {
   const [perfilEsportivo, setPerfilEsportivo] = useState([]);
   const [carregandoPerfil, setCarregandoPerfil] = useState(true);
   const [exibindoPerfilAtleta, setExibindoPerfilAtleta] = useState(false);
+  const [arquivoFoto, setArquivoFoto] = useState(null);
 
   // Verifica se o usuário que está sendo editado é o Root
   const usuarioEditadoEhRoot = usuario.email === 'michelssouza@gmail.com';
@@ -102,6 +103,18 @@ const ModalEdicaoUsuario = ({ usuario, aoFechar }) => {
     }));
   };
 
+  const handleSelecionarFoto = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (file.size > 2 * 1024 * 1024) {
+        setMensagem({ tipo: 'erro', texto: 'A imagem deve ter no máximo 2MB.' });
+        return;
+      }
+      setArquivoFoto(file);
+      setForm(prev => ({ ...prev, foto_url: URL.createObjectURL(file) }));
+    }
+  };
+
   const salvarAlteracoes = async () => {
     setCarregando(true);
     setMensagem({ tipo: '', texto: '' });
@@ -111,6 +124,28 @@ const ModalEdicaoUsuario = ({ usuario, aoFechar }) => {
     const whatsappFinal = ehMenorDeIdade ? false : form.compartilhar_whatsapp_match;
 
     try {
+      // Verifica e faz upload da foto antes de salvar o formulário
+      if (arquivoFoto) {
+        const extensao = arquivoFoto.name.split('.').pop();
+        // Sobe na pasta DO ADMIN logado para burlar a RLS de Storage que restringe pasta pelo Auth UID.
+        const caminho = `${eu.id}/admin-upload-para-${usuario.id}-${Date.now()}.${extensao}`;
+        const { error: uploadError } = await supabase.storage.from('avatares').upload(caminho, arquivoFoto);
+        if (uploadError) throw new Error('Erro no upload da foto: ' + uploadError.message);
+        
+        const { data: imgData } = supabase.storage.from('avatares').getPublicUrl(caminho);
+        const fotoUrlFinal = imgData.publicUrl;
+        
+        // Atualiza a foto via RPC para bypass das politicas de RLS (igual ocorre no salvarAlteracoes principal)
+        const { error: rlsError } = await supabase.rpc('admin_atualizar_foto_usuario', { p_usuario_id: usuario.id, p_foto_url: fotoUrlFinal });
+        
+        if (rlsError) {
+          console.warn('Erro ao chamar a RPC admin_atualizar_foto_usuario', rlsError);
+          setMensagem({ tipo: 'erro', texto: 'A foto foi enviada, mas não salva no banco. Rode o SQL fornecido no terminal do Supabase.' });
+        } else {
+          form.foto_url = fotoUrlFinal;
+        }
+      }
+
       // Usa RPC com SECURITY DEFINER para contornar RLS e
       // permitir que o Root Admin atualize campos de outros usuários
       const { error } = await supabase.rpc('admin_atualizar_usuario', {
@@ -164,13 +199,38 @@ const ModalEdicaoUsuario = ({ usuario, aoFechar }) => {
   };
 
   const excluirConta = async () => {
+    // 1. Verificacao Crucial de Integridade (Previne Crash Cascata)
+    setCarregando(true);
+    try {
+        const { data: equipesLideradas, error: errEquipes } = await supabase
+            .from('equipes')
+            .select('nome')
+            .eq('admin_id', usuario.id);
+            
+        if (errEquipes) throw errEquipes;
+        
+        if (equipesLideradas && equipesLideradas.length > 0) {
+            const nomes = equipesLideradas.map(e => e.nome).join(', ');
+            alert(`Ação Negada: Esta conta não pode ser excluída pois o jogador é Capitão (Dono) da(s) equipe(s): ${nomes}.\n\nRecomende que ele repasse a liderança para outro membro, ou remame/exclua a equipe você mesmo através do Painel de Equipes antes de prosseguir com a deleção da conta.`);
+            setCarregando(false);
+            return;
+        }
+    } catch (err) {
+        console.error('Erro ao verificar dependências do jogador:', err);
+        setMensagem({ tipo: 'erro', texto: 'Erro ao validar conta: ' + err.message });
+        setCarregando(false);
+        return;
+    }
+
     const confirmacao = window.confirm(
       `ATENÇÃO: Você está prestes a EXCLUIR DEFINITIVAMENTE a conta de ${usuario.nome_completo || usuario.email}.\n\nEsta ação não pode ser desfeita e removerá imediatamente o jogador de todas as equipes e partidas.\n\nDeseja continuar?`
     );
     
-    if (!confirmacao) return;
+    if (!confirmacao) {
+        setCarregando(false);
+        return;
+    }
     
-    setCarregando(true);
     setMensagem({ tipo: '', texto: '' });
     
     try {
@@ -216,21 +276,27 @@ const ModalEdicaoUsuario = ({ usuario, aoFechar }) => {
           <form onSubmit={salvarAlteracoes} id="form-edicao-usuario">
             {/* Cabeçalho de Foto */}
             <div className="edicao-usuario-avatar">
-              <div className="avatar-preview-container" style={{ borderColor: usuarioEditadoEhRoot ? '#fbbf24' : '#0ea5e9' }}>
-                {form.foto_url ? (
-                  <img src={form.foto_url} alt="Foto de perfil" />
-                ) : (
-                  <div className="avatar-placeholder">
-                    {form.nome_completo?.charAt(0).toUpperCase() || 'U'}
-                  </div>
-                )}
+              <div style={{ position: 'relative' }}>
+                <div className="avatar-preview-container" style={{ borderColor: usuarioEditadoEhRoot ? '#fbbf24' : '#0ea5e9' }}>
+                  {form.foto_url ? (
+                    <img src={form.foto_url} alt="Foto de perfil" />
+                  ) : (
+                    <div className="avatar-placeholder">
+                      {form.nome_completo?.charAt(0).toUpperCase() || 'U'}
+                    </div>
+                  )}
+                </div>
+                <label className="btn-upload-admin" style={{ position: 'absolute', bottom: '-5px', right: '-5px', background: 'var(--primaria)', padding: '6px', borderRadius: '50%', cursor: 'pointer', display: 'flex', border: '3px solid #1e293b' }} title="Trocar Foto Opcional">
+                    <Camera size={16} color="white" />
+                    <input type="file" accept="image/*" onChange={handleSelecionarFoto} style={{ display: 'none' }} disabled={carregando} />
+                </label>
               </div>
               <div style={{ textAlign: 'center' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
                     <p style={{ fontSize: '0.85rem', color: '#94a3b8', margin: 0 }}>Avatar do Usuário</p>
                     {usuarioEditadoEhRoot && <ShieldCheck size={14} color="#fbbf24" />}
                 </div>
-                <span style={{ fontSize: '0.75rem', color: '#64748b' }}>A foto é alterada pelo jogador em seu perfil.</span>
+                <span style={{ fontSize: '0.75rem', color: '#64748b' }}>A foto selecionada será salva ao aplicar as alterações.</span>
               </div>
             </div>
 

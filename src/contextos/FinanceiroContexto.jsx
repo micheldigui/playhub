@@ -65,14 +65,19 @@ export const FinanceiroProvider = ({ children }) => {
         }
     }, []);
 
-    const salvarConfiguracao = async (config) => {
+    const salvarConfiguracao = async (config, necessitaBypass = false) => {
         setCarregando(true);
         try {
-            const { error } = await supabase
-                .from('financeiro_config')
-                .upsert(config);
+            if (necessitaBypass) {
+                const { error } = await supabase.rpc('admin_bypass_update_financeiro', { p_equipe_id: config.equipe_id, p_config: config });
+                if (error) throw error;
+            } else {
+                const { error } = await supabase
+                    .from('financeiro_config')
+                    .upsert(config);
 
-            if (error) throw error;
+                if (error) throw error;
+            }
             setConfiguracao(config);
             return { success: true };
         } catch (error) {

@@ -100,7 +100,13 @@ function App() {
     if (telaAtiva === 'convite') {
       return (
         <Suspense fallback={<CarregandoTela />}>
-          <PaginaConvite equipeId={equipeConviteId} aoVoltar={() => setQuerFazerLogin(true)} />
+          <PaginaConvite 
+            equipeId={equipeConviteId} 
+            aoVoltar={() => setQuerFazerLogin(true)} 
+            aoNavegar={(tela) => {
+              if (tela === 'login' || tela === 'cadastro') setQuerFazerLogin(true);
+            }}
+          />
         </Suspense>
       );
     }
@@ -153,7 +159,7 @@ function App() {
           }}
         />
       case 'convite':
-        return <PaginaConvite equipeId={equipeConviteId} aoVoltar={() => setTelaAtiva('inicio')} />
+        return <PaginaConvite equipeId={equipeConviteId} aoVoltar={() => setTelaAtiva('inicio')} aoNavegar={setTelaAtiva} />
       case 'minhas_equipes':
         return <GerenciarEquipes 
           aoVoltar={() => setTelaAtiva('inicio')} 
