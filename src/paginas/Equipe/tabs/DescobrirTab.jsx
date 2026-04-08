@@ -9,7 +9,7 @@ import ModalPerfilAtleta from '../../../componentes/Modais/ModalPerfilAtleta';
 import { supabase } from '../../../servicos/supabase';
 
 const DescobrirTab = () => {
-    const { equipeAtiva, buscarAtletas, enviarConvite, carregarConvitesEnviados, cancelarConvite } = usarEquipe();
+    const { equipeAtiva, buscarAtletas, enviarConvite, carregarConvitesEnviados, cancelarConvite, temPermissaoEquipe } = usarEquipe();
     const { usuario } = usarAutenticacao();
     
     const [termo, setTermo] = useState('');
@@ -180,7 +180,20 @@ const DescobrirTab = () => {
                             ) : mapaConvites[jog.id]?.status === 'aceito' ? (
                                 <div className="tag-membro">Já é membro do time</div>
                             ) : (
-                                <Botao variant="secundario" onClick={(e) => { e.stopPropagation(); setModalConvite(jog); }} style={{ width: '100%', fontSize: '0.85rem' }}>Convidar p/ Equipe</Botao>
+                                <Botao 
+                                    variant="secundario" 
+                                    onClick={(e) => { 
+                                        e.stopPropagation(); 
+                                        if (temPermissaoEquipe('gerenciar_membros')) {
+                                            setModalConvite(jog); 
+                                        } else {
+                                            alert('Você não tem privilégios para convidar atletas nesta equipe. 🛡️\nSolicite ao capitão a permissão de "Gerenciar Membros".');
+                                        }
+                                    }} 
+                                    style={{ width: '100%', fontSize: '0.85rem' }}
+                                >
+                                    Convidar p/ Equipe
+                                </Botao>
                             )}
                         </div>
                     ))

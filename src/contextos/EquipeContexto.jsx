@@ -926,6 +926,10 @@ export const EquipeProvedor = ({ children }) => {
     // ── SISTEMA DE CONVITES ──────────────────────────────────────────
 
     const enviarConvite = async (jogadorId, equipeId, mensagem = '') => {
+        if (!temPermissaoEquipe('gerenciar_membros')) {
+            return { sucesso: false, erro: 'Você não tem privilégios para convidar atletas nesta equipe. Solicite ao capitão a permissão de "Gerenciar Membros".' };
+        }
+
         try {
             // Usar RPC com SECURITY DEFINER para contornar bloqueios de RLS
             const { data: conviteId, error } = await supabase.rpc('enviar_convite_seguro', {

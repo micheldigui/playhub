@@ -141,18 +141,18 @@ const SolicitacoesTab = () => {
                                     <div 
                                         className="info-atleta" 
                                         style={{ cursor: 'pointer' }}
-                                        onClick={() => setAtletaSelecionado(sol.usuarios)}
+                                        onClick={() => sol.usuarios && setAtletaSelecionado(sol.usuarios)}
                                         title="Clique para ver o Perfil Esportivo"
                                     >
                                         <div className="avatar-mini">
-                                            {sol.usuarios.foto_url ? <img src={sol.usuarios.foto_url} alt={sol.usuarios.apelido} /> : <Users size={18} />}
+                                            {sol.usuarios?.foto_url ? <img src={sol.usuarios.foto_url} alt={sol.usuarios.apelido} /> : <Users size={18} />}
                                         </div>
                                         <div>
-                                            <p className="nome">{sol.usuarios.nome_completo}</p>
+                                            <p className="nome">{sol.usuarios?.nome_completo || 'Atleta não localizado'}</p>
                                             <p className="sub">
-                                                <MapPin size={12} /> {sol.usuarios.cidade || 'Não informada'}
-                                                {sol.usuarios.estado ? `, ${sol.usuarios.estado}` : ''}
-                                                {sol.usuarios.data_nascimento && ` • ${calcularIdade(sol.usuarios.data_nascimento)} anos`}
+                                                <MapPin size={12} /> {sol.usuarios?.cidade || 'Não informada'}
+                                                {sol.usuarios?.estado ? `, ${sol.usuarios.estado}` : ''}
+                                                {sol.usuarios?.data_nascimento && ` • ${calcularIdade(sol.usuarios.data_nascimento)} anos`}
                                             </p>
                                         </div>
                                     </div>
@@ -189,7 +189,7 @@ const SolicitacoesTab = () => {
                                                 </div>
                                                 <div>
                                                     <p className="nome">{conv.jogador?.nome_completo || 'Atleta Convidado'}</p>
-                                                    <p className="sub">Status: <span className={`status ${conv.status}`}>{conv.status.toUpperCase()}</span></p>
+                                                    <p className="sub">Status: <span className={`status ${conv.status}`}>{conv.status?.toUpperCase() || 'PENDENTE'}</span></p>
                                                 </div>
                                             </div>
                                             {resolvido ? (
