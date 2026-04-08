@@ -124,21 +124,34 @@ const MembrosTab = ({ membrosIniciais = [], recarregar }) => {
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                                             <div 
                                                 onClick={() => abrirPerfil(m)}
-                                                style={{ width: '36px', height: '36px', borderRadius: '50%', overflow: 'hidden', background: '#1e293b', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}
+                                                style={{ 
+                                                    width: '40px', 
+                                                    height: '40px', 
+                                                    minWidth: '40px', 
+                                                    minHeight: '40px',
+                                                    borderRadius: '50%', 
+                                                    overflow: 'hidden', 
+                                                    background: '#1e293b', 
+                                                    display: 'flex', 
+                                                    alignItems: 'center', 
+                                                    justifyContent: 'center', 
+                                                    cursor: 'pointer', 
+                                                    flexShrink: 0 
+                                                }}
                                             >
                                                 {m.usuarios.foto_url ? <img src={m.usuarios.foto_url} alt={m.usuarios.apelido} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <Users size={18} color="#64748b" />}
                                             </div>
                                             <div>
                                                 <div 
                                                     onClick={() => abrirPerfil(m)}
-                                                    style={{ fontWeight: '600', color: '#f1f5f9', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}
+                                                    style={{ fontWeight: '600', color: '#f1f5f9', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', whiteSpace: 'nowrap' }}
                                                 >
                                                     {m.usuarios.nome_completo}
-                                                    {m.papel === 'admin' && <Crown size={12} color="#fbbf24" style={{ marginLeft: '4px' }} title="Capitão" />}
-                                                    {m.papel === 'sub_admin' && <Crown size={12} color="#cbd5e1" style={{ marginLeft: '4px' }} title="Vice-Capitão" />}
+                                                    {m.papel === 'admin' && <Crown size={12} color="#fbbf24" style={{ marginLeft: '4px', flexShrink: 0 }} title="Capitão" />}
+                                                    {m.papel === 'sub_admin' && <Crown size={12} color="#cbd5e1" style={{ marginLeft: '4px', flexShrink: 0 }} title="Vice-Capitão" />}
                                                 </div>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                                    <div style={{ fontSize: '0.8rem', color: '#64748b' }}>@{m.usuarios.apelido}</div>
+                                                    <div style={{ fontSize: '0.8rem', color: '#64748b', whiteSpace: 'nowrap' }}>@{m.usuarios.apelido}</div>
                                                     {m.usuarios.telefone && idade >= 18 ? (
                                                         <a 
                                                             href={`https://wa.me/55${m.usuarios.telefone.replace(/\D/g, '')}`} 
@@ -273,11 +286,35 @@ const MembrosTab = ({ membrosIniciais = [], recarregar }) => {
                     return (
                         <div key={m.id} className="card-membro-mobile" style={{ opacity: processando === m.id ? 0.5 : 1 }}>
                             <div className="card-membro-topo">
-                                <div className="card-membro-avatar" onClick={() => abrirPerfil(m)} style={{ cursor: 'pointer' }}>
+                                <div 
+                                    className="card-membro-avatar" 
+                                    onClick={() => abrirPerfil(m)} 
+                                    style={{ 
+                                        cursor: 'pointer',
+                                        width: '48px',
+                                        height: '48px',
+                                        minWidth: '48px',
+                                        minHeight: '48px',
+                                        borderRadius: '50%',
+                                        flexShrink: 0,
+                                        position: 'relative'
+                                    }}
+                                >
                                     {m.usuarios.foto_url ? (
-                                        <img src={m.usuarios.foto_url} alt={m.usuarios.apelido} />
+                                        <img src={m.usuarios.foto_url} alt={m.usuarios.apelido} style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
                                     ) : (
-                                        <div className="avatar-placeholder"><Users size={20} /></div>
+                                        <div style={{ 
+                                            width: '100%', 
+                                            height: '100%', 
+                                            borderRadius: '50%', 
+                                            background: '#1e293b', 
+                                            display: 'flex', 
+                                            alignItems: 'center', 
+                                            justifyContent: 'center', 
+                                            color: '#64748b' 
+                                        }}>
+                                            <Users size={20} />
+                                        </div>
                                     )}
                                     {m.papel === 'admin' && <div className="badge-lider"><Crown size={12} /></div>}
                                 </div>
