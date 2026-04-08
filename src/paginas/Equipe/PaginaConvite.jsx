@@ -27,11 +27,18 @@ const PaginaConvite = ({ equipeId, aoVoltar, aoNavegar }) => {
         return;
       }
       try {
-        // Busca equipe pelo slug
+        // Uma única query com joins para evitar bloqueio de RLS em usuários não autenticados
         const { data, error } = await supabase
           .from('equipes')
-          .select('*')
+          .select(`
+            *,
+            admin:admin_id (
+              id, nome_completo, apelido, foto_url
+            ),
+            membros_equipe(count)
+          `)
           .eq('slug_convite', equipeId)
+          .eq('membros_equipe.status', 'ativo')
           .maybeSingle();
 
         if (error) throw error;
@@ -41,24 +48,7 @@ const PaginaConvite = ({ equipeId, aoVoltar, aoNavegar }) => {
           return;
         }
 
-        // Busca dados do capitão separadamente (mais robusto)
-        if (data.admin_id) {
-          const { data: admin } = await supabase
-            .from('usuarios')
-            .select('id, nome_completo, apelido, foto_url')
-            .eq('id', data.admin_id)
-            .maybeSingle();
-          data.admin = admin;
-        }
-
-        // Busca contagem de membros ativos
-        const { count } = await supabase
-          .from('membros_equipe')
-          .select('*', { count: 'exact', head: true })
-          .eq('equipe_id', data.id)
-          .eq('status', 'ativo');
-
-        setTotalMembros(count || 0);
+        setTotalMembros(data.membros_equipe?.[0]?.count || 0);
         setEquipe(data);
       } catch (err) {
         console.error('Erro ao carregar convite:', err.message);
