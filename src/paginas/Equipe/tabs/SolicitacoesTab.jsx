@@ -133,10 +133,10 @@ const SolicitacoesTab = () => {
                     </h3>
                     
                     <div className="lista-cards">
-                        {solicitacoes.length === 0 ? (
+                        {solicitacoes.length === 0 || !solicitacoes.some(s => s.usuarios) ? (
                             <p style={{ color: '#64748b', fontSize: '0.9rem', textAlign: 'center', padding: '2rem', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px dashed rgba(255,255,255,0.1)' }}>Nenhuma solicitação pendente.</p>
                         ) : (
-                            solicitacoes.map(sol => (
+                            solicitacoes.filter(s => s.usuarios).map(sol => (
                                 <div key={sol.id} className="card-solicitacao">
                                     <div 
                                         className="info-atleta" 
@@ -173,10 +173,10 @@ const SolicitacoesTab = () => {
                     </h3>
                     
                     <div className="lista-cards">
-                        {convitesEnviados.length === 0 ? (
+                        {convitesEnviados.length === 0 || !convitesEnviados.some(c => c.jogador) ? (
                             <p style={{ color: '#64748b', fontSize: '0.9rem', textAlign: 'center', padding: '2rem', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px dashed rgba(255,255,255,0.1)' }}>Nenhum convite enviado.</p>
                         ) : (
-                            convitesEnviados.map(conv => {
+                            convitesEnviados.filter(c => c.jogador).map(conv => {
                                 const resolvido = conv.status !== 'pendente';
                                 const aberto = expandidos[conv.id];
 
@@ -223,7 +223,7 @@ const SolicitacoesTab = () => {
                 
                 .card-solicitacao { background: rgba(15, 23, 42, 0.6); padding: 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center; }
                 .info-atleta { display: flex; align-items: center; gap: 12px; }
-                .avatar-mini { width: 36px; height: 36px; border-radius: 50%; overflow: hidden; background: rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: center; }
+                .avatar-mini { width: 36px; height: 36px; border-radius: 50%; overflow: hidden; background: rgba(255,255,255,0.05); display: flex; align-items: center; justifyContent: center; flex-shrink: 0; }
                 .avatar-mini img { width: 100%; height: 100%; object-fit: cover; }
                 .nome { font-size: 0.9rem; font-weight: 600; color: #f1f5f9; }
                 .sub { font-size: 0.75rem; color: #64748b; display: flex; align-items: center; gap: 4px; }
