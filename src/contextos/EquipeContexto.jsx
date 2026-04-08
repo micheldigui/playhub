@@ -871,21 +871,27 @@ export const EquipeProvedor = ({ children }) => {
 
             if (!errorRpc && dataRpc) {
                 // Formata o retorno da RPC para bater com a estrutura esperada (usuarios como sub-objeto)
-                return dataRpc.map(m => ({
-                    id: m.id,
-                    usuario_id: m.usuario_id,
-                    papel: m.papel,
-                    permissoes: m.permissoes,
-                    vinculo: m.vinculo,
-                    status: m.status,
-                    entrou_em: m.entrou_em,
-                    usuarios: {
-                        id: m.usuario_id,
-                        nome_completo: m.nome_completo,
-                        apelido: m.apelido,
-                        foto_url: m.foto_url
-                    }
-                }));
+                return dataRpc.map(m => {
+                    // Determina o papel de forma automática: Dono da equipe é sempre Capitão (admin)
+                    // Isso garante que mesmo que ele esteja como 'jogador' na tabela de membros, a coroa apareça.
+                    const papelReal = m.usuario_id === equipeAtiva?.admin_id ? 'admin' : m.papel;
+                    
+                    return {
+                        id: m.id,
+                        usuario_id: m.usuario_id,
+                        papel: papelReal,
+                        permissoes: m.permissoes,
+                        vinculo: m.vinculo,
+                        status: m.status,
+                        entrou_em: m.entrou_em,
+                        usuarios: {
+                            id: m.usuario_id,
+                            nome_completo: m.nome_completo,
+                            apelido: m.apelido,
+                            foto_url: m.foto_url
+                        }
+                    };
+                });
             }
 
             // Fallback: Busca padrão via join (respeita RLS original)
@@ -910,12 +916,17 @@ export const EquipeProvedor = ({ children }) => {
                 .eq('status', 'ativo');
 
             if (error) throw error;
-            return data;
+            
+            // Aplica o mesmo mapeamento de papel automático no fallback
+            return (data || []).map(m => ({
+                ...m,
+                papel: m.usuario_id === equipeAtiva?.admin_id ? 'admin' : m.papel
+            }));
         } catch (error) {
             console.error('Erro ao carregar membros:', error);
             return [];
         }
-    }, []);
+    }, [equipeAtiva?.admin_id]);
 
     const removerMembro = useCallback(async (membroId) => {
         try {

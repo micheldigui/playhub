@@ -21,7 +21,20 @@ const MembrosTab = ({ membrosIniciais = [], recarregar }) => {
 
     // Sincroniza estado local se as props mudarem (ex: mudança de equipe)
     useEffect(() => {
-        setMembros(membrosIniciais);
+        const ordenados = [...membrosIniciais].sort((a, b) => {
+            // Ordem: admin (1), sub_admin (2), resto (3)
+            const ordem = { 'admin': 1, 'sub_admin': 2, 'jogador': 3 };
+            const pesoA = ordem[a.papel] || 4;
+            const pesoB = ordem[b.papel] || 4;
+            
+            if (pesoA !== pesoB) return pesoA - pesoB;
+            
+            // Desempate por nome
+            const nomeA = (a.usuarios?.nome_completo || '').toLowerCase();
+            const nomeB = (b.usuarios?.nome_completo || '').toLowerCase();
+            return nomeA.localeCompare(nomeB);
+        });
+        setMembros(ordenados);
         setCarregando(false);
     }, [membrosIniciais]);
 
@@ -175,8 +188,9 @@ const MembrosTab = ({ membrosIniciais = [], recarregar }) => {
                                     <td style={{ padding: '16px' }}>
                                         <span style={{ 
                                             fontSize: '0.7rem', fontWeight: 'bold', padding: '4px 10px', borderRadius: '8px',
-                                            background: m.papel === 'admin' ? 'rgba(251, 191, 36, 0.1)' : m.papel === 'sub_admin' ? 'rgba(203, 213, 225, 0.1)' : 'rgba(148, 163, 184, 0.1)',
-                                            color: m.papel === 'admin' ? '#fbbf24' : m.papel === 'sub_admin' ? '#cbd5e1' : '#94a3b8'
+                                            background: m.papel === 'admin' ? 'rgba(251, 191, 36, 0.15)' : m.papel === 'sub_admin' ? 'rgba(56, 189, 248, 0.15)' : 'rgba(148, 163, 184, 0.1)',
+                                            color: m.papel === 'admin' ? '#fbbf24' : m.papel === 'sub_admin' ? '#38bdf8' : '#94a3b8',
+                                            border: `1px solid ${m.papel === 'admin' ? 'rgba(251, 191, 36, 0.2)' : m.papel === 'sub_admin' ? 'rgba(56, 189, 248, 0.2)' : 'transparent'}`
                                         }}>
                                             {m.papel === 'admin' ? 'Capitão' : m.papel === 'sub_admin' ? 'Vice-Capitão' : 'Jogador'}
                                         </span>

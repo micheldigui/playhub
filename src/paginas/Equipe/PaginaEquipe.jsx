@@ -261,7 +261,17 @@ const PaginaEquipe = ({ abaAtiva, setAbaAtiva, aoVoltar }) => {
                             </div>
 
                             <div className="grid-atletas-social">
-                                {membros.slice(0, 8).filter(membro => membro.usuarios).map(membro => {
+                                {membros
+                                    .filter(membro => membro.usuarios)
+                                    .sort((a, b) => {
+                                        if (a.papel === 'admin') return -1;
+                                        if (b.papel === 'admin') return 1;
+                                        if (a.papel === 'sub_admin' && b.papel !== 'admin') return -1;
+                                        if (b.papel === 'sub_admin' && a.papel !== 'admin') return 1;
+                                        return 0;
+                                    })
+                                    .slice(0, 8)
+                                    .map(membro => {
                                     const u = membro.usuarios;
                                     const p = u.perfil_esportivo?.[0] || {};
                                     return (
