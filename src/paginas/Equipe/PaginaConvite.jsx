@@ -27,19 +27,9 @@ const PaginaConvite = ({ equipeId, aoVoltar, aoNavegar }) => {
         return;
       }
       try {
-        // Uma única query com joins para evitar bloqueio de RLS em usuários não autenticados
+        // RPC com SECURITY DEFINER para bypassar RLS (necessário para usuários anônimos)
         const { data, error } = await supabase
-          .from('equipes')
-          .select(`
-            *,
-            admin:admin_id (
-              id, nome_completo, apelido, foto_url
-            ),
-            membros_equipe(count)
-          `)
-          .eq('slug_convite', equipeId)
-          .eq('membros_equipe.status', 'ativo')
-          .maybeSingle();
+          .rpc('get_equipe_convite', { p_slug: equipeId });
 
         if (error) throw error;
         if (!data) {
@@ -48,7 +38,7 @@ const PaginaConvite = ({ equipeId, aoVoltar, aoNavegar }) => {
           return;
         }
 
-        setTotalMembros(data.membros_equipe?.[0]?.count || 0);
+        setTotalMembros(data.total_membros || 0);
         setEquipe(data);
       } catch (err) {
         console.error('Erro ao carregar convite:', err.message);

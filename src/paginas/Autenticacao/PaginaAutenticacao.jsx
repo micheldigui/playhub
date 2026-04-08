@@ -3,8 +3,8 @@ import './PaginaAutenticacao.css';
 import PaginaLogin from './PaginaLogin';
 import PaginaCadastro from './PaginaCadastro';
 
-const PaginaAutenticacao = ({ aoVoltar }) => {
-  const [tela, setTela] = useState('login');
+const PaginaAutenticacao = ({ aoVoltar, telaInicial = 'login' }) => {
+  const [tela, setTela] = useState(telaInicial);
 
   return (
     <div className="auth-pagina">

@@ -82,6 +82,7 @@ function App() {
   });
   
   const [querFazerLogin, setQuerFazerLogin] = useState(false);
+  const [telaAuth, setTelaAuth] = useState('login');
 
   // Sincroniza a URL sem persistir a tela no localStorage
   useEffect(() => {
@@ -97,6 +98,16 @@ function App() {
   }, [telaAtiva, equipeConviteId, abaEquipe]);
 
   if (!estaLogado) {
+    // PRIMEIRO: verifica se o usuário clicou em login/cadastro (tem prioridade sobre convite)
+    if (querFazerLogin) {
+      return (
+        <Suspense fallback={<CarregandoTela />}>
+          <PaginaAutenticacao aoVoltar={() => setQuerFazerLogin(false)} telaInicial={telaAuth} />
+        </Suspense>
+      );
+    }
+
+    // DEPOIS: mostra a página de convite
     if (telaAtiva === 'convite') {
       return (
         <Suspense fallback={<CarregandoTela />}>
@@ -104,17 +115,12 @@ function App() {
             equipeId={equipeConviteId} 
             aoVoltar={() => setQuerFazerLogin(true)} 
             aoNavegar={(tela) => {
-              if (tela === 'login' || tela === 'cadastro') setQuerFazerLogin(true);
+              if (tela === 'login' || tela === 'cadastro') {
+                setTelaAuth(tela);
+                setQuerFazerLogin(true);
+              }
             }}
           />
-        </Suspense>
-      );
-    }
-    
-    if (querFazerLogin) {
-      return (
-        <Suspense fallback={<CarregandoTela />}>
-          <PaginaAutenticacao aoVoltar={() => setQuerFazerLogin(false)} />
         </Suspense>
       );
     }
