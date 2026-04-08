@@ -55,8 +55,8 @@ const PaginaCadastro = ({ aoIrParaLogin, aoVoltar }) => {
     email: '', telefone: '',
     cep: '', rua: '', numero: '', complemento: '', bairro: '', cidade: '', estado: '',
     senha: '', confirmarSenha: '',
-    perfil_publico: false,
-    compartilhar_whatsapp_match: false,
+    perfil_publico: true,
+    compartilhar_whatsapp_match: true,
   });
 
   const idadeAtual = calcularIdade(form.data_nascimento);
