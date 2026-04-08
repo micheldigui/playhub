@@ -397,7 +397,7 @@ const MembrosTab = ({ membrosIniciais = [], recarregar }) => {
                 .card-membro-topo { display: flex; align-items: center; gap: 12px; }
                 .card-membro-avatar { position: relative; width: 48px; height: 48px; flex-shrink: 0; }
                 .card-membro-avatar img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
-                .avatar-placeholder { width: 48px; height: 48px; border-radius: 50%; background: #1e293b; display: flex; align-items: center; justifyContent: center; color: #64748b; }
+                .avatar-placeholder { width: 48px; height: 48px; border-radius: 50%; background: #1e293b; display: flex; align-items: center; justify-content: center; color: #64748b; }
                 .badge-lider { position: absolute; bottom: -2px; right: -2px; background: #fbbf24; color: #000; border-radius: 50%; width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; border: 2px solid #1e293b; }
                 
                 .card-membro-infos { flex: 1; min-width: 0; }
