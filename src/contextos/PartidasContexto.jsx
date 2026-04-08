@@ -116,17 +116,41 @@ export const PartidasProvider = ({ children }) => {
 
     const buscarPresencas = async (partidaId) => {
         try {
-            const { data, error } = await supabase
-                .from('partidas_presencas')
-                .select(`
-                    id, status, frequencia, created_at, usuario_id,
-                    usuarios ( id, nome_completo, apelido, foto_url )
-                `)
-                .eq('partida_id', partidaId)
-                .order('created_at', { ascending: true });
+            // Utiliza a nova RPC segura que contorna o RLS para membros da mesma equipe
+            const { data, error } = await supabase.rpc('buscar_presencas_partida_seguro', {
+                p_partida_id: partidaId
+            });
 
-            if (error) throw error;
-            return { sucesso: true, presencas: data };
+            if (error) {
+                // Fallback para policy convencional caso a RPC não tenha sido criada ainda
+                console.warn('RPC buscar_presencas_partida_seguro não encontrada, usando select normal:', error.message);
+                const queryFallback = await supabase
+                    .from('partidas_presencas')
+                    .select('id, status, frequencia, created_at, usuario_id, usuarios ( id, nome_completo, apelido, foto_url )')
+                    .eq('partida_id', partidaId)
+                    .order('created_at', { ascending: true });
+                
+                if (queryFallback.error) throw queryFallback.error;
+                return { sucesso: true, presencas: queryFallback.data };
+            }
+
+            // Formata o retorno da RPC para manter a compatibilidade com a interface atual
+            // A interface espera que os dados do usuário venham num sub-objeto 'usuarios'
+            const presencasFormatadas = data ? data.map(p => ({
+                id: p.id,
+                status: p.status,
+                frequencia: p.frequencia,
+                created_at: p.created_at,
+                usuario_id: p.usuario_id,
+                usuarios: {
+                    id: p.usuario_id,
+                    nome_completo: p.nome_completo,
+                    apelido: p.apelido,
+                    foto_url: p.foto_url
+                }
+            })) : [];
+
+            return { sucesso: true, presencas: presencasFormatadas };
         } catch (error) {
             console.error('Erro buscar presencas:', error);
             return { sucesso: false, erro: error.message };
