@@ -22,12 +22,13 @@ const ModalDetalhesPartida = ({ isOpen, onClose, partida }) => {
     const [pickerAberto, setPickerAberto] = useState(null); // id do usuário com o seletor de cartão aberto
 
     useEffect(() => {
-        if (isOpen && partida) {
+        if (isOpen && partida && equipeAtiva?.id) {
             carregarDados();
         }
-    }, [isOpen, partida]);
+    }, [isOpen, partida, equipeAtiva?.id]);
 
     const carregarDados = async () => {
+        if (!equipeAtiva?.id) return;
         setCarregando(true);
         try {
             // Busca presencas do banco e os membros da equipe para pegar os vínculos
@@ -57,7 +58,7 @@ const ModalDetalhesPartida = ({ isOpen, onClose, partida }) => {
         }
     };
 
-    if (!isOpen || !partida) return null;
+    if (!isOpen || !partida || !equipeAtiva) return null;
 
     const limite = partida.vagas || 999;
 
@@ -71,8 +72,8 @@ const ModalDetalhesPartida = ({ isOpen, onClose, partida }) => {
 
     if (equipeAtiva?.regras?.prioridade_mensalista) {
         todosInscritos.sort((a, b) => {
-            const vinculoA = getVinculoUsuario(a.usuarios.id);
-            const vinculoB = getVinculoUsuario(b.usuarios.id);
+            const vinculoA = getVinculoUsuario(a.usuarios?.id);
+            const vinculoB = getVinculoUsuario(b.usuarios?.id);
             if (vinculoA === 'mensalista' && vinculoB !== 'mensalista') return -1;
             if (vinculoB === 'mensalista' && vinculoA !== 'mensalista') return 1;
             return 0; // se ambos forem iguais, mantém a cronológica por inscrição
@@ -167,6 +168,20 @@ const ModalDetalhesPartida = ({ isOpen, onClose, partida }) => {
         const local = partida.local_nome || 'Local a definir';
         const equipeNome = equipeAtiva?.nome || 'Equipe';
 
+        // Função auxiliar para obter o emoji de papel do membro
+        const getEmojiPapel = (userId) => {
+            const membroRef = membros.find(m => m.usuarios?.id === userId);
+            if (!membroRef) return '';
+            if (membroRef.papel === 'admin') return ' 👑'; // Capitão - coroa de ouro
+            if (membroRef.papel === 'sub_admin') return ' 🥈'; // Vice - coroa de prata
+            return '';
+        };
+
+        // Função auxiliar para obter o emoji de vínculo
+        const getEmojiVinculo = (vinculo) => {
+            return vinculo === 'mensalista' ? ' ⭐' : ' ✩';
+        };
+
         let mensagem = `*🏟️ JOGO CONFIRMADO - ${equipeNome.toUpperCase()}*\n`;
         mensagem += `📅 *DATA:* ${dataFormatada}\n`;
         mensagem += `⏰ *HORA:* ${horaFormatada}\n`;
@@ -180,8 +195,7 @@ const ModalDetalhesPartida = ({ isOpen, onClose, partida }) => {
                 const vinculo = getVinculoUsuario(u?.id);
                 const nomes = u?.nome_completo?.split(' ') || ['Jogador'];
                 const nomeExibir = nomes.length > 1 ? `${nomes[0]} ${nomes[1][0]}.` : nomes[0];
-                const label = getLabelVinculo(vinculo);
-                mensagem += `${index + 1}. ${nomeExibir}${vinculo === 'mensalista' ? ' 👑' : ''} (_${label}_)\n`;
+                mensagem += `${index + 1}. ${nomeExibir}${getEmojiPapel(u?.id)}${getEmojiVinculo(vinculo)}\n`;
             });
         } else {
             mensagem += `_Nenhum confirmado_\n`;
@@ -194,12 +208,12 @@ const ModalDetalhesPartida = ({ isOpen, onClose, partida }) => {
                 const vinculo = getVinculoUsuario(u?.id);
                 const nomes = u?.nome_completo?.split(' ') || ['Jogador'];
                 const nomeExibir = nomes.length > 1 ? `${nomes[0]} ${nomes[1][0]}.` : nomes[0];
-                const label = getLabelVinculo(vinculo);
-                mensagem += `${index + 1}. ${nomeExibir}${vinculo === 'mensalista' ? ' 👑' : ''} (_${label}_)\n`;
+                mensagem += `${index + 1}. ${nomeExibir}${getEmojiPapel(u?.id)}${getEmojiVinculo(vinculo)}\n`;
             });
         }
 
         mensagem += `\n---------------------------\n`;
+        mensagem += `⭐ _Mensalista_  ✩ _Avulso_  👑 _Capitão_  🥈 _Vice_\n`;
         mensagem += `👉 _Garanta sua vaga em playhubapp.com.br_ 🚀`;
 
         const encodedMessage = encodeURIComponent(mensagem);
@@ -394,7 +408,7 @@ const ModalDetalhesPartida = ({ isOpen, onClose, partida }) => {
                                 ) : (
                                     <div style={{ display: 'grid', gap: '8px' }}>
                                         {listaConfirmados.map((p, index) => {
-                                            const u = p.usuarios;
+                                            const u = p.usuarios || {};
                                             const vinculo = getVinculoUsuario(u.id);
                                             return (
                                                 <div key={p.id} style={{ 
@@ -606,7 +620,7 @@ const ModalDetalhesPartida = ({ isOpen, onClose, partida }) => {
                                     </h3>
                                     <div style={{ display: 'grid', gap: '8px' }}>
                                         {listaEspera.map((p, index) => {
-                                            const u = p.usuarios;
+                                            const u = p.usuarios || {};
                                             const vinculo = getVinculoUsuario(u.id);
                                             return (
                                                 <div key={p.id} style={{ 
