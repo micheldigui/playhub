@@ -725,7 +725,10 @@ export const EquipeProvedor = ({ children }) => {
 
             if (existente) {
                 if (existente.status === 'ativo') return { sucesso: false, erro: 'Você já é membro deste time.' };
-                if (existente.status === 'pendente') return { sucesso: false, erro: 'Sua solicitação já está pendente.' };
+                if (existente.status === 'pendente') {
+                    await carregarEquipes();
+                    return { sucesso: true };
+                }
                 
                 // Se o status era 'saiu', 'removido' ou 'recusado', permite solicitar novamente (reativação)
                 const { error: errUpdate } = await supabase
@@ -754,28 +757,36 @@ export const EquipeProvedor = ({ children }) => {
 
             if (error) throw error;
 
-            // Criar Alerta Global (Sino) para o ADMIN da equipe
-            const { data: equipeAlvo } = await supabase
-                .from('equipes')
-                .select('admin_id, nome')
-                .eq('id', equipeId)
-                .maybeSingle();
+            // Criar Alerta Global (Sino) para TODOS os gestores (ADMIN e SUB_ADMIN) da equipe
+            const { data: gestores } = await supabase
+                .from('membros_equipe')
+                .select('usuario_id')
+                .eq('equipe_id', equipeId)
+                .in('papel', ['admin', 'sub_admin'])
+                .eq('status', 'ativo');
 
-            if (equipeAlvo?.admin_id) {
-                await supabase
-                    .from('interacoes')
-                    .insert({
-                        remetente_id: usuario.id,
-                        destinatario_id: equipeAlvo.admin_id,
-                        tipo: 'solicitacao_ingresso',
-                        payload: {
-                            equipe_id: equipeId,
-                            nome_equipe: equipeAlvo.nome,
-                            mensagem: `Solicitou ingresso na equipe ${equipeAlvo.nome}`
-                        }
-                    });
+            if (gestores && gestores.length > 0) {
+                const { data: equipeAlvo } = await supabase
+                    .from('equipes')
+                    .select('nome')
+                    .eq('id', equipeId)
+                    .maybeSingle();
+
+                const notificacoes = gestores.map(g => ({
+                    remetente_id: usuario.id,
+                    destinatario_id: g.usuario_id,
+                    tipo: 'solicitacao_ingresso',
+                    payload: {
+                        equipe_id: equipeId,
+                        nome_equipe: equipeAlvo?.nome || 'Equipe',
+                        mensagem: `Solicitou ingresso na equipe ${equipeAlvo?.nome || ''}`
+                    }
+                }));
+
+                await supabase.from('interacoes').insert(notificacoes);
             }
 
+            await carregarEquipes();
             return { sucesso: true };
         } catch (error) {
             console.error('Erro ao solicitar ingresso:', error);
