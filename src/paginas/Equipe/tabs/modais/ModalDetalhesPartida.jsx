@@ -93,6 +93,20 @@ const ModalDetalhesPartida = ({ isOpen, onClose, partida }) => {
         return `${first} ${last}`;
     };
 
+    // Função auxiliar para buscar o nome do usuário lidando com perfis privados / null
+    const getNomeUsuario = (userId, usuarioPayload) => {
+        // Tenta pegar do payload direto da presenca (p.usuarios)
+        if (usuarioPayload?.nome_completo) return formatName(usuarioPayload.nome_completo);
+        if (usuarioPayload?.apelido) return formatName(usuarioPayload.apelido);
+        
+        // Fallback: se o RLS (perfil privado) ocultou, tenta buscar pelo membro da equipe atrelado
+        const membroRef = membros.find(m => m.usuario_id === userId || m.usuarios?.id === userId);
+        if (membroRef?.usuarios?.nome_completo) return formatName(membroRef.usuarios.nome_completo);
+        if (membroRef?.usuarios?.apelido) return formatName(membroRef.usuarios.apelido);
+        
+        return 'Desconhecido';
+    };
+
     // Calcula filas dinamicamente com base nas regras de prioridade
     let todosInscritos = [...presencas].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
 
@@ -203,10 +217,10 @@ const ModalDetalhesPartida = ({ isOpen, onClose, partida }) => {
         mensagem += `*✅ CONFIRMADOS (${listaConfirmados.length}/${limite === 999 ? '∞' : limite})*\n`;
         if (listaConfirmados.length > 0) {
             listaConfirmados.forEach((p, index) => {
-                const u = p.usuarios;
-                const vinculo = getVinculoUsuario(u?.id);
-                const nomeExibir = formatName(u?.nome_completo);
-                mensagem += `${index + 1}. ${nomeExibir}${getEmojiPapel(u?.id)}${getEmojiVinculo(vinculo)}\n`;
+                const userId = p.usuario_id || p.usuarios?.id;
+                const vinculo = getVinculoUsuario(userId);
+                const nomeExibir = getNomeUsuario(userId, p.usuarios);
+                mensagem += `${index + 1}. ${nomeExibir}${getEmojiPapel(userId)}${getEmojiVinculo(vinculo)}\n`;
             });
         } else {
             mensagem += `_Nenhum confirmado_\n`;
@@ -215,10 +229,10 @@ const ModalDetalhesPartida = ({ isOpen, onClose, partida }) => {
         if (listaEspera.length > 0) {
             mensagem += `\n*⏳ LISTA DE ESPERA (${listaEspera.length})*\n`;
             listaEspera.forEach((p, index) => {
-                const u = p.usuarios;
-                const vinculo = getVinculoUsuario(u?.id);
-                const nomeExibir = formatName(u?.nome_completo);
-                mensagem += `${index + 1}. ${nomeExibir}${getEmojiPapel(u?.id)}${getEmojiVinculo(vinculo)}\n`;
+                const userId = p.usuario_id || p.usuarios?.id;
+                const vinculo = getVinculoUsuario(userId);
+                const nomeExibir = getNomeUsuario(userId, p.usuarios);
+                mensagem += `${index + 1}. ${nomeExibir}${getEmojiPapel(userId)}${getEmojiVinculo(vinculo)}\n`;
             });
         }
 
@@ -419,7 +433,10 @@ const ModalDetalhesPartida = ({ isOpen, onClose, partida }) => {
                                     <div style={{ display: 'grid', gap: '8px' }}>
                                         {listaConfirmados.map((p, index) => {
                                             const u = p.usuarios || {};
-                                            const vinculo = getVinculoUsuario(u.id);
+                                            const userId = p.usuario_id || u.id;
+                                            const vinculo = getVinculoUsuario(userId);
+                                            const nomeDisplay = getNomeUsuario(userId, u);
+                                            
                                             return (
                                                 <div key={p.id} style={{ 
                                                     display: 'flex', 
@@ -441,8 +458,8 @@ const ModalDetalhesPartida = ({ isOpen, onClose, partida }) => {
                                                                 overflow: 'hidden', 
                                                                 textOverflow: 'ellipsis',
                                                                 flex: 1
-                                                            }} title={u?.nome_completo}>
-                                                                {formatName(u?.nome_completo) || 'Desconhecido'}{getEmojiPapel(u?.id)}{getEmojiVinculo(vinculo)}
+                                                            }} title={u?.nome_completo || nomeDisplay}>
+                                                                {nomeDisplay}{getEmojiPapel(userId)}{getEmojiVinculo(vinculo)}
                                                             </span>
                                                         </div>
 
@@ -626,7 +643,10 @@ const ModalDetalhesPartida = ({ isOpen, onClose, partida }) => {
                                     <div style={{ display: 'grid', gap: '8px' }}>
                                         {listaEspera.map((p, index) => {
                                             const u = p.usuarios || {};
-                                            const vinculo = getVinculoUsuario(u.id);
+                                            const userId = p.usuario_id || u.id;
+                                            const vinculo = getVinculoUsuario(userId);
+                                            const nomeDisplay = getNomeUsuario(userId, u);
+                                            
                                             return (
                                                 <div key={p.id} style={{ 
                                                     display: 'flex', 
@@ -648,8 +668,8 @@ const ModalDetalhesPartida = ({ isOpen, onClose, partida }) => {
                                                             overflow: 'hidden', 
                                                             textOverflow: 'ellipsis',
                                                             flex: 1
-                                                        }}>
-                                                            {formatName(u?.nome_completo) || 'Desconhecido'}{getEmojiPapel(u?.id)}{getEmojiVinculo(vinculo)}
+                                                        }} title={u?.nome_completo || nomeDisplay}>
+                                                            {nomeDisplay}{getEmojiPapel(userId)}{getEmojiVinculo(vinculo)}
                                                         </span>
                                                     </div>
                                                 </div>
