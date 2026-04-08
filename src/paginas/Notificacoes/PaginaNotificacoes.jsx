@@ -33,8 +33,25 @@ const PaginaNotificacoes = ({ aoVoltar, abrirEquipeTab }) => {
     const handleVerPedido = async (notificacao) => {
         setProcessando(notificacao.id);
         const equipeId = notificacao.payload?.equipe_id;
+        const atletaId = notificacao.remetente_id;
         
         try {
+            // Verificar se a solicitação ainda é válida (status pendente)
+            const { data: membroPendente, error: erroCheck } = await supabase
+                .from('membros_equipe')
+                .select('id, status')
+                .eq('equipe_id', equipeId)
+                .eq('usuario_id', atletaId)
+                .maybeSingle();
+
+            if (!membroPendente || membroPendente.status !== 'pendente') {
+                alert('Esta solicitação já foi processada por outro gestor da equipe. ✅');
+                await supabase.from('interacoes').delete().eq('id', notificacao.id);
+                carregarNotificacoes();
+                setProcessando(null);
+                return;
+            }
+
             // Remove a notificação do sino (marcando como lida) e envia o capitão para a área da equipe
             await supabase.from('interacoes').delete().eq('id', notificacao.id);
             carregarNotificacoes();

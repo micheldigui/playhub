@@ -844,6 +844,13 @@ export const EquipeProvedor = ({ children }) => {
 
     const responderSolicitacao = async (membroId, aprovado) => {
         try {
+            // Busca dados da solicitação antes para saber quem e qual equipe é (para limpar notificações)
+            const { data: solicitacao } = await supabase
+                .from('membros_equipe')
+                .select('usuario_id, equipe_id')
+                .eq('id', membroId)
+                .single();
+
             if (aprovado) {
                 const { error } = await supabase
                     .from('membros_equipe')
@@ -857,6 +864,17 @@ export const EquipeProvedor = ({ children }) => {
                     .eq('id', membroId);
                 if (error) throw error;
             }
+
+            // Limpa as notificações (Soluções de ingresso) para TODOS os gestores envolvidos
+            if (solicitacao) {
+                await supabase
+                    .from('interacoes')
+                    .delete()
+                    .eq('tipo', 'solicitacao_ingresso')
+                    .eq('remetente_id', solicitacao.usuario_id)
+                    .filter('payload->>equipe_id', 'eq', solicitacao.equipe_id);
+            }
+
             return { sucesso: true };
         } catch (error) {
             console.error('Erro ao responder solicitação:', error);

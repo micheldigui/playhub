@@ -336,7 +336,7 @@ const PaginaExplorar = ({ aoVoltar }) => {
                       )}
                       <span><Users size={14} /> {qtdMembros} {qtdMembros === 1 ? 'membro' : 'membros'}{equipe.nivel ? ` • ${equipe.nivel}` : ''}</span>
                       <span className="admin-do-time">
-                        <Crown size={13} /> Capitão: {nomeAdmin}
+                        <Crown size={13} /> <b>Capitão:</b> {nomeAdmin}
                       </span>
                     </div>
 

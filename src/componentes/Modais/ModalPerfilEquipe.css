@@ -79,7 +79,7 @@
 }
 
 .badge-p-lead.admin { background: #fbbf24; color: #000; }
-.badge-p-lead.sub_admin { background: #cbd5e1; color: #000; }
+.badge-p-lead.sub_admin { background: #38bdf8; color: #000; }
 
 .lider-info {
     flex: 1;
@@ -98,6 +98,14 @@
     color: #64748b;
     text-transform: uppercase;
     font-weight: 700;
+}
+
+.lider-card.admin .lider-info span {
+    color: #fbbf24;
+}
+
+.lider-card.sub_admin .lider-info span {
+    color: #38bdf8;
 }
 
 .lideranca-dica {

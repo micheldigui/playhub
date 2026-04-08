@@ -368,7 +368,16 @@
   gap: 5px;
   color: #64748b;
   font-size: 0.8rem;
-  font-style: italic;
+}
+
+.admin-do-time svg {
+  color: #fbbf24;
+}
+
+.admin-do-time b {
+  color: #fbbf24;
+  font-weight: 700;
+  font-style: normal;
 }
 
 .tag-ja-membro {

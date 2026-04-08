@@ -43,6 +43,7 @@ const ModalPerfilEquipe = ({ isOpen, onClose, idEquipe, aoVerAtleta = null }) =>
                 .from('membros_equipe')
                 .select(`
                     id,
+                    usuario_id,
                     papel,
                     vinculo,
                     usuarios (
@@ -56,11 +57,19 @@ const ModalPerfilEquipe = ({ isOpen, onClose, idEquipe, aoVerAtleta = null }) =>
                     )
                 `)
                 .eq('equipe_id', idEquipe)
-                .in('papel', ['admin', 'sub_admin'])
                 .eq('status', 'ativo')
-                .order('papel', { ascending: true }); // Admin primeiro
+                .or(`papel.in.(admin,sub_admin),usuario_id.eq.${eq.admin_id}`);
 
-            setLideranca(leads || []);
+            // Mapeia e Ordena: Capitão primeiro, depois Vices
+            const leadsOrdenados = (leads || []).map(l => ({
+                ...l,
+                papel: l.usuario_id === eq.admin_id ? 'admin' : l.papel
+            })).sort((a, b) => {
+                const ordem = { 'admin': 1, 'sub_admin': 2 };
+                return (ordem[a.papel] || 3) - (ordem[b.papel] || 3);
+            });
+
+            setLideranca(leadsOrdenados);
         } catch (error) {
             console.error('Erro ao carregar perfil de equipe:', error);
         } finally {
@@ -199,7 +208,7 @@ const ModalPerfilEquipe = ({ isOpen, onClose, idEquipe, aoVerAtleta = null }) =>
                                                 lideranca.map(lead => (
                                                     <div 
                                                         key={lead.id} 
-                                                        className="lider-card"
+                                                        className={`lider-card ${lead.papel}`}
                                                         onClick={() => aoVerAtleta?.(lead.usuarios)}
                                                     >
                                                         <div className="lider-avatar">
