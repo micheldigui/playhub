@@ -67,6 +67,32 @@ const ModalDetalhesPartida = ({ isOpen, onClose, partida }) => {
         return membroRef?.vinculo || 'avulso';
     };
 
+    // Função auxiliar para obter o emoji de papel do membro
+    const getEmojiPapel = (userId) => {
+        const membroRef = membros.find(m => m.usuarios?.id === userId);
+        if (!membroRef) return '';
+        if (membroRef.papel === 'admin') return ' 👑'; // Capitão - coroa de ouro
+        if (membroRef.papel === 'sub_admin') return ' 🥈'; // Vice - coroa de prata
+        return '';
+    };
+
+    // Função auxiliar para obter o emoji de vínculo
+    const getEmojiVinculo = (vinculo) => {
+        return vinculo === 'mensalista' ? ' ⭐' : ' ✩';
+    };
+
+    // Formata nome: primeiro nome + inicial do último sobrenome (maiúscula)
+    const formatName = (fullName) => {
+        if (!fullName) return '';
+        const parts = fullName.trim().toLowerCase().split(/\s+/);
+        if (parts.length === 1) return parts[0].charAt(0).toUpperCase() + parts[0].slice(1);
+        
+        const first = parts[0].charAt(0).toUpperCase() + parts[0].slice(1);
+        const last = parts[parts.length - 1].charAt(0).toUpperCase() + parts[parts.length - 1].slice(1);
+        
+        return `${first} ${last}`;
+    };
+
     // Calcula filas dinamicamente com base nas regras de prioridade
     let todosInscritos = [...presencas].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
 
@@ -168,20 +194,6 @@ const ModalDetalhesPartida = ({ isOpen, onClose, partida }) => {
         const local = partida.local_nome || 'Local a definir';
         const equipeNome = equipeAtiva?.nome || 'Equipe';
 
-        // Função auxiliar para obter o emoji de papel do membro
-        const getEmojiPapel = (userId) => {
-            const membroRef = membros.find(m => m.usuarios?.id === userId);
-            if (!membroRef) return '';
-            if (membroRef.papel === 'admin') return ' 👑'; // Capitão - coroa de ouro
-            if (membroRef.papel === 'sub_admin') return ' 🥈'; // Vice - coroa de prata
-            return '';
-        };
-
-        // Função auxiliar para obter o emoji de vínculo
-        const getEmojiVinculo = (vinculo) => {
-            return vinculo === 'mensalista' ? ' ⭐' : ' ✩';
-        };
-
         let mensagem = `*🏟️ JOGO CONFIRMADO - ${equipeNome.toUpperCase()}*\n`;
         mensagem += `📅 *DATA:* ${dataFormatada}\n`;
         mensagem += `⏰ *HORA:* ${horaFormatada}\n`;
@@ -193,8 +205,7 @@ const ModalDetalhesPartida = ({ isOpen, onClose, partida }) => {
             listaConfirmados.forEach((p, index) => {
                 const u = p.usuarios;
                 const vinculo = getVinculoUsuario(u?.id);
-                const nomes = u?.nome_completo?.split(' ') || ['Jogador'];
-                const nomeExibir = nomes.length > 1 ? `${nomes[0]} ${nomes[1][0]}.` : nomes[0];
+                const nomeExibir = formatName(u?.nome_completo);
                 mensagem += `${index + 1}. ${nomeExibir}${getEmojiPapel(u?.id)}${getEmojiVinculo(vinculo)}\n`;
             });
         } else {
@@ -206,8 +217,7 @@ const ModalDetalhesPartida = ({ isOpen, onClose, partida }) => {
             listaEspera.forEach((p, index) => {
                 const u = p.usuarios;
                 const vinculo = getVinculoUsuario(u?.id);
-                const nomes = u?.nome_completo?.split(' ') || ['Jogador'];
-                const nomeExibir = nomes.length > 1 ? `${nomes[0]} ${nomes[1][0]}.` : nomes[0];
+                const nomeExibir = formatName(u?.nome_completo);
                 mensagem += `${index + 1}. ${nomeExibir}${getEmojiPapel(u?.id)}${getEmojiVinculo(vinculo)}\n`;
             });
         }
@@ -432,13 +442,8 @@ const ModalDetalhesPartida = ({ isOpen, onClose, partida }) => {
                                                                 textOverflow: 'ellipsis',
                                                                 flex: 1
                                                             }} title={u?.nome_completo}>
-                                                                {u?.nome_completo || 'Desconhecido'}
+                                                                {formatName(u?.nome_completo) || 'Desconhecido'}{getEmojiPapel(u?.id)}{getEmojiVinculo(vinculo)}
                                                             </span>
-                                                            {vinculo === 'mensalista' ? (
-                                                                <Star size={14} fill="#fbbf24" color="#fbbf24" title={getLabelVinculo('mensalista')} />
-                                                            ) : (
-                                                                <Star size={14} fill="#94a3b8" color="#94a3b8" title={getLabelVinculo('avulso')} />
-                                                            )}
                                                         </div>
 
                                                         {/* ÁREA DE FREQUÊNCIA (Visível para todos, editável apenas p/ Admin) */}
@@ -644,13 +649,8 @@ const ModalDetalhesPartida = ({ isOpen, onClose, partida }) => {
                                                             textOverflow: 'ellipsis',
                                                             flex: 1
                                                         }}>
-                                                            {u?.nome_completo || 'Desconhecido'}
+                                                            {formatName(u?.nome_completo) || 'Desconhecido'}{getEmojiPapel(u?.id)}{getEmojiVinculo(vinculo)}
                                                         </span>
-                                                        {vinculo === 'mensalista' ? (
-                                                            <Star size={14} fill="#fbbf24" color="#fbbf24" title={getLabelVinculo('mensalista')} />
-                                                        ) : (
-                                                            <Star size={14} fill="#94a3b8" color="#94a3b8" title={getLabelVinculo('avulso')} />
-                                                        )}
                                                     </div>
                                                 </div>
                                             );
