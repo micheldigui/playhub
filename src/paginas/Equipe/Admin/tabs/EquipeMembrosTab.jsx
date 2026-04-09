@@ -38,6 +38,25 @@ const EquipeMembrosTab = () => {
         setCarregando(false);
     };
 
+    const formatName = (fullName) => {
+        if (!fullName) return '';
+        const parts = fullName.trim().toLowerCase().split(/\s+/);
+        if (parts.length === 1) return parts[0].charAt(0).toUpperCase() + parts[0].slice(1);
+        
+        const first = parts[0].charAt(0).toUpperCase() + parts[0].slice(1);
+        const last = parts[parts.length - 1].charAt(0).toUpperCase() + parts[parts.length - 1].slice(1);
+        
+        return `${first} ${last}`;
+    };
+
+    const formatFullName = (fullName) => {
+        if (!fullName) return '';
+        const particles = ['de', 'da', 'do', 'das', 'dos', 'e'];
+        return fullName.trim().toLowerCase().split(/\s+/).map(part => 
+            particles.includes(part) ? part : part.charAt(0).toUpperCase() + part.slice(1)
+        ).join(' ');
+    };
+
     const handleRemoverMembro = async (membroId) => {
         if (confirmandoRemocao !== membroId) {
             setConfirmandoRemocao(membroId);
@@ -143,7 +162,7 @@ const EquipeMembrosTab = () => {
                 </div>
 
                 <div style={{ display: 'grid', gap: '12px' }}>
-                    {membrosFiltrados.length > 0 ? membrosFiltrados.map(membro => {
+                    {membrosFiltrados.length > 0 ? membrosFiltrados.map((membro, index) => {
                         const user = membro.usuarios;
                         const isAdmin = membro.papel === 'admin';
                         const isSubAdmin = membro.papel === 'sub_admin';
@@ -161,6 +180,7 @@ const EquipeMembrosTab = () => {
                                     gap: '16px'
                                 }}
                             >
+                                <span style={{ fontSize: '0.85rem', color: '#64748b', minWidth: '16px' }}>{index + 1}.</span>
                                 <div style={{ width: '48px', height: '48px', borderRadius: '50%', overflow: 'hidden', background: 'rgba(255,255,255,0.1)', flexShrink: 0 }}>
                                     {user?.foto_url ? (
                                         <img src={user.foto_url} alt={user?.apelido} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -172,8 +192,11 @@ const EquipeMembrosTab = () => {
                                 </div>
                                 <div style={{ flex: 1, minWidth: 0 }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                        <div style={{ fontWeight: '600', color: '#f8fafc', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                            {user?.nome_completo}
+                                        <div 
+                                            style={{ fontWeight: '600', color: '#f8fafc', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+                                            title={user?.nome_completo ? formatFullName(user.nome_completo) : ''}
+                                        >
+                                            {user?.nome_completo ? formatName(user.nome_completo) : 'Membro'}
                                         </div>
                                         {isAdmin && <span title="Administrador Geral" style={{ display: 'flex' }}><Crown size={14} color="#fbbf24" /></span>}
                                         {isSubAdmin && <span title="Co-Administrador" style={{ display: 'flex' }}><Crown size={14} color="#94a3b8" /></span>}

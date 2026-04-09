@@ -63,7 +63,7 @@ const ModalDetalhesPartida = ({ isOpen, onClose, partida }) => {
     const limite = partida.vagas || 999;
 
     const getVinculoUsuario = (userId) => {
-        const membroRef = membros.find(m => m.usuarios?.id === userId);
+        const membroRef = membros.find(m => String(m.usuario_id) === String(userId) || String(m.usuarios?.id) === String(userId));
         return membroRef?.vinculo || 'avulso';
     };
 
@@ -91,6 +91,14 @@ const ModalDetalhesPartida = ({ isOpen, onClose, partida }) => {
         const last = parts[parts.length - 1].charAt(0).toUpperCase() + parts[parts.length - 1].slice(1);
         
         return `${first} ${last}`;
+    };
+
+    const formatFullName = (fullName) => {
+        if (!fullName) return '';
+        const particles = ['de', 'da', 'do', 'das', 'dos', 'e'];
+        return fullName.trim().toLowerCase().split(/\s+/).map(part => 
+            particles.includes(part) ? part : part.charAt(0).toUpperCase() + part.slice(1)
+        ).join(' ');
     };
 
     // Função auxiliar para buscar o nome do usuário lidando com perfis privados / null
@@ -126,7 +134,7 @@ const ModalDetalhesPartida = ({ isOpen, onClose, partida }) => {
     
     // Identificar a situação do usuário atual logado
     const isLotado = listaConfirmados.length >= limite;
-    const inscricaoUser = todosInscritos.find(p => p.usuarios?.id === usuario?.id);
+    const inscricaoUser = todosInscritos.find(p => String(p.usuario_id || p.usuarios?.id) === String(usuario?.id));
     let statusUser = 'nenhum';
     if (inscricaoUser) {
         if (listaConfirmados.some(p => p.id === inscricaoUser.id)) {
@@ -155,50 +163,58 @@ const ModalDetalhesPartida = ({ isOpen, onClose, partida }) => {
     const isLateCancellation = now >= cancelDeadline;
 
     const handleAcaoPresenca = async () => {
-        if (statusUser !== 'nenhum') {
-            // Cancelar
-            if (isLateCancellation) {
-                if (!window.confirm(`⚠️ ATENÇÃO: CANCELAMENTO TARDIO ⚠️\n\nFaltam menos de ${cancelHours} horas para a partida.\n\nSe você cancelar agora, receberá uma PUNIÇÃO automaticamente pelo sistema.\n\nTem certeza que deseja aceitar a punição e cancelar?`)) {
-                    return;
-                }
-            } else {
-                if (!window.confirm("Deseja realmente cancelar sua inscrição nesta partida?")) {
-                    return;
-                }
-            }
-            
-            setProcessandoAcao(true);
-            const result = await cancelarPresenca(partida.id);
-            if (result.sucesso) {
-                await carregarDados(); 
-            } else {
-                alert('Erro ao cancelar: ' + result.erro);
-            }
-        } else {
-            // Tentar entrar (o status no server importa pouco pois a fila frontend recalcula, mas gravamos status guess)
-            const novoStatus = isLotado ? 'espera' : 'confirmado';
-            const vinculoAtual = getVinculoUsuario(usuario?.id);
-            const mzg = isLotado ? "A partida está cheia. Você vai entrar para a lista de espera. Deseja continuar?" : "Confirmar sua presença no jogo?";
-            if (window.confirm(mzg)) {
-                setProcessandoAcao(true);
-                // INJETANDO O OBJETO E NÃO APENAS O ID (Erro do Null resolvido)
-                // Novo: Bloqueio Financeiro para Mensalistas
-                const fin = await verificarSituacaoFinanceiraAtleta(partida.equipe_id, usuario?.id);
-                if (fin.bloqueio) {
-                    alert(`⚠️ INSCRIÇÃO BLOQUEADA\n\nVocê possui a mensalidade de ${fin.ciclo} em atraso.\n\nPor favor, procure o capitão ou vice-capitão da equipe para regularizar sua situação financeira.`);
-                    setProcessandoAcao(false);
-                    return;
-                }
-
-                const result = await confirmarPresenca(partida, novoStatus, vinculoAtual);
-                if (result.sucesso) {
-                    await carregarDados();
+        try {
+            if (statusUser !== 'nenhum') {
+                // Cancelar
+                if (isLateCancellation) {
+                    if (!window.confirm(`⚠️ ATENÇÃO: CANCELAMENTO TARDIO ⚠️\n\nFaltam menos de ${cancelHours} horas para a partida.\n\nSe você cancelar agora, receberá uma PUNIÇÃO automaticamente pelo sistema.\n\nTem certeza que deseja aceitar a punição e cancelar?`)) {
+                        return;
+                    }
                 } else {
-                    alert('Erro ao inscrever-se: ' + result.erro);
+                    if (!window.confirm("Deseja realmente cancelar sua inscrição nesta partida?")) {
+                        return;
+                    }
+                }
+                
+                setProcessandoAcao(true);
+                const result = await cancelarPresenca(partida.id);
+                if (result.sucesso) {
+                    await carregarDados(); 
+                } else {
+                    alert('Erro ao cancelar: ' + result.erro);
+                }
+            } else {
+                // Tentar entrar
+                const novoStatus = isLotado ? 'espera' : 'confirmado';
+                const vinculoAtual = getVinculoUsuario(usuario?.id);
+                const mzg = isLotado ? "A partida está cheia. Você vai entrar para a lista de espera. Deseja continuar?" : "Confirmar sua presença no jogo?";
+                
+                if (window.confirm(mzg)) {
+                    setProcessandoAcao(true);
+                    
+                    const fin = await verificarSituacaoFinanceiraAtleta(partida.equipe_id, usuario?.id);
+                    
+                    if (fin && fin.bloqueio) {
+                        alert(`⚠️ INSCRIÇÃO BLOQUEADA\n\nVocê possui a mensalidade de ${fin.ciclo} em atraso.\n\nPor favor, procure o capitão ou vice-capitão da equipe para regularizar sua situação financeira.`);
+                        setProcessandoAcao(false);
+                        return;
+                    }
+
+                    const result = await confirmarPresenca(partida, novoStatus, vinculoAtual);
+                    
+                    if (result.sucesso) {
+                        await carregarDados();
+                    } else {
+                        alert('Erro ao inscrever-se: ' + (result.erro || 'Erro desconhecido no servidor.'));
+                    }
                 }
             }
+        } catch (err) {
+            console.error("Erro CRÍTICO no handleAcaoPresenca:", err);
+            alert("Aconteceu um erro inesperado: " + err.message);
+        } finally {
+            setProcessandoAcao(false);
         }
-        setProcessandoAcao(false);
     };
 
     const handleShareWhatsApp = () => {
@@ -461,7 +477,7 @@ const ModalDetalhesPartida = ({ isOpen, onClose, partida }) => {
                                                                 overflow: 'hidden', 
                                                                 textOverflow: 'ellipsis',
                                                                 flex: 1
-                                                            }} title={u?.nome_completo || nomeDisplay}>
+                                                            }} title={u?.nome_completo ? formatFullName(u.nome_completo) : (nomeDisplay ? formatFullName(nomeDisplay) : '')}>
                                                                 {nomeDisplay}{getEmojiPapel(userId)}{getEmojiVinculo(vinculo)}
                                                             </span>
                                                         </div>
@@ -524,7 +540,7 @@ const ModalDetalhesPartida = ({ isOpen, onClose, partida }) => {
 
                                                                         {pickerAberto === u.id && (
                                                                             <div className="animate-pop-in" style={{ 
-                                                                                position: 'absolute', bottom: '100%', right: 0, marginBottom: '8px',
+                                                                                position: 'absolute', top: '100%', right: 0, marginTop: '8px',
                                                                                 background: '#1e293b', border: '1px solid rgba(255,255,255,0.1)',
                                                                                 borderRadius: '8px', padding: '6px', display: 'flex', gap: '6px',
                                                                                 boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.4)', zIndex: 100
@@ -671,7 +687,7 @@ const ModalDetalhesPartida = ({ isOpen, onClose, partida }) => {
                                                             overflow: 'hidden', 
                                                             textOverflow: 'ellipsis',
                                                             flex: 1
-                                                        }} title={u?.nome_completo || nomeDisplay}>
+                                                        }} title={u?.nome_completo ? formatFullName(u.nome_completo) : (nomeDisplay ? formatFullName(nomeDisplay) : '')}>
                                                             {nomeDisplay}{getEmojiPapel(userId)}{getEmojiVinculo(vinculo)}
                                                         </span>
                                                     </div>

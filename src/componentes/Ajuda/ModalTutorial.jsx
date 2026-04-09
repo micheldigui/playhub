@@ -29,7 +29,7 @@ const ModalTutorial = ({ isOpen, onClose, abaInicial = 'atleta' }) => {
     { id: 'c0zyeVAL1tE', titulo: 'Tutorial: Instalar no iPhone', desc: 'Como adicionar o PlayHub na tela de início do seu iOS.' },
     { id: 'tnuiicFBf4E', titulo: 'Encontrar Jogadores e Times', desc: 'Use o Explorar para achar novos craques ou equipes na região.' },
     { id: 'r9uekAd4WRc', titulo: 'Configurar Perfil e Habilidades', desc: 'Destaque-se no time preenchendo todos os seus dados esportivos.' },
-    { id: 'EiIF2A-BGoA', titulo: 'Criar e Gerenciar seu Time', desc: 'Guia completo para Capitães dominarem as ferramentas de gestão.' }
+    { id: 'mvRRDiW9_gs', titulo: 'Criar e Gerenciar seu Time', desc: 'Guia completo para Capitães dominarem as ferramentas de gestão.' }
   ];
 
   const renderConteudo = () => {

@@ -3,10 +3,12 @@ import { supabase } from '../../../servicos/supabase';
 import { usarEquipe } from '../../../contextos/EquipeContexto';
 import { DollarSign, User, CheckCircle2, AlertCircle, XCircle, Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
 import { usarFinanceiro } from '../../../contextos/FinanceiroContexto';
+import { usarAutenticacao } from '../../../contextos/AutenticacaoContexto';
 
 const FinanceiroAvulsos = ({ membrosIniciais = [] }) => {
     const { equipeAtiva, temPermissaoEquipe } = usarEquipe();
     const { obterCicloAtual, formatarPeriodoParaExibicao } = usarFinanceiro();
+    const { usuario } = usarAutenticacao();
     const [pagamentos, setPagamentos] = useState([]);
     const [membros, setMembros] = useState(membrosIniciais);
     const [carregando, setCarregando] = useState(true);
@@ -34,6 +36,19 @@ const FinanceiroAvulsos = ({ membrosIniciais = [] }) => {
         return 'Desconhecido';
     };
 
+    // Mapa usuario_id -> papel para badges de cargo
+    const mapaPapeis = React.useMemo(() => {
+        const mapa = {};
+        membros.forEach(m => { if (m.usuario_id) mapa[m.usuario_id] = m.papel; });
+        return mapa;
+    }, [membros]);
+
+    const getPapelPorUsuarioId = (userId) => {
+        // tenta pelo id direto ou pelo id interno do objeto usuarios
+        const membroRef = membros.find(m => String(m.usuario_id) === String(userId) || String(m.usuarios?.id) === String(userId));
+        return membroRef?.papel || null;
+    };
+
     const isAdmin = equipeAtiva?.papel === 'admin' || temPermissaoEquipe('gerenciar_financeiro');
 
     const carregarAvulsos = async () => {
@@ -46,7 +61,7 @@ const FinanceiroAvulsos = ({ membrosIniciais = [] }) => {
         const dataFim = new Date(ano, mes, 0).toISOString().split('T')[0];
 
         try {
-            const { data, error } = await supabase
+            let query = supabase
                 .from('pagamentos_avulsos')
                 .select(`
                     id, status, valor_pago, pago_em,
@@ -55,8 +70,14 @@ const FinanceiroAvulsos = ({ membrosIniciais = [] }) => {
                 `)
                 .eq('equipe_id', equipeAtiva.id)
                 .gte('partidas.data', dataInicio)
-                .lte('partidas.data', dataFim)
-                .order('pago_em', { ascending: false });
+                .lte('partidas.data', dataFim);
+                
+            // Jogadores comuns veem apenas os SEUS pagamentos
+            if (!isAdmin && usuario) {
+                query = query.eq('usuario_id', usuario.id);
+            }
+            
+            const { data, error } = await query.order('pago_em', { ascending: false });
                 
             if (error) throw error;
             setPagamentos(data || []);
@@ -186,7 +207,11 @@ const FinanceiroAvulsos = ({ membrosIniciais = [] }) => {
                                     {p.usuarios?.foto_url ? <img src={p.usuarios.foto_url} alt="jogador" style={{width:'100%', height:'100%', objectFit:'cover'}}/> : <User size={20} style={{margin:'10px', color:'#94a3b8'}}/>}
                                 </div>
                                 <div style={{ flex: 1 }}>
-                                    <div style={{ fontWeight: '500', color: '#f8fafc', marginBottom: '4px' }}>{getNomeUsuario(p.usuarios?.id, p.usuarios)}</div>
+                                    <div style={{ fontWeight: '600', color: '#f8fafc', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                        {getNomeUsuario(p.usuarios?.id, p.usuarios)}
+                                        {getPapelPorUsuarioId(p.usuarios?.id) === 'admin'     && <span style={{ fontSize: '0.65rem', background: 'rgba(251,191,36,0.15)', color: '#fbbf24', border: '1px solid rgba(251,191,36,0.25)', padding: '1px 6px', borderRadius: '6px', fontWeight: '700' }}>Capitão</span>}
+                                        {getPapelPorUsuarioId(p.usuarios?.id) === 'sub_admin' && <span style={{ fontSize: '0.65rem', background: 'rgba(16,185,129,0.15)',  color: '#10b981', border: '1px solid rgba(16,185,129,0.25)',  padding: '1px 6px', borderRadius: '6px', fontWeight: '700' }}>Vice</span>}
+                                    </div>
                                     <div style={{ display: 'flex', gap: '16px', fontSize: '0.8rem', color: '#94a3b8' }}>
                                         <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><Calendar size={12}/> {p.partidas ? formatarData(p.partidas.data) : 'Partida Excluída'}</span>
                                         <span style={{ color: '#cbd5e1', fontWeight: 'bold' }}>{formatarMoeda(p.valor_pago)}</span>

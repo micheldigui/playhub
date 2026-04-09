@@ -350,40 +350,37 @@ export const FinanceiroProvider = ({ children }) => {
                 return { status: 'ocultar' };
             }
 
-            // 2. Buscar todas as mensalidades do usuário (ordem antiga -> nova)
+            // 2. Buscar Mensalidades
             const { data: mensalidades, error: errMens } = await supabase
                 .from('mensalidades')
                 .select('*')
                 .eq('equipe_id', equipeId)
                 .eq('usuario_id', usuarioId)
                 .order('periodo', { ascending: true }); // MAIS ANTIGO PRIMEIRO
-
             if (errMens) throw errMens;
-            if (!mensalidades || mensalidades.length === 0) return { status: 'ocultar' };
 
-            // 3. Buscar os ciclos para pegar snapshots de vencimento
-            const periodos = mensalidades.map(m => m.periodo);
-            const { data: ciclos, error: errCiclos } = await supabase
-                .from('ciclos_financeiros')
-                .select('periodo, dia_vencimento_snapshot')
-                .eq('equipe_id', equipeId)
-                .in('periodo', periodos);
-
-            if (errCiclos) throw errCiclos;
-
-            const mapaCiclos = (ciclos || []).reduce((acc, c) => {
-                acc[c.periodo] = c;
-                return acc;
-            }, {});
+            let mapaCiclos = {};
+            if (mensalidades && mensalidades.length > 0) {
+                const periodos = mensalidades.map(m => m.periodo);
+                const { data: ciclos, error: errCiclos } = await supabase
+                    .from('ciclos_financeiros')
+                    .select('periodo, dia_vencimento_snapshot')
+                    .eq('equipe_id', equipeId)
+                    .in('periodo', periodos);
+                if (errCiclos) throw errCiclos;
+                mapaCiclos = (ciclos || []).reduce((acc, c) => {
+                    acc[c.periodo] = c;
+                    return acc;
+                }, {});
+            }
 
             const hoje = new Date();
             let statusFinal = 'pago';
-            let cicloReferencia = mensalidades[mensalidades.length - 1].periodo; // Último como fallback
+            let cicloReferencia = (mensalidades && mensalidades.length > 0) ? mensalidades[mensalidades.length - 1].periodo : 'avulso';
             let bloqueio = false;
 
-            // Encontramos a PRIMEIRA (mais antiga) não paga
-            const primeiraNaoPaga = mensalidades.find(m => m.status !== 'pago');
-
+            // Avaliar primeira mensalidade pendente
+            const primeiraNaoPaga = (mensalidades || []).find(m => m.status !== 'pago');
             if (primeiraNaoPaga) {
                 const [ano, mes] = primeiraNaoPaga.periodo.split('-').map(Number);
                 const cicData = mapaCiclos[primeiraNaoPaga.periodo];
@@ -400,14 +397,51 @@ export const FinanceiroProvider = ({ children }) => {
                 }
             }
 
+            // 3. Buscar Avulsos Pendentes
+            const { data: avulsosPendentes, error: errAvulsos } = await supabase
+                .from('pagamentos_avulsos')
+                .select('id, partidas!inner(data, hora)')
+                .eq('equipe_id', equipeId)
+                .eq('usuario_id', usuarioId)
+                .eq('status', 'pendente');
+
+            if (!errAvulsos && avulsosPendentes && avulsosPendentes.length > 0) {
+                let temAvulsoVencido = false;
+                for (const avulso of avulsosPendentes) {
+                    const partida = avulso.partidas;
+                    if (partida && partida.data) {
+                        const horaIso = partida.hora || '23:59:59';
+                        const dataPartida = new Date(`${partida.data}T${horaIso}`);
+                        if (hoje > dataPartida) {
+                            temAvulsoVencido = true;
+                            break;
+                        }
+                    }
+                }
+
+                if (temAvulsoVencido) {
+                    statusFinal = 'vencido';
+                    bloqueio = true;
+                    if (cicloReferencia === 'avulso') cicloReferencia = 'Jogos Anteriores';
+                } else if (statusFinal === 'pago') {
+                    statusFinal = 'pendente';
+                    if (cicloReferencia === 'avulso') cicloReferencia = 'Próximo Jogo';
+                }
+            }
+
+            // Se for estritamente 'pago' e não tem mensalidades vinculadas, ocultamos (limpa a interface para avulsos sem dívida)
+            if (statusFinal === 'pago' && (!mensalidades || mensalidades.length === 0)) {
+                return { status: 'ocultar' };
+            }
+
             return { 
                 status: statusFinal, 
-                ciclo: formatarPeriodoParaExibicao(cicloReferencia),
+                // Formata ciclo SOMENTE se parecer um período AAAA-MM
+                ciclo: cicloReferencia.includes('-') ? formatarPeriodoParaExibicao(cicloReferencia) : cicloReferencia,
                 bloqueio 
             };
         } catch (error) {
             console.error('Erro ao verificar situação financeira:', error);
-            // Em caso de erro técnico, ocultamos o card para evitar falsos alertas
             return { status: 'ocultar' };
         }
     };

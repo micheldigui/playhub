@@ -312,6 +312,26 @@ const FinanceiroTab = ({ abaExterna, modoLeitura = false, membrosIniciais = [] }
     const formatarMoeda = (valor) =>
         new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valor || 0);
 
+    // Primeiro nome + último sobrenome, iniciais maiúsculas
+    const formatName = (fullName) => {
+        if (!fullName) return 'Atleta';
+        const parts = fullName.trim().toLowerCase().split(/\s+/);
+        if (parts.length === 1) return parts[0].charAt(0).toUpperCase() + parts[0].slice(1);
+        const first = parts[0].charAt(0).toUpperCase() + parts[0].slice(1);
+        const last  = parts[parts.length - 1].charAt(0).toUpperCase() + parts[parts.length - 1].slice(1);
+        return `${first} ${last}`;
+    };
+
+    // Mapa usuario_id -> papel (admin | sub_admin | jogador)
+    const mapaPapeis = React.useMemo(() => {
+        const mapa = {};
+        todosMembros.forEach(m => { if (m.usuario_id) mapa[m.usuario_id] = m.papel; });
+        return mapa;
+    }, [todosMembros]);
+
+    // Nome sempre branco — apenas o badge de cargo leva cor
+    const corNome = () => '#f8fafc';
+
     const resumo = {
         totalRecebido: mensalidades.filter(m => m.status === 'pago').reduce((acc, m) => acc + Number(m.valor_configurado), 0),
         totalPendente: mensalidades.filter(m => m.status === 'pendente').reduce((acc, m) => acc + Number(m.valor_configurado), 0),
@@ -369,7 +389,9 @@ const FinanceiroTab = ({ abaExterna, modoLeitura = false, membrosIniciais = [] }
             if (p.status === 'pago') icon = '✅';
             else if (jaVenceu) icon = '🔴';
             
-            msg += `${icon} ${p.usuarios?.nome_completo || 'Atleta'}\n`;
+            const papel = mapaPapeis[p.usuario_id];
+            const emojicargo = papel === 'admin' ? '👑 ' : papel === 'sub_admin' ? '🥈 ' : '';
+            msg += `${icon} ${emojicargo}${formatName(p.usuarios?.nome_completo)}\n`;
         });
 
         msg += `\n---------------------------\n`;
@@ -515,7 +537,11 @@ const FinanceiroTab = ({ abaExterna, modoLeitura = false, membrosIniciais = [] }
                                                 {pag.usuarios?.foto_url ? <img src={pag.usuarios.foto_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <User size={20} color="#64748b" />}
                                             </div>
                                             <div>
-                                                <p style={{ color: '#f8fafc', fontWeight: '500', fontSize: '0.95rem' }}>{pag.usuarios?.nome_completo || 'Atleta'}</p>
+                                                <p style={{ color: '#f8fafc', fontWeight: '600', fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                                    {formatName(pag.usuarios?.nome_completo)}
+                                                    {mapaPapeis[pag.usuario_id] === 'admin'     && <span title="Capitão"     style={{ fontSize: '0.7rem', background: 'rgba(251,191,36,0.15)',  color: '#fbbf24', border: '1px solid rgba(251,191,36,0.25)',  padding: '1px 6px', borderRadius: '6px', fontWeight: '700' }}>Capitão</span>}
+                                                    {mapaPapeis[pag.usuario_id] === 'sub_admin' && <span title="Vice-Capitão" style={{ fontSize: '0.7rem', background: 'rgba(16,185,129,0.15)',  color: '#10b981', border: '1px solid rgba(16,185,129,0.25)',  padding: '1px 6px', borderRadius: '6px', fontWeight: '700' }}>Vice</span>}
+                                                </p>
                                                 <p style={{ color: '#64748b', fontSize: '0.8rem' }}>{pag.usuarios?.apelido || '-'}</p>
                                             </div>
                                         </div>
@@ -596,7 +622,7 @@ const FinanceiroTab = ({ abaExterna, modoLeitura = false, membrosIniciais = [] }
                                     <div key={m.id} style={{ padding: '10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                                             <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'rgba(255,255,255,0.05)', overflow: 'hidden' }}>{m.usuarios?.foto_url ? <img src={m.usuarios.foto_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <User size={16} color="#64748b" />}</div>
-                                            <span style={{ fontSize: '0.9rem', color: '#f8fafc' }}>{m.usuarios?.nome_completo}</span>
+                                            <span style={{ fontSize: '0.9rem', color: '#f8fafc', fontWeight: '500' }}>{formatName(m.usuarios?.nome_completo)}</span>
                                         </div>
                                         <button onClick={() => !jaNoCiclo && handleAdicionarAoCiclo(m)} disabled={jaNoCiclo || !!processando} style={{ background: 'rgba(56,189,248,0.1)', border: '1px solid rgba(56,189,248,0.3)', color: '#38bdf8', padding: '4px 10px', borderRadius: '6px', fontSize: '0.75rem', cursor: jaNoCiclo ? 'default' : 'pointer' }}>{jaNoCiclo ? 'No ciclo' : '+ Adicionar'}</button>
                                     </div>

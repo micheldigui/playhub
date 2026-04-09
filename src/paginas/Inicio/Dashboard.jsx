@@ -286,7 +286,16 @@ const Dashboard = ({ aoNavegar, setAbaEquipe }) => {
             return permsVice.includes(a.permissao);            // vice precisa ter a permissão
         }
         // Jogador só vê atalhos sem restrição de cargo
-        return a.roles.length === 0;
+        if (a.roles.length > 0) return false;
+
+        // Regra do ícone de mensalistas e avulsos para jogadores comuns
+        if (papelNaEquipe === 'jogador') {
+            if (a.id === 'meus_pagamentos' && equipeFinAtual?.vinculo !== 'mensalista') return false;
+            // Se for mensalista, talvez ele não precise ver a aba de avulsos? 
+            if (a.id === 'financas_avulso' && equipeFinAtual?.vinculo !== 'avulso') return false;
+        }
+
+        return true;
     });
     // Obs: financeiro só se equipe tem gestão_financeira
     const catalogoEquipeFiltrado = equipeFinAtual?.gestao_financeira

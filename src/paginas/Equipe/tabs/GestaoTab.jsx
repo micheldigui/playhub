@@ -59,6 +59,15 @@ const GestaoTab = ({ abrirEdicao, aoExcluir }) => {
         setProcessando(null);
     };
 
+    const formatName = (fullName) => {
+        if (!fullName) return 'Membro';
+        const parts = fullName.trim().toLowerCase().split(/\s+/);
+        if (parts.length === 1) return parts[0].charAt(0).toUpperCase() + parts[0].slice(1);
+        const first = parts[0].charAt(0).toUpperCase() + parts[0].slice(1);
+        const last  = parts[parts.length - 1].charAt(0).toUpperCase() + parts[parts.length - 1].slice(1);
+        return `${first} ${last}`;
+    };
+
     if (carregando) return <div className="p-8 text-center text-muted">Carregando painel de gestão...</div>;
 
     const ehDono = equipeAtiva.admin_id === usuario?.id || ehSuperAdmin;
@@ -143,8 +152,9 @@ const GestaoTab = ({ abrirEdicao, aoExcluir }) => {
                                             </div>
                                             <div>
                                                 <div className="membro-nome">
-                                                    {m.usuarios.nome_completo}
-                                                    {m.papel === 'admin' && <Crown size={12} title="Capitão" className="icone-capitao" />}
+                                                    {formatName(m.usuarios.nome_completo)}
+                                                    {m.papel === 'admin'     && <Crown size={12} title="Capitão"     className="icone-capitao" />}
+                                                    {m.papel === 'sub_admin' && <ShieldCheck size={12} title="Vice-Capitão" style={{ color: '#10b981' }} />}
                                                 </div>
                                                 <div className="membro-sub">@{m.usuarios.apelido}</div>
                                             </div>

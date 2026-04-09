@@ -274,6 +274,15 @@ export const PartidasProvider = ({ children }) => {
                 .eq('usuario_id', usuario.id);
 
             if (error) throw error;
+            
+            // Também anula a comanda avulsa pendente caso o atleta cancele a inscrição
+            await supabase
+                .from('pagamentos_avulsos')
+                .delete()
+                .eq('partida_id', partidaId)
+                .eq('usuario_id', usuario.id)
+                .eq('status', 'pendente');
+
             return { sucesso: true };
         } catch (error) {
             return { sucesso: false, erro: error.message };

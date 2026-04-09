@@ -48,6 +48,25 @@ const MembrosTab = ({ membrosIniciais = [], recarregar }) => {
         return idade;
     };
 
+    const formatName = (fullName) => {
+        if (!fullName) return '';
+        const parts = fullName.trim().toLowerCase().split(/\s+/);
+        if (parts.length === 1) return parts[0].charAt(0).toUpperCase() + parts[0].slice(1);
+        
+        const first = parts[0].charAt(0).toUpperCase() + parts[0].slice(1);
+        const last = parts[parts.length - 1].charAt(0).toUpperCase() + parts[parts.length - 1].slice(1);
+        
+        return `${first} ${last}`;
+    };
+
+    const formatFullName = (fullName) => {
+        if (!fullName) return '';
+        const particles = ['de', 'da', 'do', 'das', 'dos', 'e'];
+        return fullName.trim().toLowerCase().split(/\s+/).map(part => 
+            particles.includes(part) ? part : part.charAt(0).toUpperCase() + part.slice(1)
+        ).join(' ');
+    };
+
     const handleAcaoSucesso = async () => {
         if (recarregar) {
             await recarregar();
@@ -129,13 +148,14 @@ const MembrosTab = ({ membrosIniciais = [], recarregar }) => {
                         </tr>
                     </thead>
                     <tbody>
-                        {membros.map(m => {
+                        {membros.map((m, index) => {
                             const u = m.usuarios || {};
                             const idade = calcularIdade(u.data_nascimento);
                             return (
                                 <tr key={m.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)', opacity: processando === m.id ? 0.5 : 1 }}>
                                     <td style={{ padding: '16px' }}>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                            <span style={{ fontSize: '0.85rem', color: '#64748b', minWidth: '20px' }}>{index + 1}.</span>
                                             <div 
                                                 onClick={() => abrirPerfil(m)}
                                                 style={{ 
@@ -159,8 +179,9 @@ const MembrosTab = ({ membrosIniciais = [], recarregar }) => {
                                                 <div 
                                                     onClick={() => abrirPerfil(m)}
                                                     style={{ fontWeight: '600', color: '#f1f5f9', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', whiteSpace: 'nowrap' }}
+                                                    title={u.nome_completo ? formatFullName(u.nome_completo) : ''}
                                                 >
-                                                    {u.nome_completo || 'Membro'}
+                                                    {u.nome_completo ? formatName(u.nome_completo) : 'Membro'}
                                                     {m.papel === 'admin' && <Crown size={12} color="#fbbf24" style={{ marginLeft: '4px', flexShrink: 0 }} title="Capitão" />}
                                                     {m.papel === 'sub_admin' && <Crown size={12} color="#cbd5e1" style={{ marginLeft: '4px', flexShrink: 0 }} title="Vice-Capitão" />}
                                                 </div>
@@ -188,9 +209,9 @@ const MembrosTab = ({ membrosIniciais = [], recarregar }) => {
                                     <td style={{ padding: '16px' }}>
                                         <span style={{ 
                                             fontSize: '0.7rem', fontWeight: 'bold', padding: '4px 10px', borderRadius: '8px',
-                                            background: m.papel === 'admin' ? 'rgba(251, 191, 36, 0.15)' : m.papel === 'sub_admin' ? 'rgba(56, 189, 248, 0.15)' : 'rgba(148, 163, 184, 0.1)',
-                                            color: m.papel === 'admin' ? '#fbbf24' : m.papel === 'sub_admin' ? '#38bdf8' : '#94a3b8',
-                                            border: `1px solid ${m.papel === 'admin' ? 'rgba(251, 191, 36, 0.2)' : m.papel === 'sub_admin' ? 'rgba(56, 189, 248, 0.2)' : 'transparent'}`
+                                            background: m.papel === 'admin' ? 'rgba(251, 191, 36, 0.15)' : m.papel === 'sub_admin' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(148, 163, 184, 0.1)',
+                                            color: m.papel === 'admin' ? '#fbbf24' : m.papel === 'sub_admin' ? '#10b981' : '#94a3b8',
+                                            border: `1px solid ${m.papel === 'admin' ? 'rgba(251, 191, 36, 0.2)' : m.papel === 'sub_admin' ? 'rgba(16, 185, 129, 0.2)' : 'transparent'}`
                                         }}>
                                             {m.papel === 'admin' ? 'Capitão' : m.papel === 'sub_admin' ? 'Vice-Capitão' : 'Jogador'}
                                         </span>
@@ -335,8 +356,8 @@ const MembrosTab = ({ membrosIniciais = [], recarregar }) => {
                                 </div>
                                 <div className="card-membro-infos">
                                     <div className="nome-atleta" onClick={() => abrirPerfil(m)} style={{ cursor: 'pointer' }}>
-                                        {u.nome_completo || 'Membro'}
-                                        {m.papel === 'sub_admin' && <ShieldCheck size={14} color="#94a3b8" />}
+                                        {u.nome_completo ? formatName(u.nome_completo) : 'Membro'}
+                                        {m.papel === 'sub_admin' && <ShieldCheck size={14} color="#10b981" />}
                                     </div>
                                     <div className="apelido-atleta">
                                         {u.apelido ? `@${u.apelido}` : 'Sem apelido'}

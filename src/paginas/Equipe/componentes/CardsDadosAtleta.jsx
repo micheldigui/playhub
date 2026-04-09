@@ -248,7 +248,7 @@ const CardsDadosAtleta = ({ equipeIdOpcional, esconderIcones = false }) => {
                         </div>
                     )}
                     <div className="card-atleta-info" style={{ flex: 1 }}>
-                        <span className="card-atleta-label">Pagar {getLabelVinculo('mensalista')}</span>
+                        <span className="card-atleta-label">Pagar {getLabelVinculo(vinculoAtleta)}</span>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                             <strong className="card-atleta-valor" style={{ fontSize: '0.85rem', maxWidth: '160px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                 {regras.chave_pix}
