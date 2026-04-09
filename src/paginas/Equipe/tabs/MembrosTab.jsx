@@ -59,6 +59,13 @@ const MembrosTab = ({ membrosIniciais = [], recarregar }) => {
         return `${first} ${last}`;
     };
 
+    const formatarApelido = (apelido) => {
+        if (!apelido) return '';
+        return apelido.trim().split(/\s+/).map(p => 
+            p.charAt(0).toUpperCase() + p.slice(1).toLowerCase()
+        ).join('');
+    };
+
     const formatFullName = (fullName) => {
         if (!fullName) return '';
         const particles = ['de', 'da', 'do', 'das', 'dos', 'e'];
@@ -186,7 +193,7 @@ const MembrosTab = ({ membrosIniciais = [], recarregar }) => {
                                                     {m.papel === 'sub_admin' && <Crown size={12} color="#cbd5e1" style={{ marginLeft: '4px', flexShrink: 0 }} title="Vice-Capitão" />}
                                                 </div>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                                    <div style={{ fontSize: '0.8rem', color: '#64748b', whiteSpace: 'nowrap' }}>{u.apelido ? `@${u.apelido}` : 'Sem apelido'}</div>
+                                                    <div style={{ fontSize: '0.8rem', color: '#64748b', whiteSpace: 'nowrap' }}>{u.apelido ? `@${formatarApelido(u.apelido)}` : 'Sem apelido'}</div>
                                                     {u.telefone && idade >= 18 ? (
                                                         <a 
                                                             href={`https://wa.me/55${u.telefone.replace(/\D/g, '')}`} 
@@ -360,7 +367,7 @@ const MembrosTab = ({ membrosIniciais = [], recarregar }) => {
                                         {m.papel === 'sub_admin' && <ShieldCheck size={14} color="#10b981" />}
                                     </div>
                                     <div className="apelido-atleta">
-                                        {u.apelido ? `@${u.apelido}` : 'Sem apelido'}
+                                        {u.apelido ? `@${formatarApelido(u.apelido)}` : 'Sem apelido'}
                                         {u.telefone && idade >= 18 && (
                                             <a href={`https://wa.me/55${u.telefone.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" className="btn-zap">
                                                 <MessageCircle size={14} />

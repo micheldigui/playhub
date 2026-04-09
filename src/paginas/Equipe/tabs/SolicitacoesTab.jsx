@@ -15,6 +15,14 @@ const calcularIdade = (dataNasc) => {
     return idade;
 };
 
+const formatarNome = (nomeCompleto) => {
+    if (!nomeCompleto) return '';
+    const partes = nomeCompleto.trim().split(/\s+/);
+    const capitalizar = (p) => p.charAt(0).toUpperCase() + p.slice(1).toLowerCase();
+    if (partes.length === 1) return capitalizar(partes[0]);
+    return `${capitalizar(partes[0])} ${capitalizar(partes[partes.length - 1])}`;
+};
+
 const SolicitacoesTab = () => {
     const { 
         equipeAtiva, carregarSolicitacoes, responderSolicitacao, 
@@ -148,7 +156,7 @@ const SolicitacoesTab = () => {
                                             {sol.usuarios?.foto_url ? <img src={sol.usuarios.foto_url} alt={sol.usuarios.apelido} /> : <Users size={18} />}
                                         </div>
                                         <div>
-                                            <p className="nome">{sol.usuarios?.nome_completo || 'Atleta não localizado'}</p>
+                                            <p className="nome">{formatarNome(sol.usuarios?.nome_completo) || 'Atleta não localizado'}</p>
                                             <p className="sub">
                                                 <MapPin size={12} /> {sol.usuarios?.cidade || 'Não informada'}
                                                 {sol.usuarios?.estado ? `, ${sol.usuarios.estado}` : ''}
@@ -188,7 +196,7 @@ const SolicitacoesTab = () => {
                                                     {conv.jogador?.foto_url ? <img src={conv.jogador.foto_url} alt="atleta" /> : <Users size={18} />}
                                                 </div>
                                                 <div>
-                                                    <p className="nome">{conv.jogador?.nome_completo || 'Atleta Convidado'}</p>
+                                                    <p className="nome">{formatarNome(conv.jogador?.nome_completo) || 'Atleta Convidado'}</p>
                                                     <p className="sub">Status: <span className={`status ${conv.status}`}>{conv.status?.toUpperCase() || 'PENDENTE'}</span></p>
                                                 </div>
                                             </div>

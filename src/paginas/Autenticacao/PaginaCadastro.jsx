@@ -130,6 +130,13 @@ const PaginaCadastro = ({ aoIrParaLogin, aoVoltar }) => {
     e.preventDefault();
     setErro('');
     if (!validarEmail(form.email)) { setErro('Por favor, insira um e-mail válido.'); return; }
+    if (!form.nome_completo.trim()) { setErro('Por favor, informe seu nome completo.'); return; }
+    if (!form.data_nascimento) { setErro('Por favor, informe sua data de nascimento.'); return; }
+    if (!form.genero) { setErro('Por favor, selecione seu gênero.'); return; }
+    const telLimpo = form.telefone.replace(/\D/g, '');
+    if (telLimpo.length < 10) { setErro('Informe um WhatsApp/Telefone válido com DDD.'); return; }
+    if (!form.cidade.trim()) { setErro('Por favor, informe sua cidade (preencha o CEP para busca automática).'); return; }
+    if (!form.estado.trim()) { setErro('Por favor, informe seu estado.'); return; }
     if (form.senha.length < 6) { setErro('A senha deve ter pelo menos 6 caracteres.'); return; }
     if (form.senha !== form.confirmarSenha) { setErro('As senhas não conferem.'); return; }
 
@@ -286,8 +293,8 @@ const PaginaCadastro = ({ aoIrParaLogin, aoVoltar }) => {
 
         <div className="auth-grupo">
           <label>
-            WhatsApp / Telefone
-            <Tooltip texto="Seu número com DDD. Usado pelo administrador da equipe para envio de convites e comunicação do grupo." />
+            WhatsApp / Telefone *
+            <Tooltip texto="Obrigatório. Usado pelo administrador da equipe para convites e comunicação." />
           </label>
           <div className="auth-campo">
             <span className="auth-campo-icone"><Phone size={16} /></span>
@@ -297,6 +304,7 @@ const PaginaCadastro = ({ aoIrParaLogin, aoVoltar }) => {
               value={form.telefone}
               onChange={(e) => setForm(prev => ({ ...prev, telefone: mascaraTelefone(e.target.value) }))}
               maxLength={15}
+              required
               tabIndex="7"
             />
           </div>
@@ -359,7 +367,10 @@ const PaginaCadastro = ({ aoIrParaLogin, aoVoltar }) => {
         </div>
 
         <div className="auth-grupo">
-          <label>CEP *</label>
+          <label>
+            CEP
+            <Tooltip texto="Preencha o CEP para preenchimento automático da cidade e estado." />
+          </label>
           <div className="auth-grade-cep">
             <div className="auth-campo">
               <span className="auth-campo-icone"><MapPin size={16} /></span>
@@ -371,7 +382,6 @@ const PaginaCadastro = ({ aoIrParaLogin, aoVoltar }) => {
                   cep: mascaraCep(e.target.value)
                 }))}
                 maxLength={9}
-                required
                 tabIndex="9"
               />
             </div>
@@ -383,21 +393,21 @@ const PaginaCadastro = ({ aoIrParaLogin, aoVoltar }) => {
         </div>
 
         <div className="auth-grupo">
-          <label>Rua / Avenida *</label>
+          <label>Rua / Avenida</label>
           <div className="auth-campo">
             <span className="auth-campo-icone"><MapPin size={16} /></span>
             <input placeholder="Nome da rua ou avenida" value={form.rua}
-              onChange={set('rua')} required tabIndex="-1" />
+              onChange={set('rua')} tabIndex="-1" />
           </div>
         </div>
 
         <div className="auth-grade-2">
           <div className="auth-grupo">
-            <label>Número *</label>
+            <label>Número</label>
             <div className="auth-campo">
               <span className="auth-campo-icone"><MapPin size={16} /></span>
               <input ref={numeroRef} placeholder="Ex: 42" value={form.numero}
-                onChange={set('numero')} required tabIndex="10" />
+                onChange={set('numero')} tabIndex="10" />
             </div>
           </div>
           <div className="auth-grupo">
@@ -411,11 +421,11 @@ const PaginaCadastro = ({ aoIrParaLogin, aoVoltar }) => {
         </div>
 
         <div className="auth-grupo">
-          <label>Bairro *</label>
+          <label>Bairro</label>
           <div className="auth-campo">
             <span className="auth-campo-icone"><MapPin size={16} /></span>
             <input placeholder="Nome do bairro" value={form.bairro}
-              onChange={set('bairro')} required tabIndex="-1" />
+              onChange={set('bairro')} tabIndex="-1" />
           </div>
         </div>
 
@@ -438,6 +448,9 @@ const PaginaCadastro = ({ aoIrParaLogin, aoVoltar }) => {
             </div>
           </div>
         </div>
+        <p style={{ fontSize: '0.78rem', color: '#64748b', marginTop: '-0.5rem' }}>
+          💡 Preencha o CEP acima para preenchimento automático de cidade e estado.
+        </p>
 
         {/* ── Segurança ── */}
         <div className="auth-secao">

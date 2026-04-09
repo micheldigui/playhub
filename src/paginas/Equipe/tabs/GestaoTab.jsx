@@ -68,6 +68,13 @@ const GestaoTab = ({ abrirEdicao, aoExcluir }) => {
         return `${first} ${last}`;
     };
 
+    const formatarApelido = (apelido) => {
+        if (!apelido) return '';
+        return apelido.trim().split(/\s+/).map(p => 
+            p.charAt(0).toUpperCase() + p.slice(1).toLowerCase()
+        ).join('');
+    };
+
     if (carregando) return <div className="p-8 text-center text-muted">Carregando painel de gestão...</div>;
 
     const ehDono = equipeAtiva.admin_id === usuario?.id || ehSuperAdmin;
@@ -156,7 +163,7 @@ const GestaoTab = ({ abrirEdicao, aoExcluir }) => {
                                                     {m.papel === 'admin'     && <Crown size={12} title="Capitão"     className="icone-capitao" />}
                                                     {m.papel === 'sub_admin' && <ShieldCheck size={12} title="Vice-Capitão" style={{ color: '#10b981' }} />}
                                                 </div>
-                                                <div className="membro-sub">@{m.usuarios.apelido}</div>
+                                                <div className="membro-sub">{m.usuarios.apelido ? `@${formatarApelido(m.usuarios.apelido)}` : ''}</div>
                                             </div>
                                         </div>
                                     </td>

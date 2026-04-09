@@ -16,6 +16,14 @@ import {
 import InfoTooltip from '../../componentes/Tooltip/InfoTooltip';
 import './Dashboard.css';
 
+const formatarNome = (nomeCompleto) => {
+    if (!nomeCompleto) return '';
+    const partes = nomeCompleto.trim().split(/\s+/);
+    const capitalizar = (p) => p.charAt(0).toUpperCase() + p.slice(1).toLowerCase();
+    if (partes.length === 1) return capitalizar(partes[0]);
+    return `${capitalizar(partes[0])} ${capitalizar(partes[partes.length - 1])}`;
+};
+
 // ── Catálogo completo de atalhos ──────────────────────────────────────────────
 // categoria: 'pessoal' | 'equipe'
 // permissao: null = visível a todos do papel | 'nome_perm' = vice precisa ter essa permissão
@@ -259,7 +267,7 @@ const Dashboard = ({ aoNavegar, setAbaEquipe }) => {
 
     if (!dadosUsuario) return null;
 
-    const primeiroNome = dadosUsuario.apelido || dadosUsuario.nome_completo?.split(' ')[0] || 'Atleta';
+    const primeiroNome = dadosUsuario.apelido || (dadosUsuario.nome_completo ? formatarNome(dadosUsuario.nome_completo).split(' ')[0] : 'Atleta');
     const isPublico = dadosUsuario.perfil_publico;
     const horaAtual = new Date().getHours();
     const saudacao = horaAtual < 12 ? 'Bom dia' : horaAtual < 18 ? 'Boa tarde' : 'Boa noite';

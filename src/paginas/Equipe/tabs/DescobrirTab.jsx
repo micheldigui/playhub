@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Globe, Search, MapPin, Trophy, Users, Mail, Loader2 } from 'lucide-react';
 import { usarEquipe } from '../../../contextos/EquipeContexto';
 import { usarNotificacoes } from '../../../contextos/NotificacoesContexto';
@@ -7,6 +7,22 @@ import Botao from '../../../componentes/Botao/Botao';
 import Modal from '../../../componentes/Modal/Modal';
 import ModalPerfilAtleta from '../../../componentes/Modais/ModalPerfilAtleta';
 import { supabase } from '../../../servicos/supabase';
+
+// Formata "Primeiro Último" com iniciais maiúsculas
+const formatarNome = (nomeCompleto) => {
+    if (!nomeCompleto) return '';
+    const partes = nomeCompleto.trim().split(/\s+/);
+    const capitalizar = (p) => p.charAt(0).toUpperCase() + p.slice(1).toLowerCase();
+    if (partes.length === 1) return capitalizar(partes[0]);
+    return `${capitalizar(partes[0])} ${capitalizar(partes[partes.length - 1])}`;
+};
+
+const formatarApelido = (apelido) => {
+    if (!apelido) return '';
+    return apelido.trim().split(/\s+/).map(p => 
+        p.charAt(0).toUpperCase() + p.slice(1).toLowerCase()
+    ).join('');
+};
 
 const DescobrirTab = () => {
     const { equipeAtiva, buscarAtletas, enviarConvite, carregarConvitesEnviados, cancelarConvite, temPermissaoEquipe } = usarEquipe();
@@ -22,6 +38,21 @@ const DescobrirTab = () => {
     const [atletaSelecionado, setAtletaSelecionado] = useState(null);
     const [modalConvite, setModalConvite] = useState(null);
     const [msgConvite, setMsgConvite] = useState('');
+    const [idsMembrosEquipe, setIdsMembrosEquipe] = useState(new Set());
+
+    // Carrega IDs dos membros atuais da equipe para detectar duplicatas nos resultados
+    useEffect(() => {
+        if (!equipeAtiva?.id) return;
+        const carregar = async () => {
+            const { data } = await supabase
+                .from('membros_equipe')
+                .select('usuario_id')
+                .eq('equipe_id', equipeAtiva.id)
+                .eq('status', 'ativo');
+            setIdsMembrosEquipe(new Set((data || []).map(m => m.usuario_id)));
+        };
+        carregar();
+    }, [equipeAtiva?.id]);
 
     const handleBuscar = async () => {
         setBuscando(true);
@@ -159,8 +190,8 @@ const DescobrirTab = () => {
                                     {jog.foto_url ? <img src={jog.foto_url} alt={jog.apelido} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <Users size={24} color="#64748b" style={{ margin: '12px' }} />}
                                 </div>
                                 <div>
-                                    <h4 style={{ color: '#f1f5f9', fontSize: '1rem', margin: 0 }}>{jog.nome_completo}</h4>
-                                    <span style={{ color: '#64748b', fontSize: '0.8rem' }}>@{jog.apelido}</span>
+                                    <h4 style={{ color: '#f1f5f9', fontSize: '1rem', margin: 0 }}>{formatarNome(jog.nome_completo)}</h4>
+                                    <span style={{ color: '#64748b', fontSize: '0.8rem' }}>{jog.apelido ? `@${formatarApelido(jog.apelido)}` : '@atleta'}</span>
                                 </div>
                             </div>
                             
@@ -169,27 +200,37 @@ const DescobrirTab = () => {
                             </div>
 
                             {mapaConvites[jog.id]?.status === 'pendente' ? (
-                                <Botao 
-                                    variant="secundario" 
-                                    onClick={(e) => handleDesfazerConvite(mapaConvites[jog.id].id, jog.id, e)} 
+                                <Botao
+                                    variant="secundario"
+                                    onClick={(e) => handleDesfazerConvite(mapaConvites[jog.id].id, jog.id, e)}
                                     style={{ width: '100%', fontSize: '0.85rem', borderColor: 'rgba(244, 63, 94, 0.4)', color: '#f43f5e' }}
                                     title="Desfazer Convite Pendente"
                                 >
                                     Desfazer Convite
                                 </Botao>
+                            ) : idsMembrosEquipe.has(jog.id) ? (
+                                <div style={{
+                                    textAlign: 'center', color: '#10b981',
+                                    background: 'rgba(16,185,129,0.1)',
+                                    border: '1px solid rgba(16,185,129,0.25)',
+                                    borderRadius: '10px', padding: '10px',
+                                    fontSize: '0.82rem', fontWeight: '700'
+                                }}>
+                                    ✓ Já faz parte da equipe
+                                </div>
                             ) : mapaConvites[jog.id]?.status === 'aceito' ? (
                                 <div className="tag-membro">Já é membro do time</div>
                             ) : (
-                                <Botao 
-                                    variant="secundario" 
-                                    onClick={(e) => { 
-                                        e.stopPropagation(); 
+                                <Botao
+                                    variant="secundario"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
                                         if (temPermissaoEquipe('gerenciar_membros')) {
-                                            setModalConvite(jog); 
+                                            setModalConvite(jog);
                                         } else {
                                             alert('Você não tem privilégios para convidar atletas nesta equipe. 🛡️\nSolicite ao capitão a permissão de "Gerenciar Membros".');
                                         }
-                                    }} 
+                                    }}
                                     style={{ width: '100%', fontSize: '0.85rem' }}
                                 >
                                     Convidar p/ Equipe
@@ -204,9 +245,9 @@ const DescobrirTab = () => {
 
             {/* MODAL DE CONVITE */}
             {modalConvite && (
-                <Modal isOpen={!!modalConvite} onClose={() => setModalConvite(null)} title={`Convidar ${modalConvite.nome_completo}`}>
+                <Modal isOpen={!!modalConvite} onClose={() => setModalConvite(null)} title={`Convidar ${formatarNome(modalConvite.nome_completo)}`}>
                     <div style={{ padding: '20px' }}>
-                        <p style={{ color: '#94a3b8', marginBottom: '16px', fontSize: '0.9rem' }}>Envie uma mensagem personalizada para {modalConvite.apelido}.</p>
+                        <p style={{ color: '#94a3b8', marginBottom: '16px', fontSize: '0.9rem' }}>Envie uma mensagem personalizada para {formatarApelido(modalConvite.apelido)}.</p>
                         <textarea 
                             value={msgConvite}
                             onChange={e => setMsgConvite(e.target.value)}

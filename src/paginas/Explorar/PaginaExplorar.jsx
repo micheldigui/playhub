@@ -1,4 +1,22 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
+
+// Formata "Primeiro Último" com iniciais maiúsculas
+const formatarNome = (nomeCompleto) => {
+  if (!nomeCompleto) return '';
+  const partes = nomeCompleto.trim().split(/\s+/);
+  const capitalizar = (p) => p.charAt(0).toUpperCase() + p.slice(1).toLowerCase();
+  // Se tiver só um nome, retorna ele
+  if (partes.length === 1) return capitalizar(partes[0]);
+  // Retorna primeiro nome + último sobrenome
+  return `${capitalizar(partes[0])} ${capitalizar(partes[partes.length - 1])}`;
+};
+
+const formatarApelido = (apelido) => {
+  if (!apelido) return 'atleta';
+  return apelido.trim().split(/\s+/).map(p => 
+      p.charAt(0).toUpperCase() + p.slice(1).toLowerCase()
+  ).join('');
+};
 import { usarEquipe } from '../../contextos/EquipeContexto';
 import { usarAutenticacao } from '../../contextos/AutenticacaoContexto';
 import { usarNotificacoes } from '../../contextos/NotificacoesContexto';
@@ -53,10 +71,12 @@ const PaginaExplorar = ({ aoVoltar }) => {
   const [processando, setProcessando] = useState(null);
   const [equipeSelecionada, setEquipeSelecionada] = useState(null);
   const [atletaSelecionado, setAtletaSelecionado] = useState(null);
+  const [idsColega, setIdsColega] = useState(new Set()); // atletas que já são da equipe do usuário
 
   // IDs de equipes onde o usuario já é membro ou já solicitou
   const idsMinhasEquipes = new Set((minhasEquipes || []).map((e) => e.id));
   const idsSolicitacoesEnviadas = new Set((minhasSolicitacoes || []).map((s) => s.id));
+
 
   const executarBusca = useCallback(async (novaBusca = true) => {
     setBuscando(true);
@@ -115,11 +135,29 @@ const PaginaExplorar = ({ aoVoltar }) => {
 
       const { data, error, count } = await query.range(de, ate);
       if (error) throw error;
-      
+
+      const lista = data || [];
+
+      // Para aba de atletas: detecta quais já são colegas de alguma equipe do usuário
+      if (abaAtiva === 'atletas' && lista.length > 0 && minhasEquipes?.length > 0) {
+        const minhasEquipeIds = minhasEquipes.map(e => e.id);
+        const atletaIds = lista.map(a => a.id);
+        const { data: colegas } = await supabase
+          .from('membros_equipe')
+          .select('usuario_id')
+          .in('equipe_id', minhasEquipeIds)
+          .in('usuario_id', atletaIds)
+          .eq('status', 'ativo');
+        const novosIds = new Set((colegas || []).map(c => c.usuario_id));
+        setIdsColega(prev => novaBusca ? novosIds : new Set([...prev, ...novosIds]));
+      } else if (novaBusca) {
+        setIdsColega(new Set());
+      }
+
       if (novaBusca) {
-        setResultados(data || []);
+        setResultados(lista);
       } else {
-        setResultados(prev => [...prev, ...(data || [])]);
+        setResultados(prev => [...prev, ...lista]);
       }
       
       setPagina(novaPagina);
@@ -131,6 +169,12 @@ const PaginaExplorar = ({ aoVoltar }) => {
       setBuscando(false);
     }
   }, [termoBusca, modalidadeBusca, cidadeBusca, pagina, abaAtiva]);
+
+  // Dispara busca automática ao montar e ao trocar de aba (sem precisar clicar em Pesquisar)
+  useEffect(() => {
+    executarBusca(true);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [abaAtiva]);
 
   const handleFormBusca = (e) => {
     e.preventDefault();
@@ -306,7 +350,7 @@ const PaginaExplorar = ({ aoVoltar }) => {
             {abaAtiva === 'equipes' ? (
               resultados.map((equipe) => {
                 const meuStatus = statusEquipe(equipe);
-                const nomeAdmin = equipe.admin?.nome_completo || equipe.admin?.apelido || 'Desconhecido';
+                const nomeAdmin = formatarNome(equipe.admin?.nome_completo || equipe.admin?.apelido || 'Desconhecido');
                 const qtdMembros = (equipe.membros || []).filter(m => m.status === 'ativo').length;
                 return (
                   <div key={equipe.id} className={`card-explorar ${meuStatus ? 'card-explorar--meu' : ''} animacao-entrada`}>
@@ -406,13 +450,13 @@ const PaginaExplorar = ({ aoVoltar }) => {
                       <img src={atleta.foto_url} alt={atleta.nome_completo} className="atleta-avatar" />
                     ) : (
                       <div className="atleta-avatar-placeholder">
-                        {atleta.nome_completo?.charAt(0).toUpperCase()}
+                        {formatarNome(atleta.nome_completo)?.charAt(0).toUpperCase()}
                       </div>
                     )}
                     <div className="atleta-info">
-                      <h4>{atleta.nome_completo}</h4>
+                      <h4>{formatarNome(atleta.nome_completo)}</h4>
                       <div className="atleta-slug-idade">
-                        <span>@{atleta.apelido || 'atleta'}</span>
+                        <span>@{formatarApelido(atleta.apelido)}</span>
                         {atleta.data_nascimento && (
                           <span className="badge-idade">{calcularIdade(atleta.data_nascimento)} anos</span>
                         )}
@@ -428,22 +472,34 @@ const PaginaExplorar = ({ aoVoltar }) => {
                     </div>
                   </div>
                   <div className="atleta-acoes">
-                    <Botao 
-                      variant="minimal" 
+                    <Botao
+                      variant="minimal"
                       style={{ flex: 1, fontSize: '0.8rem', gap: '4px' }}
                       onClick={() => setAtletaSelecionado(atleta)}
                     >
                       <User size={14} /> Ver Perfil
                     </Botao>
-                    <Botao 
-                      variant="secundario" 
-                      style={{ flex: 1, fontSize: '0.8rem', gap: '4px', background: matchesConfirmados?.has(atleta.id) ? 'rgba(37, 211, 102, 0.1)' : undefined, color: matchesConfirmados?.has(atleta.id) ? '#25D366' : undefined, borderColor: matchesConfirmados?.has(atleta.id) ? 'rgba(37, 211, 102, 0.4)' : undefined }}
-                      onClick={() => handleCutucar(atleta)}
-                      disabled={atleta.id === usuario.id}
-                      title={matchesConfirmados?.has(atleta.id) ? "Vocês já deram Match!" : "Mostrar interesse"}
-                    >
-                      {matchesConfirmados?.has(atleta.id) ? <><MessageCircle size={14}/> Match!</> : '⚽ Passar a bola'}
-                    </Botao>
+                    {idsColega.has(atleta.id) ? (
+                      <div style={{
+                        flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        gap: '4px', fontSize: '0.75rem', fontWeight: '700',
+                        color: '#10b981', background: 'rgba(16,185,129,0.1)',
+                        border: '1px solid rgba(16,185,129,0.25)', borderRadius: '8px',
+                        padding: '6px 8px'
+                      }}>
+                        ✓ Colega de Equipe
+                      </div>
+                    ) : (
+                      <Botao
+                        variant="secundario"
+                        style={{ flex: 1, fontSize: '0.8rem', gap: '4px', background: matchesConfirmados?.has(atleta.id) ? 'rgba(37, 211, 102, 0.1)' : undefined, color: matchesConfirmados?.has(atleta.id) ? '#25D366' : undefined, borderColor: matchesConfirmados?.has(atleta.id) ? 'rgba(37, 211, 102, 0.4)' : undefined }}
+                        onClick={() => handleCutucar(atleta)}
+                        disabled={atleta.id === usuario.id}
+                        title={matchesConfirmados?.has(atleta.id) ? "Vocês já deram Match!" : "Mostrar interesse"}
+                      >
+                        {matchesConfirmados?.has(atleta.id) ? <><MessageCircle size={14}/> Match!</> : '⚽ Passar a bola'}
+                      </Botao>
+                    )}
                   </div>
                 </div>
               ))

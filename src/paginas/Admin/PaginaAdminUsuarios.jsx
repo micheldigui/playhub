@@ -8,6 +8,19 @@ import Botao from '../../componentes/Botao/Botao';
 import ModalEdicaoUsuario from './modais/ModalEdicaoUsuario';
 import './PaginaAdminUsuarios.css';
 
+// Retorna "Primeiro Último" com iniciais maiúsculas
+const formatarNomeAdmin = (nomeCompleto) => {
+  if (!nomeCompleto) return '';
+  const partes = nomeCompleto.trim().split(/\s+/);
+  if (partes.length === 1) {
+    return partes[0].charAt(0).toUpperCase() + partes[0].slice(1).toLowerCase();
+  }
+  const primeiro = partes[0];
+  const ultimo = partes[partes.length - 1];
+  const capitalizar = (p) => p.charAt(0).toUpperCase() + p.slice(1).toLowerCase();
+  return `${capitalizar(primeiro)} ${capitalizar(ultimo)}`;
+};
+
 const PaginaAdminUsuarios = () => {
   const { ehSuperAdmin, ehRootAdmin, temPermissao } = usarAutenticacao();
   const [termoBusca, setTermoBusca] = useState('');
@@ -147,16 +160,16 @@ const PaginaAdminUsuarios = () => {
                     <div className="card-usuario-topo">
                         <div className="usuario-avatar-admin" style={{ borderColor: ehO_Root ? '#fbbf24' : 'rgba(255,255,255,0.1)' }}>
                         {u.foto_url ? (
-                            <img src={u.foto_url} alt={u.nome_completo} />
+                            <img src={u.foto_url} alt={formatarNomeAdmin(u.nome_completo)} />
                         ) : (
                             <div className="avatar-admin-placeholder">
-                            {u.nome_completo?.charAt(0).toUpperCase()}
+                            {formatarNomeAdmin(u.nome_completo)?.charAt(0).toUpperCase()}
                             </div>
                         )}
                         </div>
                         <div className="usuario-info-admin">
                         <h4 style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                            {u.nome_completo} 
+                            {formatarNomeAdmin(u.nome_completo)} 
                             {ehO_Root && <ShieldCheck size={14} color="#fbbf24" title="Super Admin Root" />}
                             {!ehO_Root && u.eh_super_admin && <Shield size={14} color="#94a3b8" title="Administrador" />}
                         </h4>

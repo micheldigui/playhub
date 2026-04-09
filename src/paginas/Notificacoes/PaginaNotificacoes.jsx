@@ -9,6 +9,14 @@ import ModalPerfilAtleta from '../../componentes/Modais/ModalPerfilAtleta';
 import PerfilEquipeModal from '../../componentes/Modais/PerfilEquipeModal';
 import './PaginaNotificacoes.css';
 
+const formatarNome = (nomeCompleto) => {
+    if (!nomeCompleto) return '';
+    const partes = nomeCompleto.trim().split(/\s+/);
+    const capitalizar = (p) => p.charAt(0).toUpperCase() + p.slice(1).toLowerCase();
+    if (partes.length === 1) return capitalizar(partes[0]);
+    return `${capitalizar(partes[0])} ${capitalizar(partes[partes.length - 1])}`;
+};
+
 const PaginaNotificacoes = ({ aoVoltar, abrirEquipeTab }) => {
     const { notificacoes, carregarNotificacoes, limparNotificacoes, matches } = usarNotificacoes();
     const { usuario, dadosUsuario } = usarAutenticacao();
@@ -175,7 +183,7 @@ const PaginaNotificacoes = ({ aoVoltar, abrirEquipeTab }) => {
                                     </div>
                                     <div className="notificacao-conteudo">
                                         <p>
-                                            <strong>{admin?.nome_completo || admin?.apelido || 'O Capitão'}</strong> convidou você para jogar pelo time{' '}
+                                            <strong>{admin?.nome_completo ? formatarNome(admin.nome_completo) : (admin?.apelido || 'O Capitão')}</strong> convidou você para jogar pelo time{' '}
                                             <strong 
                                                 style={{ color: '#38bdf8', cursor: 'pointer', textDecoration: 'underline' }} 
                                                 onClick={() => setEquipeSelecionada(notificacao)}
@@ -221,7 +229,7 @@ const PaginaNotificacoes = ({ aoVoltar, abrirEquipeTab }) => {
                                     </div>
                                     <div className="notificacao-conteudo">
                                         <p>
-                                            <strong>{notificacao.remetente?.nome_completo || notificacao.remetente?.apelido || 'Um atleta'}</strong> solicitou ingresso na equipe <strong>{notificacao.payload?.nome_equipe || 'sua equipe'}</strong>.
+                                            <strong>{notificacao.remetente?.nome_completo ? formatarNome(notificacao.remetente.nome_completo) : (notificacao.remetente?.apelido || 'Um atleta')}</strong> solicitou ingresso na equipe <strong>{notificacao.payload?.nome_equipe || 'sua equipe'}</strong>.
                                         </p>
                                         <span className="notificacao-data">
                                             {new Date(notificacao.criado_em).toLocaleDateString()} às {new Date(notificacao.criado_em).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -260,7 +268,7 @@ const PaginaNotificacoes = ({ aoVoltar, abrirEquipeTab }) => {
                                 </div>
                                 <div className="notificacao-conteudo">
                                     <p>
-                                        <strong>{notificacao.remetente?.nome_completo || 'Atleta'}</strong> {ehMatch ? '⚽ Match! Vocês passaram a bola um para o outro.' : 'passou a bola para você! ⚽'}
+                                        <strong>{notificacao.remetente?.nome_completo ? formatarNome(notificacao.remetente.nome_completo) : 'Atleta'}</strong> {ehMatch ? '⚽ Match! Vocês passaram a bola um para o outro.' : 'passou a bola para você! ⚽'}
                                     </p>
                                     <span className="notificacao-data">
                                         {new Date(notificacao.criado_em).toLocaleDateString()} às {new Date(notificacao.criado_em).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}

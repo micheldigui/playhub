@@ -322,6 +322,13 @@ const FinanceiroTab = ({ abaExterna, modoLeitura = false, membrosIniciais = [] }
         return `${first} ${last}`;
     };
 
+    const formatarApelido = (apelido) => {
+        if (!apelido) return '';
+        return apelido.trim().split(/\s+/).map(p => 
+            p.charAt(0).toUpperCase() + p.slice(1).toLowerCase()
+        ).join('');
+    };
+
     // Mapa usuario_id -> papel (admin | sub_admin | jogador)
     const mapaPapeis = React.useMemo(() => {
         const mapa = {};
@@ -542,7 +549,7 @@ const FinanceiroTab = ({ abaExterna, modoLeitura = false, membrosIniciais = [] }
                                                     {mapaPapeis[pag.usuario_id] === 'admin'     && <span title="Capitão"     style={{ fontSize: '0.7rem', background: 'rgba(251,191,36,0.15)',  color: '#fbbf24', border: '1px solid rgba(251,191,36,0.25)',  padding: '1px 6px', borderRadius: '6px', fontWeight: '700' }}>Capitão</span>}
                                                     {mapaPapeis[pag.usuario_id] === 'sub_admin' && <span title="Vice-Capitão" style={{ fontSize: '0.7rem', background: 'rgba(16,185,129,0.15)',  color: '#10b981', border: '1px solid rgba(16,185,129,0.25)',  padding: '1px 6px', borderRadius: '6px', fontWeight: '700' }}>Vice</span>}
                                                 </p>
-                                                <p style={{ color: '#64748b', fontSize: '0.8rem' }}>{pag.usuarios?.apelido || '-'}</p>
+                                                <p style={{ color: '#64748b', fontSize: '0.8rem' }}>{pag.usuarios?.apelido ? `@${formatarApelido(pag.usuarios.apelido)}` : '-'}</p>
                                             </div>
                                         </div>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>

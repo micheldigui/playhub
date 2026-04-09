@@ -13,6 +13,21 @@ import Modal from '../Modal/Modal';
 import Botao from '../Botao/Botao';
 import './ModalPerfilAtleta.css';
 
+const formatarNome = (nomeCompleto) => {
+    if (!nomeCompleto) return '';
+    const partes = nomeCompleto.trim().split(/\s+/);
+    const capitalizar = (p) => p.charAt(0).toUpperCase() + p.slice(1).toLowerCase();
+    if (partes.length === 1) return capitalizar(partes[0]);
+    return `${capitalizar(partes[0])} ${capitalizar(partes[partes.length - 1])}`;
+};
+
+const formatarApelido = (apelido) => {
+    if (!apelido) return 'atleta';
+    return apelido.trim().split(/\s+/).map(p => 
+        p.charAt(0).toUpperCase() + p.slice(1).toLowerCase()
+    ).join('');
+};
+
 const ModalPerfilAtleta = ({ isOpen, onClose, idAtleta, equipeId = null, aoPassarBola = null }) => {
     const { dadosUsuario: eu, ehSuperAdmin } = usarAutenticacao();
     const { equipeAtiva, temPermissaoEquipe, getLabelVinculo } = usarEquipe();
@@ -149,7 +164,7 @@ const ModalPerfilAtleta = ({ isOpen, onClose, idAtleta, equipeId = null, aoPassa
                         </div>
 
                         <div className="perfil-info-basica">
-                            <h2 className="perfil-nome">{atleta.nome_completo}</h2>
+                            <h2 className="perfil-nome">{formatarNome(atleta.nome_completo)}</h2>
                             <span className="perfil-apelido">@{formatarApelido(atleta.apelido)}</span>
                         </div>
 
@@ -280,11 +295,34 @@ const ModalPerfilAtleta = ({ isOpen, onClose, idAtleta, equipeId = null, aoPassa
                                 {/* AÇÕES E WHATSAPP - SEMPRE NO FINAL DA ABA ATIVA OU FORA DO SCROLL SE PREFERIR, 
                                     MAS AQUI COMO PARTE DO CONTENT PARA NÃO POLUIR O FOOTER FIXO SE NÃO QUISERMOS MUDAR O MODAL.JSX */}
                                 <div className="perfil-rodape-acoes">
-                                    {atleta.telefone && (eu?.eh_co_admin || podeVerTudo || ehMatch) && (
-                                        <a href={`https://wa.me/55${atleta.telefone.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" className="btn-whatsapp-perfil">
-                                            <MessageCircle size={18} /> Conversar no Zap
-                                        </a>
-                                    )}
+                                    {/* WhatsApp:
+                                        - Super Admin: sempre (suporte/operador da plataforma)
+                                        - Match confirmado: se atleta consentiu compartilhar
+                                        - Colega de equipe ativo: se atleta consentiu compartilhar
+                                        - Externo sem match: nunca
+                                    */}
+                                    {(() => {
+                                        const ehColega = membro?.status === 'ativo';
+                                        const consentiu = atleta.compartilhar_whatsapp_match;
+                                        // Super Admin bypassa a configuração de privacidade (operador da plataforma)
+                                        const podeVerZap = atleta.telefone && (
+                                            ehSuperAdmin ||
+                                            (consentiu && (ehMatch || ehColega))
+                                        );
+                                        if (!podeVerZap) return null;
+                                        return (
+                                            <a
+                                                href={`https://wa.me/55${atleta.telefone.replace(/\D/g, '')}`}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="btn-whatsapp-perfil"
+                                                title={!consentiu && ehSuperAdmin ? 'Acesso administrativo (WhatsApp privado)' : undefined}
+                                            >
+                                                <MessageCircle size={18} />
+                                                {!consentiu && ehSuperAdmin ? 'Zap (Admin)' : 'Conversar no Zap'}
+                                            </a>
+                                        );
+                                    })()}
 
                                     {idAtleta !== eu?.id && aoPassarBola && (
                                         <Botao 

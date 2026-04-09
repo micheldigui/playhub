@@ -93,6 +93,13 @@ const ModalDetalhesPartida = ({ isOpen, onClose, partida }) => {
         return `${first} ${last}`;
     };
 
+    const formatarApelido = (apelido) => {
+        if (!apelido) return '';
+        return apelido.trim().split(/\s+/).map(p => 
+            p.charAt(0).toUpperCase() + p.slice(1).toLowerCase()
+        ).join('');
+    };
+
     const formatFullName = (fullName) => {
         if (!fullName) return '';
         const particles = ['de', 'da', 'do', 'das', 'dos', 'e'];
@@ -105,13 +112,13 @@ const ModalDetalhesPartida = ({ isOpen, onClose, partida }) => {
     const getNomeUsuario = (userId, usuarioPayload) => {
         // 1. Tenta pegar do payload direto da presenca (p.usuarios)
         if (usuarioPayload?.nome_completo) return formatName(usuarioPayload.nome_completo);
-        if (usuarioPayload?.apelido) return formatName(usuarioPayload.apelido);
+        if (usuarioPayload?.apelido) return `@${formatarApelido(usuarioPayload.apelido)}`;
         
         // 2. Fallback: Busca na lista de membros da equipe (que agora vem via RPC Seguro)
         const membroRef = membros.find(m => String(m.usuario_id) === String(userId) || String(m.usuarios?.id) === String(userId));
         
         if (membroRef?.usuarios?.nome_completo) return formatName(membroRef.usuarios.nome_completo);
-        if (membroRef?.usuarios?.apelido) return formatName(membroRef.usuarios.apelido);
+        if (membroRef?.usuarios?.apelido) return `@${formatarApelido(membroRef.usuarios.apelido)}`;
         
         return 'Desconhecido';
     };

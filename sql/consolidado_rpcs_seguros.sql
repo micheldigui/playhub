@@ -11,6 +11,72 @@ DROP FUNCTION IF EXISTS public.buscar_membros_equipe_seguro(UUID);
 DROP FUNCTION IF EXISTS public.buscar_membros_equipe_seguro(UUID, UUID);
 DROP FUNCTION IF EXISTS public.admin_listar_usuarios(TEXT, TEXT, INTEGER, INTEGER);
 
+-- 3. LISTAR TODOS OS USUÁRIOS (ADMIN) - SECURITY DEFINER
+CREATE OR REPLACE FUNCTION public.admin_listar_usuarios(
+    p_busca  TEXT    DEFAULT NULL,
+    p_letra  TEXT    DEFAULT NULL,
+    p_de     INTEGER DEFAULT 0,
+    p_ate    INTEGER DEFAULT 19
+)
+RETURNS TABLE (
+    id                UUID,
+    nome_completo     TEXT,
+    apelido           TEXT,
+    email             TEXT,
+    foto_url          TEXT,
+    telefone          TEXT,
+    cidade            TEXT,
+    estado            TEXT,
+    data_nascimento   DATE,
+    perfil_publico    BOOLEAN,
+    eh_super_admin    BOOLEAN,
+    admin_permissoes  JSONB
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM public.usuarios
+        WHERE public.usuarios.id = auth.uid()
+          AND public.usuarios.eh_super_admin = true
+    ) THEN
+        RAISE EXCEPTION 'Acesso negado: apenas administradores podem listar todos os usuários.';
+    END IF;
+
+    RETURN QUERY
+    SELECT
+        u.id,
+        u.nome_completo,
+        u.apelido,
+        u.email,
+        u.foto_url,
+        u.telefone,
+        u.cidade,
+        u.estado,
+        u.data_nascimento,
+        u.perfil_publico,
+        u.eh_super_admin,
+        u.admin_permissoes
+    FROM public.usuarios u
+    WHERE
+        (
+            p_busca IS NULL
+            OR u.nome_completo ILIKE '%' || p_busca || '%'
+            OR u.apelido       ILIKE '%' || p_busca || '%'
+            OR u.email         ILIKE '%' || p_busca || '%'
+        )
+        AND (
+            p_letra IS NULL
+            OR u.nome_completo ILIKE p_letra || '%'
+        )
+    ORDER BY u.nome_completo ASC
+    LIMIT  (p_ate - p_de + 1)
+    OFFSET p_de;
+END;
+$$;
+
 -- 1. BUSCAR PRESENÇAS DE UMA PARTIDA
 CREATE OR REPLACE FUNCTION public.buscar_presencas_partida_seguro(p_partida_id UUID)
 RETURNS TABLE (
