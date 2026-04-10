@@ -42,6 +42,7 @@ const FinanceiroTab = ({ abaExterna, modoLeitura = false, membrosIniciais = [] }
         atualizarValoresMensalidadesCiclo,
         inicializarCiclo,
         obterCicloAtual,
+        obterMesAtual,
         formatarPeriodoParaExibicao
     } = usarFinanceiro();
     
@@ -91,9 +92,9 @@ const FinanceiroTab = ({ abaExterna, modoLeitura = false, membrosIniciais = [] }
                             limite_vencimento_horas: cfg.limite_vencimento_horas || equipeAtiva.regras?.horas_limite_pagamento || 24,
                             chave_pix: cfg.chave_pix || equipeAtiva.regras?.chave_pix || ''
                         });
-                        setPeriodoAtivo(obterCicloAtual(cfg.dia_vencimento || 10));
+                        setPeriodoAtivo(obterMesAtual());
                     } else {
-                        setPeriodoAtivo(obterCicloAtual(10));
+                        setPeriodoAtivo(obterMesAtual());
                     }
                 } catch (e) {
                     console.error('Erro ao iniciar FinanceiroTab:', e);

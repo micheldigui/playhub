@@ -85,7 +85,8 @@ const BarraLateral = ({ ativo, setAtivo, abaEquipe, setAbaEquipe }) => {
       { id: 'sistema', icone: Building2, label: 'Equipes do Sistema' }
     ] : []),
     ...(ehRootAdmin || temPermissao('usuarios') ? [
-      { id: 'usuarios_sistema', icone: Shield, label: 'Usuários do Sistema' }
+      { id: 'usuarios_sistema', icone: Shield, label: 'Usuários do Sistema' },
+      { id: 'estatisticas', icone: BarChart2, label: 'Gestão & Estatísticas' }
     ] : []),
     
     { id: 'configuracoes',    icone: Settings,          label: 'Configurações' },

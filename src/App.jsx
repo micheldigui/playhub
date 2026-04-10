@@ -13,6 +13,7 @@ const PaginaConvite = lazy(() => import('./paginas/Equipe/PaginaConvite'))
 const PaginaAdminSistema = lazy(() => import('./paginas/Admin/PaginaAdminSistema'))
 const EquipeAdminDashboard = lazy(() => import('./paginas/Equipe/Admin/EquipeAdminDashboard'))
 const PaginaAdminUsuarios = lazy(() => import('./paginas/Admin/PaginaAdminUsuarios'))
+const PaginaAdminEstatisticas = lazy(() => import('./paginas/Admin/PaginaAdminEstatisticas'))
 const PaginaNotificacoes = lazy(() => import('./paginas/Notificacoes/PaginaNotificacoes'))
 const Dashboard = lazy(() => import('./paginas/Inicio/Dashboard'))
 const LandingPage = lazy(() => import('./paginas/Landing/LandingPage'))
@@ -154,6 +155,8 @@ function App() {
         return <PaginaAdminSistema aoSelecionarEquipe={() => setTelaAtiva('equipe')} />
       case 'usuarios_sistema':
         return <PaginaAdminUsuarios />
+      case 'estatisticas':
+        return <PaginaAdminEstatisticas />
       case 'explorar':
         return <PaginaExplorar aoVoltar={() => setTelaAtiva('inicio')} />
       case 'notificacoes':

@@ -64,7 +64,7 @@ const ModalPerfilAtleta = ({ isOpen, onClose, idAtleta, equipeId = null, aoPassa
                 .eq('usuario_id', idAtleta);
             setModalidades(mods || []);
 
-            // 3. Vínculo com Equipe (Se fornecido)
+            // 3. Vínculo com Equipe (Se fornecido ou se tiver equipe ativa)
             const idEquipeRef = equipeId || equipeAtiva?.id;
             if (idEquipeRef) {
                 const { data: member } = await supabase
@@ -75,16 +75,22 @@ const ModalPerfilAtleta = ({ isOpen, onClose, idAtleta, equipeId = null, aoPassa
                     .maybeSingle();
                 setMembro(member);
 
-                // 4. Financeiro (Se for admin/capitão)
+                // 4. Financeiro (Dono/Membro da equipe)
+                // Só carrega se o atleta for realmente um MEMBRO desta equipe
                 const podeVerFinanceiro = ehSuperAdmin || 
-                                         (equipeAtiva?.id === idEquipeRef && (equipeAtiva.papel === 'admin' || equipeAtiva.papel === 'sub_admin' || temPermissaoEquipe('gerenciar_financeiro')));
+                                         (member && (equipeAtiva?.papel === 'admin' || equipeAtiva?.papel === 'sub_admin' || temPermissaoEquipe('gerenciar_financeiro')));
                 
                 if (podeVerFinanceiro) {
                     setCarregandoFin(true);
                     const status = await verificarSituacaoFinanceiraAtleta(idEquipeRef, idAtleta);
                     setFinanceiro(status);
                     setCarregandoFin(false);
+                } else {
+                    setFinanceiro(null);
                 }
+            } else {
+                setMembro(null);
+                setFinanceiro(null);
             }
         } catch (error) {
             console.error('Erro ao carregar perfil unificado:', error);

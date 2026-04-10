@@ -174,7 +174,14 @@ const ModalCriacaoEquipe = ({ isOpen, onClose, aoSucesso, equipeParaEditar = nul
   };
 
   const handleMudanca = (campo, valor) => {
-    setForm(prev => ({ ...prev, [campo]: valor }));
+    // Sincronizar campos de localização para garantir gravação no banco
+    if (campo === 'local_cidade') {
+      setForm(prev => ({ ...prev, [campo]: valor, cidade: valor }));
+    } else if (campo === 'local_estado') {
+      setForm(prev => ({ ...prev, [campo]: valor, estado: valor }));
+    } else {
+      setForm(prev => ({ ...prev, [campo]: valor }));
+    }
     
     // Auto busca se for CEP
     if (campo === 'local_cep') {

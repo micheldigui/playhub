@@ -52,3 +52,20 @@
 .botao-perigo:hover:not(:disabled) {
   background-color: rgba(244, 63, 94, 0.2);
 }
+
+.botao-minimal {
+  background-color: transparent;
+  color: var(--primaria);
+  border: none;
+  padding: 0.5rem 0.75rem;
+}
+
+.botao-minimal:hover:not(:disabled) {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.botao-ativo {
+  background-color: rgba(56, 189, 248, 0.15) !important;
+  border-color: rgba(56, 189, 248, 0.4) !important;
+  color: #38bdf8 !important;
+}

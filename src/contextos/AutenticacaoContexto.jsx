@@ -40,8 +40,24 @@ export const AutenticacaoProvedor = ({ children }) => {
         return () => subscription.unsubscribe();
     }, []);
 
+    // Flag para evitar múltiplos registros de acesso na mesma sessão de navegador
+    const [acessoRegistrado, setAcessoRegistrado] = useState(false);
+
     const carregarDadosUsuario = async (userId) => {
         try {
+            // Trava de redundância: Registra acesso apenas uma vez por carregamento do site
+            // sessionStorage persiste entre F5s mas limpa ao fechar a aba
+            const chaveAcesso = `playhub_acesso_${userId}`;
+            const jaRegistradoNestaAba = sessionStorage.getItem(chaveAcesso);
+
+            if (!jaRegistradoNestaAba) {
+                supabase.rpc('registrar_acesso').then(({ error }) => {
+                    if (!error) {
+                        sessionStorage.setItem(chaveAcesso, 'true');
+                    }
+                });
+            }
+
             const { data, error } = await supabase
                 .from('usuarios')
                 .select('*')

@@ -234,7 +234,7 @@ const ModalEdicaoUsuario = ({ usuario, aoFechar }) => {
     setMensagem({ tipo: '', texto: '' });
     
     try {
-      const { error } = await supabase.rpc('admin_excluir_usuario', {
+      const { error } = await supabase.rpc('admin_excluir_usuario_v2', {
         p_usuario_id: usuario.id
       });
       

@@ -7,6 +7,7 @@ import Botao from '../../componentes/Botao/Botao';
 import { usarAutenticacao } from '../../contextos/AutenticacaoContexto';
 import { usarEquipe } from '../../contextos/EquipeContexto';
 import { SUPORTE } from '../../config/suporte';
+import { supabase } from '../../servicos/supabase';
 
 const PaginaConfiguracoes = ({ aoVoltar, aoNavegar }) => {
     const { usuario, dadosUsuario, logout } = usarAutenticacao();
@@ -38,11 +39,37 @@ const PaginaConfiguracoes = ({ aoVoltar, aoNavegar }) => {
 
         if (confirmacao) {
             setProcessando(true);
-            // Simulação de lógica de exclusão (geralmente via Edge Function ou Admin API)
-            setTimeout(() => {
-                alert("Sua solicitação de exclusão foi enviada e será processada em até 24h. Você será deslogado agora.");
-                logout();
-            }, 2000);
+            try {
+                const { error } = await supabase.rpc('admin_excluir_usuario_v2', {
+                    p_usuario_id: usuario.id
+                });
+
+                if (error) {
+                    // Trata erro de capitania vindo do banco
+                    if (error.message.includes('Capitão')) {
+                        alert(`🚫 BLOQUEIO DE SEGURANÇA:\n\n${error.message}`);
+                    } else {
+                        alert(`Erro ao excluir conta: ${error.message}`);
+                    }
+                    setProcessando(false);
+                    return;
+                }
+
+                alert("Sua conta e todos os seus dados foram excluídos permanentemente. Sentiremos sua falta!");
+                
+                // Tenta o logout normal, mas limpa a aplicação de qualquer forma
+                try {
+                    await logout();
+                } catch (e) {
+                    console.warn('Sessão já invalidada no servidor após exclusão.');
+                    // Força recarregamento da página para limpar estados residuais se o logout falhar
+                    window.location.href = '/';
+                }
+            } catch (err) {
+                console.error('Erro na exclusão:', err);
+                alert("Ocorreu um erro inesperado ao tentar excluir sua conta. Por favor, tente novamente mais tarde.");
+                setProcessando(false);
+            }
         }
     };
 

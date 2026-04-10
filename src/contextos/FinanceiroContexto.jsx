@@ -30,6 +30,14 @@ export const FinanceiroProvider = ({ children }) => {
         return `${ano}-${mes}`;
     };
 
+    // Retorna sempre o mês atual (calendário)
+    const obterMesAtual = () => {
+        const hoje = new Date();
+        const ano = hoje.getFullYear();
+        const mes = String(hoje.getMonth() + 1).padStart(2, '0');
+        return `${ano}-${mes}`;
+    };
+
     const carregarConfiguracao = useCallback(async (equipeId) => {
         try {
             const { data, error } = await supabase
@@ -464,6 +472,7 @@ export const FinanceiroProvider = ({ children }) => {
             registrarPagamentoAvulso,
             removerPagamentoAvulso,
             obterCicloAtual,
+            obterMesAtual,
             formatarPeriodoParaExibicao,
             verificarSituacaoFinanceiraAtleta
         }}>

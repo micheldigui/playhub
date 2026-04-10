@@ -46,6 +46,7 @@ const PaginaCadastro = ({ aoIrParaLogin, aoVoltar }) => {
   const [fotoPreview, setFotoPreview] = useState(null);
   const [aceitouTermos, setAceitouTermos] = useState(false);
   const [modalLegal, setModalLegal] = useState({ aberto: false, tipo: null });
+  const [erros, setErros] = useState({});
   
   const numeroRef = useRef(null);
   const generoRef = useRef(null);
@@ -66,15 +67,62 @@ const PaginaCadastro = ({ aoIrParaLogin, aoVoltar }) => {
     const novoValor = e.target.value;
     setForm(prev => {
       const novoForm = { ...prev, [campo]: novoValor };
-      // Se mudou a data de nascimento, forçar privacidade para menores
+      // Se mudou a data de nascimento, ajustar privacidade
       if (campo === 'data_nascimento') {
         const idade = calcularIdade(novoValor);
-        if (idade !== null && idade < 18) {
-          novoForm.perfil_publico = false;
-          novoForm.compartilhar_whatsapp_match = false;
+        if (idade !== null) {
+          if (idade < 18) {
+            // Menores: Sempre privado por segurança
+            novoForm.perfil_publico = false;
+            novoForm.compartilhar_whatsapp_match = false;
+          } else {
+            // Maiores: Sugerimos público para facilitar encontrar equipes, 
+            // mas o usuário tem liberdade para mudar.
+            novoForm.perfil_publico = true;
+            novoForm.compartilhar_whatsapp_match = true;
+          }
         }
       }
       return novoForm;
+    });
+
+    // Limpa o erro do campo ao começar a digitar
+    if (erros[campo]) {
+      setErros(prev => {
+        const novos = { ...prev };
+        delete novos[campo];
+        return novos;
+      });
+    }
+  };
+
+  const validarCampo = (campo, valor) => {
+    let msgErro = '';
+    
+    if (campo === 'nome_completo') {
+      const nomeTrim = valor.trim();
+      if (!nomeTrim) msgErro = 'Informe seu nome completo';
+      else if (nomeTrim.split(/\s+/).length < 2) msgErro = 'Insira nome e sobrenome';
+    } else if (campo === 'email') {
+      if (!validarEmail(valor)) msgErro = 'E-mail inválido';
+    } else if (campo === 'data_nascimento') {
+      if (!valor) msgErro = 'Informe sua data de nascimento';
+    } else if (campo === 'telefone') {
+      const telLimpo = valor.replace(/\D/g, '');
+      if (telLimpo.length < 10) msgErro = 'WhatsApp inválido (mínimo 10 dígitos)';
+    } else if (campo === 'genero') {
+      if (!valor) msgErro = 'Selecione seu gênero';
+    } else if (campo === 'senha') {
+      if (valor.length < 6) msgErro = 'Mínimo de 6 caracteres';
+    } else if (campo === 'confirmarSenha') {
+      if (valor !== form.senha) msgErro = 'As senhas não conferem';
+    }
+
+    setErros(prev => {
+      const novos = { ...prev };
+      if (msgErro) novos[campo] = msgErro;
+      else delete novos[campo];
+      return novos;
     });
   };
 
@@ -129,16 +177,57 @@ const PaginaCadastro = ({ aoIrParaLogin, aoVoltar }) => {
   const handleCadastro = async (e) => {
     e.preventDefault();
     setErro('');
-    if (!validarEmail(form.email)) { setErro('Por favor, insira um e-mail válido.'); return; }
-    if (!form.nome_completo.trim()) { setErro('Por favor, informe seu nome completo.'); return; }
-    if (!form.data_nascimento) { setErro('Por favor, informe sua data de nascimento.'); return; }
-    if (!form.genero) { setErro('Por favor, selecione seu gênero.'); return; }
+    const adicionarErro = (campo, msg) => {
+        setErros(prev => ({ ...prev, [campo]: msg }));
+    };
+
+    if (!validarEmail(form.email)) { 
+        setErro('Existem campos com erros no seu cadastro.'); 
+        adicionarErro('email', 'E-mail inválido'); 
+        return; 
+    }
+    const nomeTrim = form.nome_completo.trim();
+    if (!nomeTrim) { 
+        setErro('Existem campos com erros no seu cadastro.'); 
+        adicionarErro('nome_completo', 'Informe seu nome completo'); 
+        return; 
+    }
+    if (nomeTrim.split(/\s+/).length < 2) { 
+        setErro('Existem campos com erros no seu cadastro.'); 
+        adicionarErro('nome_completo', 'Insira nome e sobrenome');
+        return; 
+    }
+    if (!form.data_nascimento) { 
+        setErro('Existem campos com erros no seu cadastro.'); 
+        adicionarErro('data_nascimento', 'Campo obrigatório'); 
+        return; 
+    }
+    if (!form.genero) { 
+        setErro('Existem campos com erros no seu cadastro.'); 
+        adicionarErro('genero', 'Selecione uma opção'); 
+        return; 
+    }
     const telLimpo = form.telefone.replace(/\D/g, '');
-    if (telLimpo.length < 10) { setErro('Informe um WhatsApp/Telefone válido com DDD.'); return; }
-    if (!form.cidade.trim()) { setErro('Por favor, informe sua cidade (preencha o CEP para busca automática).'); return; }
-    if (!form.estado.trim()) { setErro('Por favor, informe seu estado.'); return; }
-    if (form.senha.length < 6) { setErro('A senha deve ter pelo menos 6 caracteres.'); return; }
-    if (form.senha !== form.confirmarSenha) { setErro('As senhas não conferem.'); return; }
+    if (telLimpo.length < 10) { 
+        setErro('Existem campos com erros no seu cadastro.'); 
+        adicionarErro('telefone', 'Mínimo 10 dígitos'); 
+        return; 
+    }
+    if (!form.cidade.trim()) { 
+        setErro('Existem campos com erros no seu cadastro.'); 
+        adicionarErro('cep', 'Informe um CEP válido'); 
+        return; 
+    }
+    if (form.senha.length < 6) { 
+        setErro('Existem campos com erros no seu cadastro.'); 
+        adicionarErro('senha', 'Mínimo 6 caracteres'); 
+        return; 
+    }
+    if (form.senha !== form.confirmarSenha) { 
+        setErro('As senhas não conferem.'); 
+        adicionarErro('confirmarSenha', 'Senhas diferentes'); 
+        return; 
+    }
 
     setCarregando(true);
     try {
@@ -234,11 +323,20 @@ const PaginaCadastro = ({ aoIrParaLogin, aoVoltar }) => {
 
         <div className="auth-grupo">
           <label>Nome completo *</label>
-          <div className="auth-campo">
+          <div className={`auth-campo ${erros.nome_completo ? 'campo-com-erro' : ''}`}>
             <span className="auth-campo-icone"><User size={16} /></span>
-            <input placeholder="Como aparecerá no seu perfil" value={form.nome_completo}
-              onChange={set('nome_completo')} required tabIndex="2" />
+            <input 
+              placeholder="Digite seu Nome e Sobrenome" 
+              value={form.nome_completo}
+              onChange={set('nome_completo')} 
+              onBlur={(e) => validarCampo('nome_completo', e.target.value)}
+              required 
+              tabIndex="2" 
+            />
           </div>
+          {erros.nome_completo && (
+            <span className="msg-erro-campo"><AlertCircle size={12} /> {erros.nome_completo}</span>
+          )}
         </div>
 
         <div className="auth-grupo">
@@ -256,24 +354,43 @@ const PaginaCadastro = ({ aoIrParaLogin, aoVoltar }) => {
         <div className="auth-grade-2">
           <div className="auth-grupo">
             <label>Data de Nascimento *</label>
-            <div className="auth-campo">
+            <div className={`auth-campo ${erros.data_nascimento ? 'campo-com-erro' : ''}`}>
               <span className="auth-campo-icone"><Calendar size={16} /></span>
-              <input type="date" value={form.data_nascimento}
-                onChange={set('data_nascimento')} required tabIndex="4" />
+              <input 
+                type="date" 
+                value={form.data_nascimento}
+                onChange={set('data_nascimento')} 
+                onBlur={(e) => validarCampo('data_nascimento', e.target.value)}
+                required 
+                tabIndex="4" 
+              />
             </div>
+            {erros.data_nascimento && (
+              <span className="msg-erro-campo"><AlertCircle size={12} /> {erros.data_nascimento}</span>
+            )}
           </div>
           <div className="auth-grupo">
             <label>
               Gênero *
               <Tooltip texto="Usado para personalizar a experiência no app. Nenhuma informação é compartilhada com equipes." posicao="bottom" />
             </label>
-            <div className="auth-campo">
+            <div className={`auth-campo ${erros.genero ? 'campo-com-erro' : ''}`}>
               <span className="auth-campo-icone"><User size={16} /></span>
-              <select ref={generoRef} value={form.genero} onChange={set('genero')} required tabIndex="5">
+              <select 
+                ref={generoRef} 
+                value={form.genero} 
+                onChange={set('genero')} 
+                onBlur={(e) => validarCampo('genero', e.target.value)}
+                required 
+                tabIndex="5"
+              >
                 <option value="">Selecione...</option>
                 {GENEROS.map(g => <option key={g} value={g}>{g}</option>)}
               </select>
             </div>
+            {erros.genero && (
+              <span className="msg-erro-campo"><AlertCircle size={12} /> {erros.genero}</span>
+            )}
           </div>
         </div>
 
@@ -284,11 +401,22 @@ const PaginaCadastro = ({ aoIrParaLogin, aoVoltar }) => {
 
         <div className="auth-grupo">
           <label>E-mail *</label>
-          <div className="auth-campo">
+          <div className={`auth-campo ${erros.email ? 'campo-com-erro' : ''}`}>
             <span className="auth-campo-icone"><Mail size={16} /></span>
-            <input type="email" placeholder="seu@email.com" value={form.email}
-              onChange={set('email')} required autoComplete="email" tabIndex="6" />
+            <input 
+              type="email" 
+              placeholder="seu@email.com" 
+              value={form.email}
+              onChange={set('email')} 
+              onBlur={(e) => validarCampo('email', e.target.value)}
+              required 
+              autoComplete="email" 
+              tabIndex="6" 
+            />
           </div>
+          {erros.email && (
+            <span className="msg-erro-campo"><AlertCircle size={12} /> {erros.email}</span>
+          )}
         </div>
 
         <div className="auth-grupo">
@@ -296,28 +424,42 @@ const PaginaCadastro = ({ aoIrParaLogin, aoVoltar }) => {
             WhatsApp / Telefone *
             <Tooltip texto="Obrigatório. Usado pelo administrador da equipe para convites e comunicação." />
           </label>
-          <div className="auth-campo">
+          <div className={`auth-campo ${erros.telefone ? 'campo-com-erro' : ''}`}>
             <span className="auth-campo-icone"><Phone size={16} /></span>
             <input
               type="tel"
               placeholder="(00) 00000-0000"
               value={form.telefone}
-              onChange={(e) => setForm(prev => ({ ...prev, telefone: mascaraTelefone(e.target.value) }))}
+              onChange={(e) => {
+                const val = mascaraTelefone(e.target.value);
+                setForm(prev => ({ ...prev, telefone: val }));
+                if (erros['telefone']) {
+                  setErros(prev => {
+                    const novos = { ...prev };
+                    delete novos['telefone'];
+                    return novos;
+                  });
+                }
+              }}
+              onBlur={(e) => validarCampo('telefone', e.target.value)}
               maxLength={15}
               required
               tabIndex="7"
             />
           </div>
+          {erros.telefone && (
+            <span className="msg-erro-campo"><AlertCircle size={12} /> {erros.telefone}</span>
+          )}
         </div>
 
         <div className="auth-grupo">
           <label style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            Visibilidade do Perfil
-            <Tooltip texto="Permite que capitães de outras equipes te encontrem na busca de atletas." />
+            Quem pode ver meu perfil?
+            <Tooltip texto="Ativando, capitães de outras equipes podem te encontrar na busca de atletas. Recomendado para quem busca novos times!" />
           </label>
           {ehMenorDeIdade && (
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: '8px', marginTop: '8px', fontSize: '0.8rem', color: '#fca5a5' }}>
-              🔒 Opções de privacidade bloqueadas para menores de 18 anos.
+              🔒 Opções obrigatórias para menores de 18 anos.
             </div>
           )}
           <div className="auth-perfil-toggle-container" style={{ marginTop: '8px', opacity: ehMenorDeIdade ? 0.4 : 1 }}>
@@ -332,7 +474,7 @@ const PaginaCadastro = ({ aoIrParaLogin, aoVoltar }) => {
               />
               <span style={{ fontSize: '0.9rem', color: 'var(--texto-cor)', display: 'flex', alignItems: 'center', gap: '6px' }}>
                 {form.perfil_publico ? <Eye size={16} color="#0ea5e9" /> : <EyeOff size={16} color="#64748b" />}
-                {form.perfil_publico ? 'Perfil Público' : 'Perfil Privado (Obrigatório para menores)'}
+                {form.perfil_publico ? 'Perfil Aberto (Recomendado)' : 'Perfil Privado'}
               </span>
             </label>
           </div>
@@ -340,8 +482,8 @@ const PaginaCadastro = ({ aoIrParaLogin, aoVoltar }) => {
 
         <div className="auth-grupo">
           <label style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            Privacidade do WhatsApp
-            <Tooltip texto="Seu número só será exibido para jogadores que derem match com você e que sejam maiores de 18 anos." />
+            Privacidade do Número
+            <Tooltip texto="Seu WhatsApp só aparecerá após você e o capitão demonstrarem interesse mútuo (Match)." />
           </label>
           <div className="auth-perfil-toggle-container" style={{ marginTop: '8px', opacity: ehMenorDeIdade ? 0.4 : 1 }}>
             <label className="auth-toggle" style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: ehMenorDeIdade ? 'not-allowed' : 'pointer' }}>
@@ -355,7 +497,7 @@ const PaginaCadastro = ({ aoIrParaLogin, aoVoltar }) => {
               />
               <span style={{ fontSize: '0.9rem', color: 'var(--texto-cor)', display: 'flex', alignItems: 'center', gap: '6px' }}>
                 {form.compartilhar_whatsapp_match ? <Phone size={16} color="#22c55e" /> : <Phone size={16} color="#64748b" />}
-                {form.compartilhar_whatsapp_match ? 'Compartilhar no Match' : 'Não compartilhar'}
+                {form.compartilhar_whatsapp_match ? 'Autorizar WhatsApp no Match' : 'Não compartilhar número'}
               </span>
             </label>
           </div>
@@ -372,19 +514,29 @@ const PaginaCadastro = ({ aoIrParaLogin, aoVoltar }) => {
             <Tooltip texto="Preencha o CEP para preenchimento automático da cidade e estado." />
           </label>
           <div className="auth-grade-cep">
-            <div className="auth-campo">
-              <span className="auth-campo-icone"><MapPin size={16} /></span>
-              <input
-                placeholder="00000-000"
-                value={form.cep}
-                onChange={(e) => setForm(prev => ({
-                  ...prev,
-                  cep: mascaraCep(e.target.value)
-                }))}
-                maxLength={9}
-                tabIndex="9"
-              />
-            </div>
+            <div className={`auth-campo ${erros.cep ? 'campo-com-erro' : ''}`}>
+            <span className="auth-campo-icone"><MapPin size={16} /></span>
+            <input
+              placeholder="00000-000"
+              value={form.cep}
+              onChange={(e) => {
+                const val = mascaraCep(e.target.value);
+                setForm(prev => ({ ...prev, cep: val }));
+                if (erros['cep']) {
+                    setErros(prev => {
+                      const novos = { ...prev };
+                      delete novos['cep'];
+                      return novos;
+                    });
+                  }
+              }}
+              maxLength={9}
+              tabIndex="9"
+            />
+          </div>
+          {erros.cep && (
+            <span className="msg-erro-campo"><AlertCircle size={12} /> {erros.cep}</span>
+          )}
             <button type="button" className="btn-buscar-cep" onClick={buscarCep} disabled={buscandoCep} tabIndex="-1">
               <Search size={15} />
               {buscandoCep ? 'Buscando...' : 'Buscar'}
@@ -459,23 +611,43 @@ const PaginaCadastro = ({ aoIrParaLogin, aoVoltar }) => {
 
         <div className="auth-grupo">
           <label>Senha * (mínimo 6 caracteres)</label>
-          <div className="auth-campo">
+          <div className={`auth-campo ${erros.senha ? 'campo-com-erro' : ''}`}>
             <span className="auth-campo-icone"><Lock size={16} /></span>
-            <input type={mostrarSenha ? 'text' : 'password'} placeholder="••••••••"
-              value={form.senha} onChange={set('senha')} required tabIndex="12" />
+            <input 
+              type={mostrarSenha ? 'text' : 'password'} 
+              placeholder="••••••••"
+              value={form.senha} 
+              onChange={set('senha')} 
+              onBlur={(e) => validarCampo('senha', e.target.value)}
+              required 
+              tabIndex="12" 
+            />
             <button type="button" className="btn-olho" onClick={() => setMostrarSenha(!mostrarSenha)} tabIndex="-1">
               {mostrarSenha ? <EyeOff size={16} /> : <Eye size={16} />}
             </button>
           </div>
+          {erros.senha && (
+            <span className="msg-erro-campo"><AlertCircle size={12} /> {erros.senha}</span>
+          )}
         </div>
 
         <div className="auth-grupo">
           <label>Confirme a senha *</label>
-          <div className="auth-campo">
+          <div className={`auth-campo ${erros.confirmarSenha ? 'campo-com-erro' : ''}`}>
             <span className="auth-campo-icone"><Lock size={16} /></span>
-            <input type={mostrarSenha ? 'text' : 'password'} placeholder="••••••••"
-              value={form.confirmarSenha} onChange={set('confirmarSenha')} required tabIndex="13" />
+            <input 
+              type={mostrarSenha ? 'text' : 'password'} 
+              placeholder="••••••••"
+              value={form.confirmarSenha} 
+              onChange={set('confirmarSenha')} 
+              onBlur={(e) => validarCampo('confirmarSenha', e.target.value)}
+              required 
+              tabIndex="13" 
+            />
           </div>
+          {erros.confirmarSenha && (
+            <span className="msg-erro-campo"><AlertCircle size={12} /> {erros.confirmarSenha}</span>
+          )}
         </div>
 
         <div className="auth-acoes-form">

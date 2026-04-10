@@ -176,8 +176,14 @@ const RegrasTab = ({ abrirEdicao, aoExcluir }) => {
 
                         <div className="item-toggle-regras" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem' }}>
                             <div style={{ flex: 1 }}>
-                                <strong style={{ color: '#f1f5f9', fontSize: '0.9rem', display: 'block', marginBottom: '4px' }}>Prioridade Mensalista</strong>
-                                <p style={{ color: '#94a3b8', fontSize: '0.75rem', lineHeight: '1.3' }}>Dá prioridade na lista de confirmados para quem paga mensalidade.</p>
+                                <strong style={{ color: '#f1f5f9', fontSize: '0.9rem', display: 'block', marginBottom: '4px' }}>
+                                    {equipeAtiva.gestao_financeira ? 'Prioridade Mensalista' : 'Prioridade Jogadores Fixos'}
+                                </strong>
+                                <p style={{ color: '#94a3b8', fontSize: '0.75rem', lineHeight: '1.3' }}>
+                                    {equipeAtiva.gestao_financeira 
+                                        ? 'Dá prioridade na lista de confirmados para quem paga mensalidade.'
+                                        : 'Dá prioridade na lista de confirmados para os jogadores definidos como fixos.'}
+                                </p>
                             </div>
                             <label className="switch-regras">
                                 <input 
@@ -218,46 +224,48 @@ const RegrasTab = ({ abrirEdicao, aoExcluir }) => {
                 </section>
 
                 {/* ── CARD: REGRAS FINANCEIRAS ── */}
-                <section style={{ background: 'rgba(15, 23, 42, 0.6)', border: '1px solid rgba(255, 255, 255, 0.05)', borderRadius: '16px', padding: '24px', gridRow: 'span 2' }}>
-                    <h3 style={{ fontSize: '1.1rem', color: '#f1f5f9', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
-                        <Coins size={18} color="#10b981" /> Parâmetros Financeiros
-                    </h3>
-                    
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                        <div className="input-regras">
-                            <label><Wallet size={14} /> Valor da Mensalidade (R$)</label>
-                            <input disabled={!podeEditar} type="number" value={configLocal.valor_mensalidade} onChange={e => setConfigLocal({...configLocal, valor_mensalidade: e.target.value})} />
-                        </div>
-                        <div className="input-regras">
-                            <label><Coins size={14} /> Custo por Partida (Sede/Quadra)</label>
-                            <input disabled={!podeEditar} type="number" value={configLocal.custo_quadra} onChange={e => setConfigLocal({...configLocal, custo_quadra: e.target.value})} />
-                        </div>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                            <div className="input-regras">
-                                <label><Calendar size={14} /> Dia Vencimento</label>
-                                <input disabled={!podeEditar} type="number" value={configLocal.dia_vencimento} onChange={e => setConfigLocal({...configLocal, dia_vencimento: e.target.value})} />
-                            </div>
-                            <div className="input-regras">
-                                <label><Clock size={14} /> Horas de Limite</label>
-                                <input disabled={!podeEditar} type="number" value={configLocal.limite_vencimento_horas} onChange={e => setConfigLocal({...configLocal, limite_vencimento_horas: e.target.value})} />
-                            </div>
-                        </div>
-                        <div className="input-regras">
-                            <label><CreditCard size={14} /> Chave PIX p/ Recebimento</label>
-                            <input disabled={!podeEditar} type="text" value={configLocal.chave_pix} onChange={e => setConfigLocal({...configLocal, chave_pix: e.target.value})} placeholder="E-mail, CPF, Celuar..." />
-                        </div>
+                {equipeAtiva.gestao_financeira && (
+                    <section style={{ background: 'rgba(15, 23, 42, 0.6)', border: '1px solid rgba(255, 255, 255, 0.05)', borderRadius: '16px', padding: '24px', gridRow: 'span 2' }}>
+                        <h3 style={{ fontSize: '1.1rem', color: '#f1f5f9', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+                            <Coins size={18} color="#10b981" /> Parâmetros Financeiros
+                        </h3>
                         
-                        {podeEditar && (
-                            <Botao 
-                                onClick={handleSalvarRegras} 
-                                disabled={!!processando} 
-                                style={{ marginTop: '10px', width: '100%' }}
-                            >
-                                {processando === 'salvando' ? <Loader2 className="animate-spin" size={18} /> : 'Salvar Financeiro'}
-                            </Botao>
-                        )}
-                    </div>
-                </section>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                            <div className="input-regras">
+                                <label><Wallet size={14} /> Valor da Mensalidade (R$)</label>
+                                <input disabled={!podeEditar} type="number" value={configLocal.valor_mensalidade} onChange={e => setConfigLocal({...configLocal, valor_mensalidade: e.target.value})} />
+                            </div>
+                            <div className="input-regras">
+                                <label><Coins size={14} /> Custo por Partida (Sede/Quadra)</label>
+                                <input disabled={!podeEditar} type="number" value={configLocal.custo_quadra} onChange={e => setConfigLocal({...configLocal, custo_quadra: e.target.value})} />
+                            </div>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                                <div className="input-regras">
+                                    <label><Calendar size={14} /> Dia Vencimento</label>
+                                    <input disabled={!podeEditar} type="number" value={configLocal.dia_vencimento} onChange={e => setConfigLocal({...configLocal, dia_vencimento: e.target.value})} />
+                                </div>
+                                <div className="input-regras">
+                                    <label><Clock size={14} /> Horas de Limite</label>
+                                    <input disabled={!podeEditar} type="number" value={configLocal.limite_vencimento_horas} onChange={e => setConfigLocal({...configLocal, limite_vencimento_horas: e.target.value})} />
+                                </div>
+                            </div>
+                            <div className="input-regras">
+                                <label><CreditCard size={14} /> Chave PIX p/ Recebimento</label>
+                                <input disabled={!podeEditar} type="text" value={configLocal.chave_pix} onChange={e => setConfigLocal({...configLocal, chave_pix: e.target.value})} placeholder="E-mail, CPF, Celuar..." />
+                            </div>
+                            
+                            {podeEditar && (
+                                <Botao 
+                                    onClick={handleSalvarRegras} 
+                                    disabled={!!processando} 
+                                    style={{ marginTop: '10px', width: '100%' }}
+                                >
+                                    {processando === 'salvando' ? <Loader2 className="animate-spin" size={18} /> : 'Salvar Financeiro'}
+                                </Botao>
+                            )}
+                        </div>
+                    </section>
+                )}
 
                 {/* ── CARD: PERIGO ── */}
                 {ehDono && (

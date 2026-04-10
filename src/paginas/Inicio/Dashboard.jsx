@@ -526,6 +526,7 @@ const Dashboard = ({ aoNavegar, setAbaEquipe }) => {
                                                     className="equipe-chip-arrow-btn" 
                                                     onClick={(ev) => {
                                                         ev.stopPropagation();
+                                                        selecionarEquipe(e.id);
                                                         setAbaEquipe('minha-equipe');
                                                         aoNavegar('equipe');
                                                     }}

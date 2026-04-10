@@ -7,13 +7,13 @@ import { usarAutenticacao } from '../../../contextos/AutenticacaoContexto';
 
 const FinanceiroAvulsos = ({ membrosIniciais = [] }) => {
     const { equipeAtiva, temPermissaoEquipe } = usarEquipe();
-    const { obterCicloAtual, formatarPeriodoParaExibicao } = usarFinanceiro();
+    const { obterCicloAtual, obterMesAtual, formatarPeriodoParaExibicao } = usarFinanceiro();
     const { usuario } = usarAutenticacao();
     const [pagamentos, setPagamentos] = useState([]);
     const [membros, setMembros] = useState(membrosIniciais);
     const [carregando, setCarregando] = useState(true);
     const [processando, setProcessando] = useState(null);
-    const [periodoAtivo, setPeriodoAtivo] = useState(() => obterCicloAtual(10));
+    const [periodoAtivo, setPeriodoAtivo] = useState(() => obterMesAtual());
 
     // Sincroniza membros se as props mudarem
     useEffect(() => {

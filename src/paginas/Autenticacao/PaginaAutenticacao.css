@@ -239,6 +239,17 @@ input:-webkit-autofill:focus {
   box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.12);
 }
 
+.auth-campo.campo-com-erro input,
+.auth-campo.campo-com-erro select {
+  border-color: #f43f5e;
+  background: rgba(244, 63, 94, 0.05);
+}
+
+.auth-campo.campo-com-erro input:focus,
+.auth-campo.campo-com-erro select:focus {
+  box-shadow: 0 0 0 3px rgba(244, 63, 94, 0.15);
+}
+
 .auth-campo input::placeholder {
   color: #334155;
 }
@@ -342,6 +353,24 @@ input:-webkit-autofill:focus {
   color: #f43f5e;
   font-size: 0.84rem;
   margin-bottom: 1rem;
+}
+
+/* Mensagem de erro individual no campo */
+.msg-erro-campo {
+  color: #f43f5e;
+  font-size: 0.72rem;
+  font-weight: 600;
+  margin-top: 5px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding-left: 2px;
+  animation: fadeInDown 0.2s ease-out;
+}
+
+@keyframes fadeInDown {
+  from { opacity: 0; transform: translateY(-5px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 /* Link de troca */
