@@ -410,6 +410,93 @@
   gap: 1.5rem;
 }
 
+/* --- ESTILOS MODERNOS GLASSMORPHISM (NOVO PADRÃO) --- */
+
+.secao-form-endereco {
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  padding: 1.75rem;
+  margin-top: 1.5rem;
+  background: rgba(255, 255, 255, 0.012);
+  backdrop-filter: blur(4px);
+  border-radius: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.1);
+}
+
+.input-glass {
+  background-color: rgba(15, 23, 42, 0.4) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  color: #f8fafc !important;
+  border-radius: 10px !important;
+  font-size: 0.95rem !important;
+  padding: 0.8rem 1rem !important;
+  transition: all 0.3s ease !important;
+}
+
+.input-glass:focus {
+  border-color: var(--primaria) !important;
+  background-color: rgba(15, 23, 42, 0.6) !important;
+  box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.1) !important;
+}
+
+.campo-valida-moderno {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.campo-valida-moderno .icone-input {
+  position: absolute;
+  left: 1.25rem;
+  color: #94a3b8;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.campo-valida-moderno input {
+  padding-left: 3.5rem !important;
+}
+
+.fila-campos-moderna {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 1.25rem;
+}
+
+.fila-campos-moderna .campo-num {
+  grid-column: span 1;
+}
+
+.fila-campos-moderna .campo-uf {
+  grid-column: span 1;
+}
+
+@media (max-width: 640px) {
+  .fila-campos-moderna {
+    grid-template-columns: 1fr;
+  }
+}
+
+.grade-cep-moderno {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.btn-busca-cep-mod {
+  height: 46px !important;
+  min-width: 50px !important;
+  border-radius: 10px !important;
+}
+
+.input-cep-mod {
+  font-weight: 600 !important;
+  letter-spacing: 0.05em;
+}
+
 .item-toggle {
   display: flex;
   justify-content: space-between;

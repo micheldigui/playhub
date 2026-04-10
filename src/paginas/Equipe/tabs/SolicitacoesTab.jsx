@@ -3,6 +3,7 @@ import { Users, Mail, CheckCircle2, XCircle, Trash2, Clock, MapPin, ChevronDown,
 import { supabase } from '../../../servicos/supabase';
 import { usarEquipe } from '../../../contextos/EquipeContexto';
 import { usarAutenticacao } from '../../../contextos/AutenticacaoContexto';
+import { rastrear } from '../../../servicos/rastreamento';
 import ModalPerfilAtleta from '../../../componentes/Modais/ModalPerfilAtleta';
 
 const calcularIdade = (dataNasc) => {
@@ -66,6 +67,7 @@ const SolicitacoesTab = () => {
         setProcessando(membroId);
         const res = await responderSolicitacao(membroId, aprovado);
         if (res.sucesso) {
+            rastrear.clique('equipe_avaliou_solicitacao', 'Aprovou ou negou a entrada do novo recruta', { aprovante: true, sucesso_ingresso: aprovado });
             setSolicitacoes(prev => prev.filter(s => s.id !== membroId));
         } else {
             alert('Erro: ' + res.erro);
@@ -110,6 +112,8 @@ const SolicitacoesTab = () => {
                 tipo: 'bola'
             });
             if (error) throw error;
+            
+            rastrear.clique('equipe_passou_bola_convidado', 'Passou bola pro perfil por dentro da area admnistrativa');
             alert('Você passou a bola para ' + (atletaAlvo.apelido || atletaAlvo.nome_completo) + '! ⚽');
         } catch (err) {
             alert('Erro ao passar a bola: ' + err.message);

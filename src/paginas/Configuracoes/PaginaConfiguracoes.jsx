@@ -8,6 +8,7 @@ import { usarAutenticacao } from '../../contextos/AutenticacaoContexto';
 import { usarEquipe } from '../../contextos/EquipeContexto';
 import { SUPORTE } from '../../config/suporte';
 import { supabase } from '../../servicos/supabase';
+import { rastrear } from '../../servicos/rastreamento';
 
 const PaginaConfiguracoes = ({ aoVoltar, aoNavegar }) => {
     const { usuario, dadosUsuario, logout } = usarAutenticacao();
@@ -38,6 +39,7 @@ const PaginaConfiguracoes = ({ aoVoltar, aoNavegar }) => {
         );
 
         if (confirmacao) {
+            rastrear.clique('configuracoes_btn_excluir_conta', 'Iniciou jornada de exclusao de conta');
             setProcessando(true);
             try {
                 const { error } = await supabase.rpc('admin_excluir_usuario_v2', {
@@ -45,6 +47,7 @@ const PaginaConfiguracoes = ({ aoVoltar, aoNavegar }) => {
                 });
 
                 if (error) {
+                    rastrear.erro('exclusao_conta_erro', 'Erro ao processar exclusão de dados', { erro: error.message });
                     // Trata erro de capitania vindo do banco
                     if (error.message.includes('Capitão')) {
                         alert(`🚫 BLOQUEIO DE SEGURANÇA:\n\n${error.message}`);
@@ -55,6 +58,7 @@ const PaginaConfiguracoes = ({ aoVoltar, aoNavegar }) => {
                     return;
                 }
 
+                rastrear.clique('configuracoes_conta_excluida_sucesso', 'Atleta concluiu exclusao do perfil (Churn definitivo)');
                 alert("Sua conta e todos os seus dados foram excluídos permanentemente. Sentiremos sua falta!");
                 
                 // Tenta o logout normal, mas limpa a aplicação de qualquer forma
@@ -126,7 +130,10 @@ const PaginaConfiguracoes = ({ aoVoltar, aoNavegar }) => {
                             </div>
                             
                             <Botao 
-                                onClick={() => window.open(SUPORTE.GET_LINK_WHATSAPP('Olá! Preciso de ajuda no PlayHub.'), '_blank')}
+                                onClick={() => {
+                                    rastrear.clique('configuracoes_suporte_whatsapp', 'Acessou suporte direto da plataforma');
+                                    window.open(SUPORTE.GET_LINK_WHATSAPP('Olá! Preciso de ajuda no PlayHub.'), '_blank');
+                                }}
                                 style={{ width: '100%', justifyContent: 'center', background: '#25D366', color: '#fff', border: 'none' }}
                             >
                                 <MessageCircle size={18} /> Conversar no WhatsApp
@@ -142,7 +149,10 @@ const PaginaConfiguracoes = ({ aoVoltar, aoNavegar }) => {
                     </h2>
                     <div style={{ background: 'rgba(15, 23, 42, 0.4)', borderRadius: '20px', border: '1px solid rgba(255, 255, 255, 0.05)', overflow: 'hidden' }}>
                         <button 
-                            onClick={() => aoNavegar('termos')}
+                            onClick={() => {
+                                rastrear.clique('configuracoes_legal_termos');
+                                aoNavegar('termos');
+                            }}
                             style={{ ...secaoItemEstilo, borderBottom: '1px solid rgba(255, 255, 255, 0.05)' }}
                             onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.02)'}
                             onMouseOut={(e) => e.currentTarget.style.background = 'none'}
@@ -155,7 +165,10 @@ const PaginaConfiguracoes = ({ aoVoltar, aoNavegar }) => {
                         </button>
 
                         <button 
-                            onClick={() => aoNavegar('privacidade')}
+                            onClick={() => {
+                                rastrear.clique('configuracoes_legal_privacidade');
+                                aoNavegar('privacidade');
+                            }}
                             style={secaoItemEstilo}
                             onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.02)'}
                             onMouseOut={(e) => e.currentTarget.style.background = 'none'}

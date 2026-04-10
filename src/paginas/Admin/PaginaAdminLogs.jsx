@@ -3,7 +3,7 @@ import {
     Activity, Search, Filter, Calendar, 
     ArrowLeft, ChevronRight, X, AlertCircle, 
     MousePointerClick, Navigation, ShieldAlert,
-    Download, RefreshCw, Eye
+    Download, RefreshCw, Eye, FileSpreadsheet, Trash2
 } from 'lucide-react';
 import { supabase } from '../../servicos/supabase';
 import './PaginaAdminLogs.css';
@@ -12,6 +12,9 @@ import Botao from '../../componentes/Botao/Botao';
 const PaginaAdminLogs = ({ aoVoltar }) => {
     const [logs, setLogs] = useState([]);
     const [carregando, setCarregando] = useState(true);
+    const [confirmandoLimpeza, setConfirmandoLimpeza] = useState(false);
+    const [limpando, setLimpando] = useState(false);
+    
     const [filtros, setFiltros] = useState({
         tipo: '',
         busca: '',
@@ -22,7 +25,6 @@ const PaginaAdminLogs = ({ aoVoltar }) => {
     const LIMITE = 50;
 
     useEffect(() => {
-        // Resetar ao mudar tipo
         setLogs([]);
         setFiltros(prev => ({ ...prev, pagina: 0 }));
     }, [filtros.tipo]);
@@ -65,9 +67,66 @@ const PaginaAdminLogs = ({ aoVoltar }) => {
         }
     };
 
+    const handleLimparBanco = async () => {
+        try {
+            setLimpando(true);
+            // Chama uma query direta de delete (ou RPC se preferir)
+            const { error } = await supabase.from('telemetria').delete().neq('log_id', '00000000-0000-0000-0000-000000000000');
+            
+            if (error) throw error;
+            
+            setLogs([]);
+            setConfirmandoLimpeza(false);
+            alert('Banco de logs limpo com sucesso!');
+        } catch (err) {
+            console.error('Erro ao limpar banco:', err);
+            alert('Erro ao limpar base de dados.');
+        } finally {
+            setLimpando(false);
+        }
+    };
+
+    const handleExportarCSV = () => {
+        if (logs.length === 0) return;
+
+        // Cabeçalhos do CSV (Excel BR prefere ponto e vírgula)
+        const headers = ['Data', 'Usuario', 'Email', 'Tipo', 'Mensagem', 'Pagina', 'Detalhes_Tecnicos'];
+        
+        // Formatar linhas
+        const csvRows = logs.map(log => {
+            const data = new Date(log.criado_em).toLocaleString('pt-BR');
+            const mensagem = (log.mensagem || '').replace(/"/g, '""');
+            // Serializa o JSON e remove quebras de linha internas para não quebrar o CSV
+            const metadata = log.metadata ? JSON.stringify(log.metadata).replace(/"/g, '""').replace(/\n/g, ' ') : '';
+            
+            return [
+                `"${data}"`,
+                `"${log.usuario_nome || 'Anônimo'}"`,
+                `"${log.usuario_email || ''}"`,
+                `"${log.tipo}"`,
+                `"${mensagem}"`,
+                `"${log.pagina || ''}"`,
+                `"${metadata}"`
+            ].join(';'); // Separador ponto e vírgula
+        });
+
+        // Força o Excel a reconhecer UTF-8 injetando o BOM binário (0xEF, 0xBB, 0xBF)
+        const csvContent = "sep=;\n" + [headers.join(';'), ...csvRows].join('\n');
+        const blob = new Blob([new Uint8Array([0xEF, 0xBB, 0xBF]), csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        
+        link.setAttribute("href", url);
+        link.setAttribute("download", `PlayHub_Audit_Logs_${new Date().toISOString().slice(0,10)}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
     const getIconeTipo = (tipo) => {
         switch (tipo) {
-            case 'ERRO': return <ShieldAlert size={16} color="#f43f5e" />;
+            case 'ERRO': return <ShieldAlert size={16} />;
             case 'CLIQUE': return <MousePointerClick size={16} color="#22c55e" />;
             case 'NAVEGACAO': return <Navigation size={16} color="#0ea5e9" />;
             default: return <Activity size={16} />;
@@ -79,6 +138,22 @@ const PaginaAdminLogs = ({ aoVoltar }) => {
         return data.toLocaleString('pt-BR');
     };
 
+    // Lógica de agrupamento visual: Condensa registros idênticos em sequência
+    const logsExibicao = [];
+    logs.forEach((log, index) => {
+        const anterior = logs[index - 1];
+        const ehRepetido = anterior && 
+                           anterior.usuario_email === log.usuario_email && 
+                           anterior.mensagem === log.mensagem &&
+                           anterior.tipo === log.tipo;
+        
+        if (ehRepetido) {
+            logsExibicao[logsExibicao.length - 1].repeticoes = (logsExibicao[logsExibicao.length - 1].repeticoes || 1) + 1;
+        } else {
+            logsExibicao.push({ ...log, repeticoes: 1 });
+        }
+    });
+
     return (
         <div className="admin-logs-container animate-fade-in">
             <header className="admin-logs-header">
@@ -89,6 +164,15 @@ const PaginaAdminLogs = ({ aoVoltar }) => {
                     <div>
                         <h1>Central de Monitoramento Global</h1>
                         <p>Acompanhe logs de erro, comportamento de usuários e saúde do sistema.</p>
+                    </div>
+                    
+                    <div className="header-actions-logs" style={{ marginLeft: 'auto', display: 'flex', gap: '10px' }}>
+                        <button className="btn-export-logs" onClick={handleExportarCSV}>
+                            <FileSpreadsheet size={18} /> Exportar CSV
+                        </button>
+                        <button className="btn-clear-database" onClick={() => setConfirmandoLimpeza(true)}>
+                            <Trash2 size={18} /> Limpar Banco
+                        </button>
                     </div>
                 </div>
 
@@ -134,7 +218,7 @@ const PaginaAdminLogs = ({ aoVoltar }) => {
             </header>
 
             <main className="logs-content-area">
-                {carregando ? (
+                {carregando && logs.length === 0 ? (
                     <div className="loading-logs">
                         <div className="spinner-logs"></div>
                         <span>Carregando telemetria...</span>
@@ -153,15 +237,15 @@ const PaginaAdminLogs = ({ aoVoltar }) => {
                                 </tr>
                             </thead>
                             <tbody>
-                                {logs.length === 0 ? (
+                                {logsExibicao.length === 0 ? (
                                     <tr>
                                         <td colSpan="6" className="no-logs">
                                             <Activity size={48} />
-                                            <p>Nenhum registro encontrado para os filtros selecionados.</p>
+                                            <p>Nenhum registro encontrado.</p>
                                         </td>
                                     </tr>
                                 ) : (
-                                    logs.map((log) => (
+                                    logsExibicao.map((log) => (
                                         <tr key={log.log_id} className={`row-tipo-${log.tipo?.toLowerCase()}`}>
                                             <td className="col-data" data-label="Data">{formatarDataLog(log.criado_em)}</td>
                                             <td className="col-usuario" data-label="Usuário">
@@ -176,7 +260,16 @@ const PaginaAdminLogs = ({ aoVoltar }) => {
                                                     {log.tipo}
                                                 </span>
                                             </td>
-                                            <td className="col-mensagem" data-label="Mensagem">{log.mensagem}</td>
+                                            <td className="col-mensagem" data-label="Mensagem">
+                                                <div className="msg-wrapper-logs">
+                                                    <span className="msg-text">{log.mensagem}</span>
+                                                    {log.repeticoes > 1 && (
+                                                        <span className="badge-repeticao">
+                                                            +{log.repeticoes - 1} repetido(s)
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </td>
                                             <td className="col-pagina" data-label="Página">{log.pagina}</td>
                                             <td className="col-acoes" data-label="Ações">
                                                 <button onClick={() => setLogSelecionado(log)} className="btn-view-log">
@@ -202,13 +295,25 @@ const PaginaAdminLogs = ({ aoVoltar }) => {
                         </Botao>
                     </div>
                 )}
-                
-                {logs.length > 0 && !temMais && (
-                    <div className="load-more-container" style={{ color: '#475569', fontSize: '0.85rem' }}>
-                        Todos os registros foram carregados.
-                    </div>
-                )}
             </main>
+
+            {/* MODAL DE CONFIRMAÇÃO DE LIMPEZA */}
+            {confirmandoLimpeza && (
+                <div className="modal-confirm-overlay" onClick={() => !limpando && setConfirmandoLimpeza(false)}>
+                    <div className="modal-confirm-content" onClick={e => e.stopPropagation()}>
+                        <div style={{ color: '#f43f5e' }}><ShieldAlert size={48} style={{ margin: '0 auto' }} /></div>
+                        <h3>Limpar Base de Logs?</h3>
+                        <p>Esta ação apagará <strong>todos os registros de telemetria</strong> permanentemente. Deseja continuar com a manutenção?</p>
+                        
+                        <div className="modal-confirm-actions">
+                            <button className="btn-cancel" onClick={() => setConfirmandoLimpeza(false)} disabled={limpando}>Não, Cancelar</button>
+                            <button className="btn-confirm-danger" onClick={handleLimparBanco} disabled={limpando}>
+                                {limpando ? 'Limpando...' : 'Sim, Apagar Tudo'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* MODAL DE DETALHES DO LOG */}
             {logSelecionado && (

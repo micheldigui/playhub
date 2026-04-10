@@ -4,6 +4,7 @@ import { usarPartidas } from '../../../../contextos/PartidasContexto';
 import { usarEquipe } from '../../../../contextos/EquipeContexto';
 import { usarAutenticacao } from '../../../../contextos/AutenticacaoContexto';
 import { usarFinanceiro } from '../../../../contextos/FinanceiroContexto';
+import { rastrear } from '../../../../servicos/rastreamento';
 import Botao from '../../../../componentes/Botao/Botao';
 import Modal from '../../../../componentes/Modal/Modal';
 
@@ -186,6 +187,7 @@ const ModalDetalhesPartida = ({ isOpen, onClose, partida }) => {
                 setProcessandoAcao(true);
                 const result = await cancelarPresenca(partida.id);
                 if (result.sucesso) {
+                    rastrear.clique('partida_cancelou_presenca', 'Abandono da lista de inscricao da partida', { partida_id: partida.id });
                     await carregarDados(); 
                 } else {
                     alert('Erro ao cancelar: ' + result.erro);
@@ -210,6 +212,7 @@ const ModalDetalhesPartida = ({ isOpen, onClose, partida }) => {
                     const result = await confirmarPresenca(partida, novoStatus, vinculoAtual);
                     
                     if (result.sucesso) {
+                        rastrear.clique('partida_confirmou_presenca', 'Confirmacao bem sucedida na lista de pelada', { status_fila: novoStatus, vinculo_atleta: vinculoAtual });
                         await carregarDados();
                     } else {
                         alert('Erro ao inscrever-se: ' + (result.erro || 'Erro desconhecido no servidor.'));

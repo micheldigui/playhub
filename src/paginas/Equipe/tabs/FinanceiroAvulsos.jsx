@@ -4,6 +4,7 @@ import { usarEquipe } from '../../../contextos/EquipeContexto';
 import { DollarSign, User, CheckCircle2, AlertCircle, XCircle, Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
 import { usarFinanceiro } from '../../../contextos/FinanceiroContexto';
 import { usarAutenticacao } from '../../../contextos/AutenticacaoContexto';
+import { rastrear } from '../../../servicos/rastreamento';
 
 const FinanceiroAvulsos = ({ membrosIniciais = [] }) => {
     const { equipeAtiva, temPermissaoEquipe } = usarEquipe();
@@ -113,6 +114,7 @@ const FinanceiroAvulsos = ({ membrosIniciais = [] }) => {
                 .eq('id', id);
             
             if (error) throw error;
+            rastrear.clique('financeiro_avulso_alternar_pagamento', 'Alternou o status de uma fatura de avulso', { status: novoStatus });
             await carregarAvulsos();
         } catch (error) {
             alert('Falha ao atualizar pagamento: ' + error.message);
@@ -139,6 +141,7 @@ const FinanceiroAvulsos = ({ membrosIniciais = [] }) => {
                 .delete()
                 .eq('id', pag.id);
             if (error) throw error;
+            rastrear.clique('financeiro_avulso_anular', 'Anulou faturamento indesejado ou equivocado de avulso');
             await carregarAvulsos();
         } catch (error) {
             alert('Falha ao anular: ' + error.message);
@@ -198,11 +201,23 @@ const FinanceiroAvulsos = ({ membrosIniciais = [] }) => {
             ) : (
                 <div className="painel-membros" style={{ background: 'rgba(15,23,42,0.6)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '16px', overflow: 'hidden' }}>
                     <div className="lista-membros" style={{ padding: 0 }}>
-                        {pagamentos.map(p => (
+                        {(() => {
+                            const avulsosOrdenados = [...pagamentos].sort((a, b) => {
+                                const nomeA = getNomeUsuario(a.usuarios?.id, a.usuarios);
+                                const nomeB = getNomeUsuario(b.usuarios?.id, b.usuarios);
+                                if (nomeA !== nomeB) {
+                                    return nomeA.localeCompare(nomeB);
+                                }
+                                const dataA = a.partidas?.data ? new Date(a.partidas.data).getTime() : 0;
+                                const dataB = b.partidas?.data ? new Date(b.partidas.data).getTime() : 0;
+                                return dataA - dataB;
+                            });
+                            return avulsosOrdenados.map((p, index) => (
                             <div key={p.id} className="membro-item" style={{ 
                                 display: 'flex', alignItems: 'center', padding: '16px', borderBottom: '1px solid rgba(255,255,255,0.05)',
                                 opacity: processando === p.id ? 0.5 : 1
                             }}>
+                                <span style={{ color: '#64748b', fontSize: '0.85rem', width: '20px', textAlign: 'right', marginRight: '12px' }}>{index + 1}.</span>
                                 <div style={{width: 40, height: 40, borderRadius: '50%', background: 'rgba(255,255,255,0.1)', overflow: 'hidden', marginRight: '16px'}}>
                                     {p.usuarios?.foto_url ? <img src={p.usuarios.foto_url} alt="jogador" style={{width:'100%', height:'100%', objectFit:'cover'}}/> : <User size={20} style={{margin:'10px', color:'#94a3b8'}}/>}
                                 </div>
@@ -257,7 +272,8 @@ const FinanceiroAvulsos = ({ membrosIniciais = [] }) => {
                                     )}
                                 </div>
                             </div>
-                        ))}
+                        ))
+                        })()}
                     </div>
                 </div>
             )}

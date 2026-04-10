@@ -12,6 +12,7 @@ import { usarAutenticacao } from '../../contextos/AutenticacaoContexto';
 import Botao from '../../componentes/Botao/Botao';
 import ModalCriacaoEquipe from '../../componentes/Equipe/ModalCriacaoEquipe';
 import ModalPerfilAtleta from '../../componentes/Modais/ModalPerfilAtleta';
+import { rastrear } from '../../servicos/rastreamento';
 
 // Importação das Abas Especializadas
 import AgendaTab from './tabs/AgendaTab';
@@ -60,6 +61,7 @@ const PaginaEquipe = ({ abaAtiva, setAbaAtiva, aoVoltar }) => {
         let isMounted = true;
         if (equipeAtiva?.id) {
             buscarMembros();
+            rastrear.pagina('Equipe', { equipe: equipeAtiva.nome, modalidade: equipeAtiva.modalidade });
         }
         return () => { isMounted = false; };
     }, [equipeAtiva?.id, buscarMembros]);
@@ -80,6 +82,7 @@ const PaginaEquipe = ({ abaAtiva, setAbaAtiva, aoVoltar }) => {
         navigator.clipboard.writeText(urlConvite);
         setCopiado(true);
         setTimeout(() => setCopiado(false), 2000);
+        rastrear.clique('equipe_copiar_link', 'Copiou link de convite da equipe');
     };
 
     const convidarWhatsApp = () => {
@@ -90,6 +93,7 @@ const PaginaEquipe = ({ abaAtiva, setAbaAtiva, aoVoltar }) => {
             `Fala atleta! 🤘\n\nVocê foi convidado(a) para a equipe *${equipeAtiva.nome}* no PlayHub!\n\n🏆 ${equipeAtiva.modalidade}\n${infos}\n\nAcesse o link, crie sua conta e solicite o ingresso:\n${urlConvite}`
         );
         window.open(`https://wa.me/?text=${mensagem}`, '_blank');
+        rastrear.clique('equipe_whatsapp_convite', 'Compartilhou convite da equipe via WhatsApp');
     };
 
     const handlesExcluir = async () => {
@@ -208,7 +212,10 @@ const PaginaEquipe = ({ abaAtiva, setAbaAtiva, aoVoltar }) => {
                                     {equipeAtiva.papel && equipeAtiva.papel !== 'admin' && (
                                         <button className={`btn-sair-equipe ${confirmandoSair ? 'confirmando' : ''}`} onClick={async () => {
                                             if (!confirmandoSair) { setConfirmandoSair(true); setTimeout(() => setConfirmandoSair(false), 3000); return; }
-                                            await sairDaEquipe(equipeAtiva.id);
+                                            const res = await sairDaEquipe(equipeAtiva.id);
+                                            if (res.sucesso) {
+                                                rastrear.clique('equipe_sair', 'Membro saiu da equipe');
+                                            }
                                         }}>
                                             <LogOut size={16} /> {confirmandoSair ? 'Confirmar Saída?' : 'Sair da Equipe'}
                                         </button>

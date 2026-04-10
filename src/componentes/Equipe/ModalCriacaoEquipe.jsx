@@ -7,6 +7,8 @@ import {
   Settings, DollarSign, Users, Calendar, CreditCard, Clock
 } from 'lucide-react';
 import { usarEquipe } from '../../contextos/EquipeContexto';
+import { rastrear } from '../../servicos/rastreamento';
+import FormEnderecoEquipe from './FormEnderecoEquipe';
 import './ModalCriacaoEquipe.css';
 
 const MODALIDADES = [
@@ -157,6 +159,7 @@ const ModalCriacaoEquipe = ({ isOpen, onClose, aoSucesso, equipeParaEditar = nul
         }));
         // Foco automático no número após preencher endereço
         setTimeout(() => campoNumeroRef.current?.focus(), 100);
+        rastrear.clique('equipe_busca_cep', 'Realizou busca de CEP para sede da equipe', { cep: cepLimpo });
       }
     } catch (err) {
       setErro('Erro ao buscar CEP. Tente preencher manualmente.');
@@ -231,6 +234,10 @@ const ModalCriacaoEquipe = ({ isOpen, onClose, aoSucesso, equipeParaEditar = nul
       if (!equipeParaEditar) limparForm();
       onClose();
       if (aoSucesso) aoSucesso(result.equipe);
+      rastrear.clique('equipe_salvar_dados', equipeParaEditar ? 'Editou dados da equipe' : 'Criou nova equipe', { 
+        modalidade: form.modalidade,
+        visibilidade: form.visibilidade
+      });
     } else {
       setErro('Falha ao processar equipe: ' + result.erro);
     }
@@ -342,139 +349,14 @@ const ModalCriacaoEquipe = ({ isOpen, onClose, aoSucesso, equipeParaEditar = nul
           </div>
         </div>
 
-        <div className="secao-form">
-          <span className="secao-titulo">Sede da Equipe (Local de Jogo)</span>
-          
-          <div className="campo">
-            <label>Nome do Local (Onde o time joga?)*</label>
-            <div className="campo-valida">
-              <span className="icone-input"><Building2 size={18} /></span>
-              <input 
-                type="text" 
-                placeholder="Ex: Arena Soccer, Clube Recreativo..." 
-                value={form.local_nome}
-                onChange={(e) => handleMudanca('local_nome', e.target.value)}
-                required
-              />
-            </div>
-          </div>
-
-          <div className="grupo-input">
-            <label>CEP (Busca Automática)</label>
-            <div className="grade-cep">
-              <div className="campo-input" style={{ flex: 1, position: 'relative' }}>
-                <span className="icone" style={{ position: 'absolute', left: '10px', top: '12px', color: '#64748b' }}><Search size={16} /></span>
-                <input 
-                  type="text"
-                  value={form.local_cep} 
-                  onChange={(e) => handleMudanca('local_cep', mascaraCep(e.target.value))}
-                  placeholder="00000-000"
-                  maxLength={9}
-                  className="input-cep"
-                />
-              </div>
-              <Botao type="button" onClick={buscarCep} disabled={buscandoCep} className="btn-busca-cep">
-                <Search size={15} />
-              </Botao>
-            </div>
-          </div>
-
-        <div className="fila-campos">
-          <div className="campo">
-            <label>Rua / Logradouro</label>
-            <div className="campo-valida">
-              <span className="icone-input"><Home size={18} /></span>
-              <input 
-                type="text" 
-                placeholder="Rua, Avenida..." 
-                value={form.local_rua}
-                onChange={(e) => handleMudanca('local_rua', e.target.value)}
-              />
-            </div>
-          </div>
-          <div className="campo campo-pequeno">
-            <label>Número *</label>
-            <div className="campo-valida">
-              <span className="icone-input"><Hash size={18} /></span>
-              <input 
-                ref={campoNumeroRef}
-                type="text" 
-                placeholder="Ex: 123" 
-                value={form.local_numero}
-                onChange={(e) => handleMudanca('local_numero', e.target.value)}
-                required
-              />
-            </div>
-          </div>
-          <div className="campo campo-medio">
-            <label>Complemento</label>
-            <div className="campo-valida">
-              <span className="icone-input"><Building2 size={18} /></span>
-              <input 
-                type="text" 
-                placeholder="Apto, Bloco..." 
-                value={form.local_complemento}
-                onChange={(e) => handleMudanca('local_complemento', e.target.value)}
-              />
-            </div>
-          </div>
-        </div>
-
-        <div className="fila-campos">
-          <div className="campo">
-            <label>Bairro</label>
-            <div className="campo-valida">
-              <span className="icone-input"><Map size={18} /></span>
-              <input 
-                type="text" 
-                placeholder="Bairro..." 
-                value={form.local_bairro}
-                onChange={(e) => handleMudanca('local_bairro', e.target.value)}
-              />
-            </div>
-          </div>
-          <div className="campo campo-flex-2">
-            <label>Cidade *</label>
-            <div className="campo-valida">
-              <span className="icone-input"><Building2 size={18} /></span>
-              <input 
-                type="text" 
-                placeholder="Cidade..." 
-                value={form.local_cidade}
-                onChange={(e) => handleMudanca('local_cidade', e.target.value)}
-                required
-              />
-            </div>
-          </div>
-          <div className="campo campo-pequeno">
-            <label>UF *</label>
-            <div className="campo-valida">
-              <span className="icone-input"><Flag size={18} /></span>
-              <input 
-                type="text" 
-                placeholder="UF" 
-                value={form.local_estado}
-                onChange={(e) => handleMudanca('local_estado', e.target.value.toUpperCase().slice(0,2))}
-                required
-                maxLength={2}
-              />
-            </div>
-          </div>
-        </div>
-
-        <div className="campo">
-          <label>Link do Google Maps / Waze</label>
-          <div className="campo-valida">
-            <span className="icone-input"><MapPin size={18} /></span>
-            <input 
-              type="url" 
-              placeholder="https://maps.google.com/..." 
-              value={form.local_mapa_link}
-              onChange={(e) => handleMudanca('local_mapa_link', e.target.value)}
-            />
-          </div>
-        </div>
-      </div>
+        <FormEnderecoEquipe 
+          form={form}
+          handleMudanca={handleMudanca}
+          buscarCep={buscarCep}
+          buscandoCep={buscandoCep}
+          campoNumeroRef={campoNumeroRef}
+          mascaraCep={mascaraCep}
+        />
 
       <div className="campo">
           <label>Visibilidade (Matchmaking)</label>

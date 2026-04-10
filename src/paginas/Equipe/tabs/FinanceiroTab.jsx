@@ -26,6 +26,7 @@ import {
 import { usarFinanceiro } from '../../../contextos/FinanceiroContexto';
 import { usarEquipe } from '../../../contextos/EquipeContexto';
 import Botao from '../../../componentes/Botao/Botao';
+import { rastrear } from '../../../servicos/rastreamento';
 import FinanceiroDashboard from './FinanceiroDashboard';
 import FinanceiroAvulsos from './FinanceiroAvulsos';
 
@@ -162,6 +163,7 @@ const FinanceiroTab = ({ abaExterna, modoLeitura = false, membrosIniciais = [] }
 
         const res = await registrarPagamentoMensalidade(dados);
         if (res.success) {
+            rastrear.clique('financeiro_alternar_pagamento_mensalista', 'Alternou pagamento do mensalista', { status: novoStatus, periodo: periodoAtivo });
             await carregarDados();
         } else {
             alert('Erro ao atualizar status: ' + res.error);
@@ -184,6 +186,7 @@ const FinanceiroTab = ({ abaExterna, modoLeitura = false, membrosIniciais = [] }
         try {
             const res = await inicializarCiclo(equipeAtiva.id, periodoAtivo, mensalistas);
             if (res.success) {
+                rastrear.clique('financeiro_inicializar_ciclo', 'Inicializou ciclo financeiro mensal', { qt_mensalistas: mensalistas.length, periodo: periodoAtivo });
                 await carregarDados();
             } else {
                 alert('Erro ao inicializar ciclo: ' + res.error);
@@ -214,6 +217,7 @@ const FinanceiroTab = ({ abaExterna, modoLeitura = false, membrosIniciais = [] }
         
         const res = await registrarPagamentoMensalidade(dados);
         if (res.success) {
+            rastrear.clique('financeiro_adicionar_mensalista_ciclo', 'Adicionou mensalista manualmente ao ciclo', { periodo: periodoAtivo });
             await carregarDados();
         } else {
             alert('Erro ao adicionar: ' + res.error);
@@ -240,6 +244,7 @@ const FinanceiroTab = ({ abaExterna, modoLeitura = false, membrosIniciais = [] }
         setProcessando('remover_' + pag.id);
         const res = await removerMensalidade(pag.id);
         if (res.success) {
+            rastrear.clique('financeiro_remover_mensalista_ciclo', 'Removeu mensalista do ciclo atual', { periodo: periodoAtivo });
             await carregarDados();
         } else {
             alert('Erro ao remover: ' + res.error);
@@ -263,6 +268,7 @@ const FinanceiroTab = ({ abaExterna, modoLeitura = false, membrosIniciais = [] }
         setProcessando('remover_ciclo');
         const res = await removerCiclo(equipeAtiva.id, periodoAtivo);
         if (res.success) {
+            rastrear.clique('financeiro_remover_ciclo_vazio', 'Apagou dados do ciclo financeiro', { periodo: periodoAtivo });
             await carregarDados();
         } else {
             alert('Erro ao excluir ciclo: ' + res.error);
@@ -301,6 +307,7 @@ const FinanceiroTab = ({ abaExterna, modoLeitura = false, membrosIniciais = [] }
 
             setExibirConfig(false);
             await carregarDados();
+            rastrear.clique('financeiro_salvar_config_mensalistas', 'Atualizou as configs financeiras da equipe');
             alert('Configurações salvas e sincronizadas!');
         } catch (error) {
             console.error('Erro ao salvar config:', error);
@@ -405,6 +412,7 @@ const FinanceiroTab = ({ abaExterna, modoLeitura = false, membrosIniciais = [] }
         msg += `\n---------------------------\n`;
         msg += `👉 _Relatório enviado via playhubapp.com.br_ 🚀`;
 
+        rastrear.clique('financeiro_whatsapp_mensalistas', 'Enviou balanço financeiro via WhatsApp');
         window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`, '_blank');
     };
 
@@ -538,9 +546,21 @@ const FinanceiroTab = ({ abaExterna, modoLeitura = false, membrosIniciais = [] }
                             <div style={{ padding: '60px', textAlign: 'center', color: '#94a3b8' }}><Loader2 className="animate-spin" style={{ margin: '0 auto 12px' }} /> Carregando...</div>
                         ) : mensalidades.length > 0 ? (
                             <div>
-                                {mensalidades.map(pag => (
+                                {(() => {
+                                    const mensalidadesOrdenadas = [...mensalidades].sort((a, b) => {
+                                        const papelA = mapaPapeis[a.usuario_id] || 'jogador';
+                                        const papelB = mapaPapeis[b.usuario_id] || 'jogador';
+                                        const pesoA = papelA === 'admin' ? 1 : papelA === 'sub_admin' ? 2 : 3;
+                                        const pesoB = papelB === 'admin' ? 1 : papelB === 'sub_admin' ? 2 : 3;
+                                        if (pesoA !== pesoB) return pesoA - pesoB;
+                                        const nomeA = formatName(a.usuarios?.nome_completo);
+                                        const nomeB = formatName(b.usuarios?.nome_completo);
+                                        return nomeA.localeCompare(nomeB);
+                                    });
+                                    return mensalidadesOrdenadas.map((pag, index) => (
                                     <div key={pag.id} className="item-mensalidade">
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                            <span style={{ color: '#64748b', fontSize: '0.85rem', width: '20px', textAlign: 'right' }}>{index + 1}.</span>
                                             <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'rgba(255,255,255,0.05)', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                                 {pag.usuarios?.foto_url ? <img src={pag.usuarios.foto_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <User size={20} color="#64748b" />}
                                             </div>
@@ -601,7 +621,8 @@ const FinanceiroTab = ({ abaExterna, modoLeitura = false, membrosIniciais = [] }
                                             )}
                                         </div>
                                     </div>
-                                ))}
+                                ))
+                                })()}
                             </div>
                         ) : (
                             <div style={{ padding: '60px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>

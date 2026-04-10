@@ -4,10 +4,16 @@ import {
   ArrowRight, CheckCircle2, Star, Zap,
   Smartphone, Share2, Gavel, Wallet
 } from 'lucide-react';
+import { rastrear } from '../../servicos/rastreamento';
 import InfoTooltip from '../../componentes/Tooltip/InfoTooltip';
 import './LandingPage.css';
 
 const LandingPage = ({ aoLogin }) => {
+  const handleCTA = (origem) => {
+    rastrear.clique('landing_clicou_entrar', `Visitante clicou para entrar a partir de: ${origem}`);
+    aoLogin();
+  };
+
   return (
     <div className="landing-container">
       {/* ── Navbar ── */}
@@ -16,7 +22,7 @@ const LandingPage = ({ aoLogin }) => {
           <img src="/icon_ph_oficial_cf.png" alt="PlayHub Logo" style={{ borderRadius: '4px' }} />
           <span>PlayHub</span>
         </div>
-        <button className="btn-hero-secondary" style={{ padding: '0.6rem 1.5rem', fontSize: '0.9rem' }} onClick={aoLogin}>
+        <button className="btn-hero-secondary" style={{ padding: '0.6rem 1.5rem', fontSize: '0.9rem' }} onClick={() => handleCTA('navbar_topo')}>
           Entrar
         </button>
       </nav>
@@ -34,7 +40,7 @@ const LandingPage = ({ aoLogin }) => {
           Feito de jogador para jogador.
         </p>
         <div className="hero-cta-group">
-          <button className="btn-hero-primary" onClick={aoLogin}>
+          <button className="btn-hero-primary" onClick={() => handleCTA('hero_header_central')}>
             Começar Agora <ArrowRight size={20} style={{ marginLeft: '8px', verticalAlign: 'middle' }} />
           </button>
           <button className="btn-hero-secondary" onClick={() => document.getElementById('features').scrollIntoView({ behavior: 'smooth' })}>
@@ -147,7 +153,7 @@ const LandingPage = ({ aoLogin }) => {
         <p className="hero-subheadline">
           Junte-se a milhares de jogadores e capitães que já usam o PlayHub para organizar suas partidas.
         </p>
-        <button className="btn-hero-primary" onClick={aoLogin} style={{ padding: '1.2rem 3rem', fontSize: '1.1rem' }}>
+        <button className="btn-hero-primary" onClick={() => handleCTA('footer_final')} style={{ padding: '1.2rem 3rem', fontSize: '1.1rem' }}>
           Criar Minha Conta Grátis
         </button>
       </section>

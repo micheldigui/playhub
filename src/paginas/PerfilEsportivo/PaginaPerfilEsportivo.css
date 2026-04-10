@@ -1,380 +1,417 @@
-/* ============================================
-   PLAYHUB - CSS do Perfil Esportivo
-   ============================================ */
+/* ============================================================
+   PLAYHUB - CSS PREMIMUM PERFIL ESPORTIVO
+   Design: Glassmorphism / Neon Accents / Ultra Responsivity
+   ============================================================ */
 
-.perfil-esportivo-container {
+.perfil-esportivo-premium {
   max-width: 1000px;
   margin: 0 auto;
-  height: calc(100vh - 64px - 4rem); /* Altura exata disponível no Layout */
+  height: calc(100dvh - 64px - 4rem);
   display: flex;
   flex-direction: column;
-  overflow: hidden;
-  background: rgba(15, 23, 42, 0.2);
-  border-radius: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.03);
-}
-
-@media (max-width: 768px) {
-  .perfil-esportivo-container {
-    height: calc(100vh - 56px - 2rem); /* Mobile header + padding reduzido */
-    border-radius: 0;
-    border: none;
-    background: transparent;
-  }
-}
-
-.perfil-body {
-  flex: 1;
   overflow-y: auto;
-  padding: 1rem 1.5rem;
+  padding: 0 1rem 2rem 1rem;
   scrollbar-width: thin;
   scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
 }
 
-/* Scrollbar minimalista */
-.perfil-body::-webkit-scrollbar {
-  width: 6px;
-}
-.perfil-body::-webkit-scrollbar-track {
-  background: transparent;
-}
-.perfil-body::-webkit-scrollbar-thumb {
-  background-color: rgba(255, 255, 255, 0.1);
-  border-radius: 20px;
-}
+.perfil-esportivo-premium::-webkit-scrollbar { width: 6px; }
+.perfil-esportivo-premium::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 10px; }
 
-.animacao-entrada {
-  animation: fadeSlideUp 0.3s ease-out;
-}
-
-.perfil-cabecalho-acoes {
-  margin-bottom: 1.5rem;
-}
-
-.btn-voltar-perfil {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: #94a3b8;
-  padding: 0.5rem 1rem;
-  border-radius: 8px;
-  font-size: 0.85rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.btn-voltar-perfil:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: #f1f5f9;
-}
-
-.perfil-cabecalho {
-  margin-bottom: 1rem;
-}
-
-.perfil-cabecalho h2 {
-  font-size: 1.8rem;
-  margin-bottom: 0.25rem;
-}
-
-.perfil-cabecalho p {
-  color: #94a3b8;
-  font-size: 0.95rem;
-}
-
-/* Base do Cartao */
-.perfil-cartao {
-  background: rgba(30, 41, 59, 0.5);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 16px;
-  padding: 2rem;
-  margin-bottom: 1.5rem;
+.esp-perfil-body {
   display: flex;
   flex-direction: column;
+  gap: 1.5rem;
 }
 
-.cartao-titulo {
-  font-size: 0.8rem;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: #0ea5e9;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  padding-bottom: 0.75rem;
+/* ==========================================
+   ALERTAS GLOBAIS
+   ========================================== */
+.alerta-esp-global {
+  padding: 1rem 1.5rem;
+  border-radius: 14px;
+  font-size: 0.9rem;
+  font-weight: 600;
   margin-bottom: 1rem;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-/* Mensagens de Alerta */
-.mensagem-alerta {
+  animation: fadeSlideUp 0.3s ease-out;
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  padding: 1rem;
-  border-radius: 12px;
-  margin-bottom: 1.5rem;
-  font-size: 0.9rem;
-  font-weight: 500;
-  animation: fadeSlideUp 0.3s ease-out;
 }
 
-.mensagem-alerta.sucesso {
+.alerta-esp-global.sucesso {
   background: rgba(16, 185, 129, 0.1);
-  border: 1px solid rgba(16, 185, 129, 0.3);
+  border: 1px solid rgba(16, 185, 129, 0.2);
   color: #10b981;
 }
 
-.mensagem-alerta.erro {
+.alerta-esp-global.erro {
   background: rgba(244, 63, 94, 0.1);
-  border: 1px solid rgba(244, 63, 94, 0.3);
+  border: 1px solid rgba(244, 63, 94, 0.2);
   color: #f43f5e;
 }
 
-/* Perfil Esportivo */
-.cartao-descricao {
-  font-size: 0.9rem;
-  color: #94a3b8;
-  margin-bottom: 1.5rem;
-  line-height: 1.5;
+/* ==========================================
+   ESTRUTURA DE CARTÃO PREMIUM
+   ========================================== */
+.esp-cartao-premium {
+  background: rgba(30, 41, 59, 0.3);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 24px;
+  padding: 2rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
 }
 
-.modalidades-lista {
+.esp-cartao-header {
   display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
+  align-items: center;
+  gap: 1.25rem;
   margin-bottom: 2rem;
 }
 
-.loading-texto, .estado-vazio {
-  text-align: center;
-  color: #64748b;
-  font-size: 0.9rem;
-  padding: 1.5rem 0;
-  background: rgba(255, 255, 255, 0.02);
+.esp-icone-wrapper {
+  width: 44px;
+  height: 44px;
+  background: rgba(14, 165, 233, 0.1);
   border-radius: 12px;
-  border: 1px dashed rgba(255, 255, 255, 0.1);
-}
-
-.modalidade-item {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 1rem 1.25rem;
-  background: rgba(15, 23, 42, 0.4);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 12px;
-  transition: all 0.2s;
+  justify-content: center;
+  color: #38bdf8;
+  border: 1px solid rgba(14, 165, 233, 0.2);
 }
 
-.modalidade-item:hover {
-  background: rgba(15, 23, 42, 0.6);
-  border-color: rgba(14, 165, 233, 0.3);
+.esp-icone-wrapper.alt {
+  background: rgba(245, 158, 11, 0.1);
+  color: #f59e0b;
+  border-color: rgba(245, 158, 11, 0.2);
 }
 
-.modalidade-info {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  flex-wrap: wrap;
-}
-
-.modalidade-info strong {
+.esp-header-texto h3 {
   font-size: 1rem;
-  color: #f1f5f9;
-}
-
-.modalidade-info span {
-  color: #94a3b8;
-  font-size: 0.9rem;
-}
-
-.badge-nivel {
-  padding: 0.25rem 0.75rem;
-  border-radius: 20px;
-  font-size: 0.75rem !important;
-  font-weight: 600;
-  text-transform: uppercase;
+  font-weight: 800;
+  color: #f8fafc;
   letter-spacing: 0.05em;
+  text-transform: uppercase;
 }
 
-.badge-nivel.lazer { background: rgba(148, 163, 184, 0.15); color: #94a3b8; border: 1px solid rgba(148,163,184,0.3); }
-.badge-nivel.iniciante { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16,185,129,0.3); }
-.badge-nivel.intermediario { background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56,189,248,0.3); }
-.badge-nivel.avancado { background: rgba(139, 92, 246, 0.15); color: #a78bfa; border: 1px solid rgba(139,92,246,0.3); }
-.badge-nivel.profissional { background: rgba(244, 63, 94, 0.15); color: #fb7185; border: 1px solid rgba(244,63,94,0.3); }
+.esp-header-texto p {
+  font-size: 0.85rem;
+  color: #94a3b8;
+  margin-top: 0.2rem;
+}
 
-/* Interesses Rapidos */
-.grade-interesses {
+/* ==========================================
+   TAGS DE INTERESSE (GLOW EFFECT)
+   ========================================== */
+.esp-grade-interesses {
   display: flex;
   flex-wrap: wrap;
   gap: 0.75rem;
 }
 
-.interesse-badge {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 1rem;
-  background: rgba(15, 23, 42, 0.4);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 20px;
+.esp-interesse-tag {
   cursor: pointer;
-  font-size: 0.85rem;
-  font-weight: 500;
-  color: #94a3b8;
-  transition: all 0.2s;
+  position: relative;
   user-select: none;
 }
 
-.interesse-badge input {
-  display: none;
+.esp-interesse-tag input { display: none; }
+
+.esp-tag-content {
+  display: block;
+  padding: 0.6rem 1.25rem;
+  background: rgba(15, 23, 42, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 50px;
+  color: #94a3b8;
+  font-size: 0.85rem;
+  font-weight: 600;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.interesse-badge:hover {
-  background: rgba(15, 23, 42, 0.6);
-  border-color: rgba(14, 165, 233, 0.3);
+.esp-interesse-tag:hover .esp-tag-content {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: #f1f5f9;
+  transform: translateY(-2px);
 }
 
-.interesse-badge.ativo {
+.esp-interesse-tag.es-ativo .esp-tag-content {
   background: rgba(14, 165, 233, 0.15);
   border-color: #0ea5e9;
-  color: #0ea5e9;
+  color: #38bdf8;
+  box-shadow: 0 0 15px rgba(14, 165, 233, 0.2);
 }
 
-.btn-remover-icone {
-  background: none;
-  border: none;
-  color: #64748b;
-  cursor: pointer;
-  padding: 0.5rem;
-  border-radius: 8px;
+/* ==========================================
+   LISTA DE HABILIDADES
+   ========================================== */
+.esp-modalidades-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 2.5rem;
+}
+
+.esp-item-modalidade {
+  background: rgba(15, 23, 42, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.03);
+  border-radius: 16px;
+  padding: 1rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   transition: all 0.2s;
+}
+
+.esp-item-modalidade:hover {
+  background: rgba(15, 23, 42, 0.6);
+  border-color: rgba(255, 255, 255, 0.1);
+  transform: scale(1.005);
+}
+
+.esp-modalidade-main {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.esp-icone-esporte {
+  color: #0ea5e9;
+  background: rgba(14, 165, 233, 0.1);
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.btn-remover-icone:hover {
+.esp-info-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.esp-nome-esporte {
+  font-weight: 700;
+  color: #f1f5f9;
+  font-size: 1rem;
+}
+
+.esp-posicao-esporte {
+  font-size: 0.8rem;
+  color: #64748b;
+}
+
+.esp-modalidade-meta {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+/* BADGES DE NIVEL (NEON) */
+.esp-badge-pro {
+  font-size: 0.7rem;
+  font-weight: 800;
+  padding: 0.35rem 0.85rem;
+  border-radius: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.esp-badge-pro.nivel-profissional { background: rgba(244, 63, 94, 0.1); color: #fb7185; border: 1px solid rgba(244, 63, 94, 0.2); }
+.esp-badge-pro.nivel-avancado { background: rgba(139, 92, 246, 0.1); color: #a78bfa; border: 1px solid rgba(139, 92, 246, 0.2); }
+.esp-badge-pro.nivel-intermediario { background: rgba(14, 165, 233, 0.1); color: #38bdf8; border: 1px solid rgba(14, 165, 233, 0.2); }
+.esp-badge-pro.nivel-iniciante { background: rgba(16, 185, 129, 0.1); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.2); }
+.esp-badge-pro.nivel-lazer { background: rgba(148, 163, 184, 0.1); color: #94a3b8; border: 1px solid rgba(148, 163, 184, 0.2); }
+
+.esp-btn-remover {
+  background: transparent;
+  border: none;
+  color: #334155;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+.esp-btn-remover:hover {
   background: rgba(244, 63, 94, 0.1);
   color: #f43f5e;
 }
 
-.form-add-modalidade {
-  background: rgba(0, 0, 0, 0.15);
-  border-radius: 12px;
-  padding: 1.5rem;
-  border: 1px solid rgba(255, 255, 255, 0.03);
+/* ==========================================
+   FORMULARIO DE ADIÇÃO
+   ========================================== */
+.esp-form-adicao {
+  background: rgba(15, 23, 42, 0.2);
+  border: 1px dashed rgba(255, 255, 255, 0.1);
+  padding: 1.75rem;
+  border-radius: 20px;
 }
 
-.form-add-modalidade h4 {
-  font-size: 0.9rem;
-  color: #cbd5e1;
-  margin-bottom: 1rem;
-  font-weight: 600;
-}
-
-.grade-add-modalidade {
+.esp-add-grid {
   display: grid;
-  grid-template-columns: 2fr 1.5fr 1.5fr auto;
-  gap: 1rem;
+  grid-template-columns: 1fr 1fr 1fr auto;
+  gap: 1.25rem;
   align-items: flex-end;
 }
 
-.grupo-btn-add {
-  display: flex;
-}
-
-.btn-add-modalidade {
-  height: 44px;
-  padding: 0 1.25rem;
-  background: #0ea5e9;
-  color: white;
-  border: none;
-  border-radius: 10px;
-  font-weight: 600;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  transition: all 0.2s;
-  white-space: nowrap;
-}
-
-.btn-add-modalidade:hover:not(:disabled) {
-  background: #0284c7;
-  transform: translateY(-1px);
-}
-
-.btn-add-modalidade:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-/* Campos de Input Herdado */
-.grupo-input {
+.esp-add-campo {
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
+  gap: 0.5rem;
 }
 
-.grupo-input label {
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: #cbd5e1;
-  padding-left: 2px;
+.esp-add-campo label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  padding-left: 0.25rem;
 }
 
-.campo-input {
-  position: relative;
-  display: flex;
-  align-items: center;
-}
-
-.campo-input input,
-.campo-input select {
-  width: 100%;
-  padding: 12px 14px;
-  background: rgba(15, 23, 42, 0.4);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 10px;
-  color: #f1f5f9;
+.esp-add-campo select {
+  background: rgba(15, 23, 42, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 0.75rem 1rem;
+  color: white;
   font-family: inherit;
-  font-size: 0.95rem;
-  transition: all 0.2s;
   outline: none;
+  transition: all 0.2s;
 }
 
-.campo-input input:focus,
-.campo-input select:focus {
+.esp-add-campo select:focus {
   border-color: #0ea5e9;
-  background: rgba(14, 165, 233, 0.05);
   box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
 }
 
-.campo-input select option {
-  background-color: #1e293b;
-  color: #f1f5f9;
-}
-
-.campo-input.desabilitado select {
-  background: rgba(255, 255, 255, 0.02);
-  color: #64748b;
+.esp-add-campo select:disabled {
+  opacity: 0.4;
   cursor: not-allowed;
-  border-color: transparent;
 }
 
+.esp-btn-confirmar-add {
+  background: #0ea5e9;
+  color: white;
+  border: none;
+  height: 46px;
+  padding: 0 1.5rem;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.esp-btn-confirmar-add:hover:not(:disabled) {
+  background: #0284c7;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(14, 165, 233, 0.4);
+}
+
+.esp-vazio-glow {
+  text-align: center;
+  padding: 2.5rem;
+  color: #64748b;
+  font-size: 0.9rem;
+  font-style: italic;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 16px;
+}
+
+/* ==========================================
+   ANIMACOES
+   ========================================== */
 @keyframes fadeSlideUp {
-  from { opacity: 0; transform: translateY(10px); }
+  from { opacity: 0; transform: translateY(15px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
-@media (max-width: 768px) {
-  .grade-add-modalidade {
+.flash-icon {
+  animation: flash 3s infinite;
+}
+
+@keyframes flash {
+  0%, 100% { opacity: 1; filter: brightness(1); }
+  50% { opacity: 0.7; filter: brightness(1.5); }
+}
+
+/* ==========================================
+   RESPONSIVIDADE
+   ========================================== */
+@media (max-width: 900px) {
+  .esp-add-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .esp-btn-confirmar-add {
+    grid-column: span 2;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 500px) {
+  .esp-add-grid {
     grid-template-columns: 1fr;
+  }
+  .esp-btn-confirmar-add {
+    grid-column: span 1;
+  }
+  .esp-cartao-premium {
+    padding: 1.5rem;
+  }
+  .esp-item-modalidade {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  .esp-modalidade-meta {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
+/* ==========================================
+   ATALHOS DE NAVEGAÇÃO
+   ========================================== */
+.esp-nav-atalho {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 0.5rem;
+}
+
+.btn-atalho-perfil {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #94a3b8;
+  padding: 0.6rem 1.25rem;
+  border-radius: 50px;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-atalho-perfil:hover {
+  background: rgba(14, 165, 233, 0.1);
+  border-color: #0ea5e9;
+  color: #38bdf8;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(14, 165, 233, 0.2);
+}
+
+/* RESPONSIVIDADE ADICIONAL */
+@media (max-width: 500px) {
+  .esp-nav-atalho {
+    justify-content: center;
+    width: 100%;
   }
 }

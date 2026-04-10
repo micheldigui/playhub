@@ -144,7 +144,19 @@ const BarraLateral = ({ ativo, setAtivo, abaEquipe, setAbaEquipe }) => {
                     if (!hasSubmenu) setAberta(false); 
                   }}
                 >
-                  <span className="item-nav-icone"><Icone size={19} /></span>
+                  <span className="item-nav-icone">
+                    {id === 'perfil' ? (
+                      <div className="mini-avatar-nav">
+                        {dadosUsuario?.foto_url ? (
+                          <img src={dadosUsuario.foto_url} alt="Perfil" />
+                        ) : (
+                          <Icone size={19} />
+                        )}
+                      </div>
+                    ) : (
+                      <Icone size={19} />
+                    )}
+                  </span>
                   <span className="item-nav-label">
             {id === 'equipe' && equipeAtiva ? equipeAtiva.nome : label}
             {id === 'equipe' && totalNotificacoesEquipe > 0 && (

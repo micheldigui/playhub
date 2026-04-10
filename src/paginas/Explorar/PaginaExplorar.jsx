@@ -21,6 +21,7 @@ import { usarEquipe } from '../../contextos/EquipeContexto';
 import { usarAutenticacao } from '../../contextos/AutenticacaoContexto';
 import { usarNotificacoes } from '../../contextos/NotificacoesContexto';
 import { supabase } from '../../servicos/supabase';
+import { rastrear } from '../../servicos/rastreamento';
 import { Globe, MapPin, Trophy, Users, Search, ArrowLeft, Crown, User, Phone, MessageCircle, Ban } from 'lucide-react';
 import Botao from '../../componentes/Botao/Botao';
 import ModalPerfilAtleta from '../../componentes/Modais/ModalPerfilAtleta';
@@ -156,6 +157,7 @@ const PaginaExplorar = ({ aoVoltar }) => {
 
       if (novaBusca) {
         setResultados(lista);
+        rastrear.clique('explorar_realizou_busca', 'Realizou busca na tela Explorar', { aba: abaAtiva, termo: termoBusca || 'vazio' });
       } else {
         setResultados(prev => [...prev, ...lista]);
       }
@@ -228,6 +230,7 @@ const PaginaExplorar = ({ aoVoltar }) => {
         throw error;
       }
       
+      rastrear.clique('explorar_passou_bola', 'Passou a bola para um atleta como demonstração de interesse');
       alert('Você passou a bola para este atleta! ⚽');
     } catch (err) {
       console.error('Erro ao interagir:', err);
@@ -239,6 +242,7 @@ const PaginaExplorar = ({ aoVoltar }) => {
     setProcessando(equipeId);
     const result = await solicitarIngresso(equipeId);
     if (result.sucesso) {
+      rastrear.clique('explorar_solicitou_ingresso', 'Solicitou ingresso numa equipe listada publicamente');
       setSolicitadosGatilho((prev) => ({ ...prev, [equipeId]: true }));
     } else {
       alert(result.erro);
@@ -249,6 +253,7 @@ const PaginaExplorar = ({ aoVoltar }) => {
   const handleCancelarSolicitacao = async (equipeId) => {
     const result = await cancelarSolicitacaoIngresso(equipeId);
     if (result.sucesso) {
+      rastrear.clique('explorar_cancelou_solicitacao', 'Cancelou uma submissão pendente de ingresso');
       setSolicitadosGatilho((prev) => {
         const novo = { ...prev };
         delete novo[equipeId];

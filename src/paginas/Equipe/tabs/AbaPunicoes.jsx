@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../../servicos/supabase';
+import { rastrear } from '../../../servicos/rastreamento';
 import { usarEquipe } from '../../../contextos/EquipeContexto';
 import { usarAutenticacao } from '../../../contextos/AutenticacaoContexto';
 import Botao from '../../../componentes/Botao/Botao';
@@ -82,6 +83,7 @@ const AbaPunicoes = ({ membrosIniciais = [] }) => {
                 .eq('id', id);
             
             if (error) throw error;
+            rastrear.clique('fairplay_punicao_alterada', 'Alternou perdao ou ativacao da punicao', { status: novoEstado ? 'reativada' : 'perdoada' });
             await carregarPunicoes();
         } catch (error) {
             alert('Falha ao perdoar: ' + error.message);
@@ -103,6 +105,7 @@ const AbaPunicoes = ({ membrosIniciais = [] }) => {
                 .eq('ativa', true);
             
             if (error) throw error;
+            rastrear.clique('fairplay_ciclo_zerado_completo', 'Tribunal concedeu anistia generalizada a todos os jogadores');
             alert('Ciclo zerado com sucesso! Todos os atletas estão aptos para o próximo jogo. 🤝');
             await carregarPunicoes();
         } catch (error) {
@@ -120,6 +123,7 @@ const AbaPunicoes = ({ membrosIniciais = [] }) => {
         try {
             const { error } = await supabase.from('punicoes_equipe').delete().eq('id', id);
             if (error) throw error;
+            rastrear.clique('fairplay_deletar_punicao', 'Punicao excluida definitivamente');
             await carregarPunicoes();
         } catch (error) {
             alert('Falha ao excluir: ' + error.message);

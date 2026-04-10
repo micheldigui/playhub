@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { usarEquipe } from '../../../contextos/EquipeContexto';
 import { usarAutenticacao } from '../../../contextos/AutenticacaoContexto';
+import { rastrear } from '../../../servicos/rastreamento';
 import InfoTooltip from '../../../componentes/Tooltip/InfoTooltip';
 import ModalPerfilAtleta from '../../../componentes/Modais/ModalPerfilAtleta';
 
@@ -84,6 +85,7 @@ const MembrosTab = ({ membrosIniciais = [], recarregar }) => {
         setProcessando(membroId);
         const res = await atualizarMembro(membroId, { vinculo: novoVinculo });
         if (res.sucesso) {
+            rastrear.clique('equipe_alterar_vinculo_membro', 'Alterou modelo de pagamento do Atleta', { novo_status: novoVinculo });
             await handleAcaoSucesso();
         } else {
             alert('Erro ao atualizar vínculo: ' + res.erro);
@@ -98,6 +100,7 @@ const MembrosTab = ({ membrosIniciais = [], recarregar }) => {
         setProcessando(membroId);
         const res = await atualizarMembro(membroId, { papel: novoPapel });
         if (res.sucesso) {
+            rastrear.clique('equipe_alterar_cargo_membro', `Promoveu ou alterou cargo do membro para ${label}`);
             await handleAcaoSucesso();
         } else {
             alert('Erro ao alterar cargo: ' + res.erro);
@@ -111,6 +114,7 @@ const MembrosTab = ({ membrosIniciais = [], recarregar }) => {
         setProcessando(membroId);
         const res = await removerMembro(membroId);
         if (res.sucesso) {
+            rastrear.clique('equipe_remover_membro', 'Excluiu o membro do elenco', { membro_removido: nome });
             setMembros(prev => prev.filter(m => m.id !== membroId));
         } else {
             alert('Erro ao remover membro: ' + res.erro);
@@ -201,6 +205,7 @@ const MembrosTab = ({ membrosIniciais = [], recarregar }) => {
                                                             rel="noopener noreferrer"
                                                             style={{ color: '#25D366', display: 'flex', alignItems: 'center' }}
                                                             title="Conversar no WhatsApp"
+                                                            onClick={() => rastrear.clique('equipe_contatou_membro_whatsapp')}
                                                         >
                                                             <MessageCircle size={12} />
                                                         </a>
@@ -274,7 +279,10 @@ const MembrosTab = ({ membrosIniciais = [], recarregar }) => {
                                                                 onClick={async () => {
                                                                     if(window.confirm(`Tem certeza que deseja passar a bola para ${u.nome_completo || 'este membro'}? Você deixará de ser o Capitão.`)) {
                                                                         const res = await transferirTitularidade(equipeAtiva.id, m.id);
-                                                                        if(res.sucesso) setTimeout(() => window.location.reload(), 800);
+                                                                        if(res.sucesso) {
+                                                                            rastrear.clique('equipe_repasse_lideranca');
+                                                                            setTimeout(() => window.location.reload(), 800);
+                                                                        }
                                                                         else alert(res.erro);
                                                                     }
                                                                 }}
@@ -369,7 +377,13 @@ const MembrosTab = ({ membrosIniciais = [], recarregar }) => {
                                     <div className="apelido-atleta">
                                         {u.apelido ? `@${formatarApelido(u.apelido)}` : 'Sem apelido'}
                                         {u.telefone && idade >= 18 && (
-                                            <a href={`https://wa.me/55${u.telefone.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" className="btn-zap">
+                                            <a 
+                                                href={`https://wa.me/55${u.telefone.replace(/\D/g, '')}`} 
+                                                target="_blank" 
+                                                rel="noopener noreferrer" 
+                                                className="btn-zap"
+                                                onClick={() => rastrear.clique('equipe_contatou_membro_whatsapp')}
+                                            >
                                                 <MessageCircle size={14} />
                                             </a>
                                         )}
@@ -417,7 +431,10 @@ const MembrosTab = ({ membrosIniciais = [], recarregar }) => {
                                                         onClick={async () => {
                                                             if(window.confirm(`Passar a bola para ${u.nome_completo || 'este membro'}?`)) {
                                                                 const res = await transferirTitularidade(equipeAtiva.id, m.id);
-                                                                if(res.sucesso) setTimeout(() => window.location.reload(), 800);
+                                                                if(res.sucesso) {
+                                                                    rastrear.clique('equipe_repasse_lideranca');
+                                                                    setTimeout(() => window.location.reload(), 800);
+                                                                }
                                                                 else alert(res.erro);
                                                             }
                                                         }}

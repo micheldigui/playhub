@@ -6,6 +6,7 @@ import {
   Globe, Users, PlayCircle, ExternalLink, Youtube, Smartphone, Mail
 } from 'lucide-react';
 import { SUPORTE } from '../../config/suporte';
+import { rastrear } from '../../servicos/rastreamento';
 import './ModalTutorial.css';
 
 const ModalTutorial = ({ isOpen, onClose, abaInicial = 'atleta' }) => {
@@ -19,8 +20,7 @@ const ModalTutorial = ({ isOpen, onClose, abaInicial = 'atleta' }) => {
   const abas = [
     { id: 'atleta', label: 'Atleta', icon: <User size={18} /> },
     { id: 'capitao', label: 'Capitão', icon: <Shield size={18} /> },
-    { id: 'vice', label: 'Vice-Capitão', icon: <ShieldCheck size={18} /> },
-    { id: 'videos', label: 'Vídeos', icon: <Youtube size={18} /> }
+    { id: 'vice', label: 'Vice-Capitão', icon: <ShieldCheck size={18} /> }
   ];
 
   const VIDEOS_TUTORIAL = [
@@ -43,7 +43,13 @@ const ModalTutorial = ({ isOpen, onClose, abaInicial = 'atleta' }) => {
                 <h4>Instalação e Acesso</h4>
                 <p>O PlayHub é um PWA. Para uma melhor experiência, adicione-o à tela de início do seu dispositivo:</p>
                 <div style={{ marginTop: '8px' }}>
-                  <a href="https://www.youtube.com/playlist?list=PLL3QBAHD-EYz4Ahj0M-IniOzdVdqWpNS5" target="_blank" rel="noreferrer" style={{ fontSize: '0.85rem', color: '#ff0000', fontWeight: '700', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                  <a 
+                    href="https://www.youtube.com/playlist?list=PLL3QBAHD-EYz4Ahj0M-IniOzdVdqWpNS5" 
+                    target="_blank" 
+                    rel="noreferrer" 
+                    onClick={() => rastrear.clique('ajuda_playlist_youtube', 'Clicou para acessar playlist geral no Youtube')}
+                    style={{ fontSize: '0.85rem', color: '#ff0000', fontWeight: '700', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '5px' }}
+                  >
                     <Youtube size={16} /> Ver Playlist de Tutoriais
                   </a>
                 </div>
@@ -123,6 +129,7 @@ const ModalTutorial = ({ isOpen, onClose, abaInicial = 'atleta' }) => {
                   href={`https://www.youtube.com/watch?v=${v.id}`} 
                   target="_blank" 
                   rel="noopener noreferrer"
+                  onClick={() => rastrear.clique('ajuda_assistiu_video', 'Usuário acessou um tutorial específico em vídeo', { video_id: v.id, titulo: v.titulo })}
                   className="video-item-ajuda"
                 >
                   <div className="video-thumbnail">
@@ -157,7 +164,10 @@ const ModalTutorial = ({ isOpen, onClose, abaInicial = 'atleta' }) => {
             <button 
               key={aba.id}
               className={`aba-tutorial ${abaAtiva === aba.id ? 'ativa' : ''}`}
-              onClick={() => setAbaAtiva(aba.id)}
+              onClick={() => {
+                rastrear.clique('ajuda_trocou_aba', 'Avançou seções dentro do guia do app', { aba: aba.id });
+                setAbaAtiva(aba.id);
+              }}
             >
               {aba.icon}
               <span>{aba.label}</span>

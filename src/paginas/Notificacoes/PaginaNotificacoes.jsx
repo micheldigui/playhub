@@ -3,6 +3,7 @@ import { usarNotificacoes } from '../../contextos/NotificacoesContexto';
 import { usarAutenticacao } from '../../contextos/AutenticacaoContexto';
 import { usarEquipe } from '../../contextos/EquipeContexto';
 import { supabase } from '../../servicos/supabase';
+import { rastrear } from '../../servicos/rastreamento';
 import { Bell, User, MessageSquare, ArrowLeft, RefreshCw, Trash2, Phone, Shield } from 'lucide-react';
 import Botao from '../../componentes/Botao/Botao';
 import ModalPerfilAtleta from '../../componentes/Modais/ModalPerfilAtleta';
@@ -61,6 +62,7 @@ const PaginaNotificacoes = ({ aoVoltar, abrirEquipeTab }) => {
             }
 
             // Remove a notificação do sino (marcando como lida) e envia o capitão para a área da equipe
+            rastrear.clique('notificacoes_avaliar_pedido_ingresso', 'Administrador abriu detalhamento da solicitação de ingresso');
             await supabase.from('interacoes').delete().eq('id', notificacao.id);
             carregarNotificacoes();
             
@@ -81,6 +83,7 @@ const PaginaNotificacoes = ({ aoVoltar, abrirEquipeTab }) => {
         setProcessando(conviteId);
         const res = await responderConvite(conviteId, aceitar);
         if (res.sucesso) {
+            rastrear.clique('notificacoes_respondeu_convite_equipe', 'Usuário respondeu ao convite de uma equipe', { aceitou: aceitar });
             alert(aceitar ? 'Você aceitou o convite e está na equipe! 🎉' : 'Convite recusado com sucesso.');
             setEquipeSelecionada(null); // Fecha o modal
             carregarNotificacoes(); // Atualiza a lista
@@ -115,6 +118,7 @@ const PaginaNotificacoes = ({ aoVoltar, abrirEquipeTab }) => {
                 });
             
             if (error) throw error;
+            rastrear.clique('notificacoes_match_retribuiu_bola', 'Retribuiu o interesse resultando em Match');
             alert('Bola passada com sucesso! ⚽');
             carregarNotificacoes();
         } catch (err) {
@@ -128,6 +132,7 @@ const PaginaNotificacoes = ({ aoVoltar, abrirEquipeTab }) => {
             alert('Este atleta não cadastrou telefone.');
             return;
         }
+        rastrear.clique('notificacoes_match_whatsapp', 'Iniciou contato via WhatsApp após match de interesse');
         const numeroLimpo = atleta.telefone.replace(/\D/g, '');
         window.open(`https://wa.me/55${numeroLimpo}`, '_blank');
     };

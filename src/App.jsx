@@ -138,9 +138,9 @@ function App() {
   const renderizarTela = () => {
     switch (telaAtiva) {
       case 'perfil':
-        return <PaginaPerfil aoVoltar={() => setTelaAtiva('inicio')} />
+        return <PaginaPerfil aoVoltar={() => setTelaAtiva('inicio')} aoNavegar={setTelaAtiva} />
       case 'perfil_esportivo':
-        return <PaginaPerfilEsportivo aoVoltar={() => setTelaAtiva('inicio')} />
+        return <PaginaPerfilEsportivo aoVoltar={() => setTelaAtiva('inicio')} aoNavegar={setTelaAtiva} />
       case 'equipe':
         return (
           <PaginaEquipe 

@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import './PaginaAutenticacao.css';
 import { supabase } from '../../servicos/supabase';
+import { rastrear } from '../../servicos/rastreamento';
 import { Mail, Lock, Eye, EyeOff, AlertCircle, X } from 'lucide-react';
 import Botao from '../../componentes/Botao/Botao';
 
@@ -11,15 +12,31 @@ const PaginaLogin = ({ aoIrParaCadastro, aoVoltar }) => {
   const [carregando, setCarregando] = useState(false);
   const [erro, setErro] = useState('');
 
+  // --- TELEMETRIA: Entrada na página ---
+  useEffect(() => {
+    rastrear.pagina('Login');
+  }, []);
+
   const handleLogin = async (e) => {
     e.preventDefault();
     setErro('');
     setCarregando(true);
+    
+    // Rastrear tentativa
+    rastrear.clique('tentativa_login', `Usuário tentou logar com e-mail: ${email}`);
+
     try {
       const { error } = await supabase.auth.signInWithPassword({ email, password: senha });
       if (error) throw error;
-    } catch {
-      setErro('E-mail ou senha inválidos. Verifique e tente novamente.');
+
+      // Rastrear sucesso
+      rastrear.clique('login_sucesso', `Sucesso na autenticação: ${email}`);
+    } catch (err) {
+      const msgErro = 'E-mail ou senha inválidos. Verifique e tente novamente.';
+      setErro(msgErro);
+      
+      // Rastrear erro técnico para auditoria
+      rastrear.erro(`Falha no login (${email}): ${err.message}`, 'Login.handleLogin', err);
     } finally {
       setCarregando(false);
     }
@@ -57,38 +74,59 @@ const PaginaLogin = ({ aoIrParaCadastro, aoVoltar }) => {
         )}
 
         <form id="form-login" onSubmit={handleLogin} className="auth-form">
-        <div className="auth-grupo">
-          <label>E-mail</label>
-          <div className="auth-campo">
-            <span className="auth-campo-icone"><Mail size={16} /></span>
-            <input type="email" placeholder="seu@email.com" value={email}
-              onChange={(e) => setEmail(e.target.value)} required autoComplete="email" />
+          <div className="auth-grupo">
+            <label>E-mail</label>
+            <div className="auth-campo">
+              <span className="auth-campo-icone"><Mail size={16} /></span>
+              <input 
+                type="email" 
+                placeholder="seu@email.com" 
+                value={email}
+                onChange={(e) => setEmail(e.target.value)} 
+                required 
+                autoComplete="email" 
+                autoFocus 
+              />
+            </div>
           </div>
-        </div>
 
-        <div className="auth-grupo">
-          <label>Senha</label>
-          <div className="auth-campo">
-            <span className="auth-campo-icone"><Lock size={16} /></span>
-            <input type={mostrarSenha ? 'text' : 'password'} placeholder="••••••••"
-              value={senha} onChange={(e) => setSenha(e.target.value)}
-              required autoComplete="current-password" />
-            <button type="button" className="btn-olho" onClick={() => setMostrarSenha(!mostrarSenha)}>
-              {mostrarSenha ? <EyeOff size={16} /> : <Eye size={16} />}
-            </button>
+          <div className="auth-grupo">
+            <label>Senha</label>
+            <div className="auth-campo">
+              <span className="auth-campo-icone"><Lock size={16} /></span>
+              <input 
+                type={mostrarSenha ? 'text' : 'password'} 
+                placeholder="••••••••"
+                value={senha} 
+                onChange={(e) => setSenha(e.target.value)}
+                required 
+                autoComplete="current-password" 
+              />
+              <button 
+                type="button" 
+                className="btn-olho" 
+                onClick={() => {
+                  setMostrarSenha(!mostrarSenha);
+                  rastrear.clique('toggle_senha_login', 'Alternou visibilidade da senha no login');
+                }}
+              >
+                {mostrarSenha ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            </div>
           </div>
-        </div>
 
-        <div className="auth-acoes-form">
-          <Botao type="submit" disabled={carregando}>
-            {carregando ? 'Entrando...' : 'Entrar na conta'}
-          </Botao>
+          <div className="auth-acoes-form">
+            <Botao type="submit" disabled={carregando}>
+              {carregando ? 'Entrando...' : 'Entrar na conta'}
+            </Botao>
 
-          <p className="auth-link" style={{ marginTop: 0, marginBottom: '0.5rem' }}>
-            Não tem conta? <button type="button" onClick={aoIrParaCadastro}>Cadastre-se grátis</button>
-          </p>
-        </div>
-
+            <p className="auth-link" style={{ marginTop: 0, marginBottom: '0.5rem' }}>
+              Não tem conta? <button type="button" onClick={() => {
+                rastrear.clique('nav_cadastro', 'Clicou para ir ao cadastro');
+                aoIrParaCadastro();
+              }}>Cadastre-se grátis</button>
+            </p>
+          </div>
         </form>
       </div>
     </div>

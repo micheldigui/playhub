@@ -3,6 +3,7 @@ import { Settings, Edit2, Trash2, Coins, Calendar, Clock, CreditCard, Wallet, Sh
 import { usarEquipe } from '../../../contextos/EquipeContexto';
 import { usarFinanceiro } from '../../../contextos/FinanceiroContexto';
 import { usarAutenticacao } from '../../../contextos/AutenticacaoContexto';
+import { rastrear } from '../../../servicos/rastreamento';
 import Botao from '../../../componentes/Botao/Botao';
 
 const RegrasTab = ({ abrirEdicao, aoExcluir }) => {
@@ -87,6 +88,7 @@ const RegrasTab = ({ abrirEdicao, aoExcluir }) => {
                 prioridade_mensalista: configLocal.prioridade_mensalista
             });
 
+            rastrear.clique('equipe_alterou_regras', 'Capitao personalizou as regras de operacao do clube local');
             alert('Regras e configurações salvas com sucesso!');
         } catch (error) {
             alert('Erro ao salvar: ' + error.message);
@@ -276,7 +278,14 @@ const RegrasTab = ({ abrirEdicao, aoExcluir }) => {
                         <p style={{ color: '#f87171', fontSize: '0.8rem', marginBottom: '20px' }}>
                             Ao excluir a equipe, todos os dados de partidas, financeiro e membros serão removidos permanentemente.
                         </p>
-                        <Botao variant="secundario" onClick={aoExcluir} style={{ width: '100%', color: '#ef4444', borderColor: 'rgba(239, 68, 68, 0.2)' }}>
+                        <Botao 
+                            variant="secundario" 
+                            onClick={() => {
+                                rastrear.clique('equipe_solicitou_exclusao', 'Iniciou fluxo agressivo de fechamento total (churn)');
+                                aoExcluir();
+                            }} 
+                            style={{ width: '100%', color: '#ef4444', borderColor: 'rgba(239, 68, 68, 0.2)' }}
+                        >
                             Excluir Equipe Permanentemente
                         </Botao>
                     </section>

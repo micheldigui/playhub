@@ -3,6 +3,7 @@ import { Calendar, MapPin, Clock, Users, ChevronRight, Plus, Wallet, Edit, Trash
 import { usarPartidas } from '../../../contextos/PartidasContexto';
 import { usarEquipe } from '../../../contextos/EquipeContexto';
 import { usarAutenticacao } from '../../../contextos/AutenticacaoContexto';
+import { rastrear } from '../../../servicos/rastreamento';
 import Botao from '../../../componentes/Botao/Botao';
 import ModalDetalhesPartida from './modais/ModalDetalhesPartida';
 import ModalCriacaoPartida from '../Admin/tabs/modais/ModalCriacaoPartida';
@@ -48,7 +49,11 @@ const AgendaTab = () => {
         e.stopPropagation();
         if (!window.confirm(`Excluir a partida do dia ${formatarData(partida.data)}?`)) return;
         const res = await excluirPartida(partida.id);
-        if (!res.sucesso) alert('Erro: ' + res.erro);
+        if (!res.sucesso) {
+            alert('Erro: ' + res.erro);
+        } else {
+            rastrear.clique('agenda_excluiu_partida', 'Cancelamento / Exclusao de partida ja agendada no backend');
+        }
     };
 
     if (carregando) {
@@ -68,7 +73,10 @@ const AgendaTab = () => {
                                 {exibirHistorico ? 'Veja os resultados e a frequência das partidas anteriores.' : 'Confira as próximas partidas agendadas e confirme sua presença.'}
                             </p>
                             <button 
-                                onClick={() => setExibirHistorico(!exibirHistorico)}
+                                onClick={() => {
+                                    rastrear.clique('agenda_alternar_historico', 'Visualizou historico passado de partidas', { status_futuro: !exibirHistorico });
+                                    setExibirHistorico(!exibirHistorico);
+                                }}
                                 style={{ 
                                     background: 'none', 
                                     border: 'none', 
@@ -85,7 +93,10 @@ const AgendaTab = () => {
                             </button>
                         </div>
                         {(equipeAtiva.papel === 'admin' || temPermissaoEquipe('gerenciar_partidas')) && (
-                            <Botao onClick={() => setModalCriacaoAberto(true)} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <Botao onClick={() => {
+                                rastrear.clique('agenda_clicou_criar_partida', 'Abriu modal de instanciacao de partida');
+                                setModalCriacaoAberto(true);
+                            }} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                 <Plus size={18} /> Agendar Partida
                             </Botao>
                         )}
@@ -108,7 +119,10 @@ const AgendaTab = () => {
                                 transition: 'all 0.2s'
                             }}
                             className="hover-card"
-                            onClick={() => setPartidaSelecionada(partida)}
+                            onClick={() => {
+                                rastrear.clique('agenda_abrir_detalhes_partida', 'Acessou o modal interativo da partida listada');
+                                setPartidaSelecionada(partida);
+                            }}
                         >
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1 }}>
                                 <div style={{ 

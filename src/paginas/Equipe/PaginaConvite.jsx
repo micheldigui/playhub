@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { usarEquipe } from '../../contextos/EquipeContexto';
 import { usarAutenticacao } from '../../contextos/AutenticacaoContexto';
 import { supabase } from '../../servicos/supabase';
+import { rastrear } from '../../servicos/rastreamento';
 import { Globe, MapPin, Trophy, Users, Crown, LogIn, UserPlus, Shield, Star, CheckCircle } from 'lucide-react';
 import Botao from '../../componentes/Botao/Botao';
 import '../Explorar/PaginaExplorar.css';
@@ -56,6 +57,7 @@ const PaginaConvite = ({ equipeId, aoVoltar, aoNavegar }) => {
     }
     const result = await solicitarIngresso(equipe.id);
     if (result.sucesso) {
+      rastrear.clique('convite_solicitou_ingresso', 'Entrou na analise do time atraves de link de convite viral', { equipe_id: equipe.id });
       setSolicitado(true);
     } else {
       alert(result.erro);

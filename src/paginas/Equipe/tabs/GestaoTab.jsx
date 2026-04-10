@@ -7,6 +7,7 @@ import {
 import { usarEquipe } from '../../../contextos/EquipeContexto';
 import { usarAutenticacao } from '../../../contextos/AutenticacaoContexto';
 import Botao from '../../../componentes/Botao/Botao';
+import { rastrear } from '../../../servicos/rastreamento';
 
 const GestaoTab = ({ abrirEdicao, aoExcluir }) => {
     const { 
@@ -40,6 +41,8 @@ const GestaoTab = ({ abrirEdicao, aoExcluir }) => {
         const res = await atualizarMembro(membroId, { papel: novoPapel });
         if (res.sucesso) {
             await buscarMembros();
+            const tag = novoPapel === 'sub_admin' ? 'equipe_membro_promover' : 'equipe_membro_rebaixar';
+            rastrear.clique(tag, `Membro alterado para ${label}`, { papel: novoPapel });
         } else {
             alert('Erro ao alterar cargo: ' + res.erro);
         }
@@ -53,6 +56,7 @@ const GestaoTab = ({ abrirEdicao, aoExcluir }) => {
         const res = await removerMembro(membroId);
         if (res.sucesso) {
             setMembros(prev => prev.filter(m => m.id !== membroId));
+            rastrear.clique('equipe_membro_remover', 'Removeu membro da equipe', { nome });
         } else {
             alert('Erro ao remover membro: ' + res.erro);
         }
@@ -194,7 +198,10 @@ const GestaoTab = ({ abrirEdicao, aoExcluir }) => {
                                                                     onClick={async () => {
                                                                         if(window.confirm(`Tem certeza que deseja passar a bola para ${m.usuarios.nome_completo}? Você deixará de ser o Capitão.`)) {
                                                                             const res = await transferirTitularidade(equipeAtiva.id, m.id);
-                                                                            if(res.sucesso) window.location.reload();
+                                                                            if(res.sucesso) {
+                                                                                rastrear.clique('equipe_transferir_posse', 'Transferiu titularidade da equipe', { novo_dono_id: m.usuario_id });
+                                                                                window.location.reload();
+                                                                            }
                                                                             else alert(res.erro);
                                                                         }
                                                                     }}
