@@ -186,6 +186,23 @@ BEGIN
                 ORDER BY ultimo_acesso DESC
                 LIMIT 30
             ) l
+        ),
+
+        'logs_sistema', (
+            SELECT jsonb_agg(ls)
+            FROM (
+                SELECT 
+                    s.id,
+                    s.criado_em,
+                    s.tipo,
+                    s.mensagem,
+                    s.pagina,
+                    u.nome_completo as usuario_nome
+                FROM public.logs_sistema s
+                LEFT JOIN public.usuarios u ON u.id = s.usuario_id
+                ORDER BY s.criado_em DESC
+                LIMIT 50
+            ) ls
         )
     );
 

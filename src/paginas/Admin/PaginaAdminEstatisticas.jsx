@@ -2,9 +2,10 @@ import { useState, useEffect } from 'react';
 import { 
   Users, Trophy, MapPin, PieChart, TrendingUp, 
   Calendar, CheckCircle2, ChevronRight, Info,
-  BarChart2, ChevronDown, Globe
+  BarChart2, ChevronDown, Globe, Activity
 } from 'lucide-react';
 import { supabase } from '../../servicos/supabase';
+import Botao from '../../componentes/Botao/Botao';
 import './PaginaAdminEstatisticas.css';
 
 const CardEstatistica = ({ titulo, icone: Icone, children, corIcone = "var(--primaria)", expandidoInicial = false }) => {
@@ -29,7 +30,7 @@ const CardEstatistica = ({ titulo, icone: Icone, children, corIcone = "var(--pri
     );
 };
 
-const PaginaAdminEstatisticas = () => {
+const PaginaAdminEstatisticas = ({ aoNavegar }) => {
     const [dados, setDados] = useState(null);
     const [carregando, setCarregando] = useState(true);
     const [erro, setErro] = useState(null);
@@ -184,7 +185,7 @@ const PaginaAdminEstatisticas = () => {
 
                 {/* ACORDEÃO: LOGS DE ACESSO */}
                 <div style={{ gridColumn: '1 / -1' }}>
-                    <CardEstatistica titulo="Atividade Recente (Logs)" icone={TrendingUp} corIcone="#8b5cf6" expandidoInicial={true}>
+                    <CardEstatistica titulo="Acessos Recentes (Atletas)" icone={TrendingUp} corIcone="#8b5cf6">
                         <div className="logs-lista">
                             {dados.logs_acesso?.length === 0 ? (
                                 <p style={{ color: '#64748b', textAlign: 'center' }}>Nenhuma atividade registrada ainda.</p>
@@ -204,6 +205,25 @@ const PaginaAdminEstatisticas = () => {
                             )}
                         </div>
                     </CardEstatistica>
+                       {/* SEÇÃO: LINKS RÁPIDOS / TELEMETRIA */}
+                <div style={{ gridColumn: '1 / -1' }}>
+                    <CardEstatistica titulo="Central de Monitoramento & Telemetria" icone={Activity} corIcone="#f43f5e" expandidoInicial={true}>
+                        <div style={{ padding: '1rem 0', textAlign: 'center' }}>
+                            <p style={{ color: '#64748b', marginBottom: '1.5rem', fontSize: '0.9rem' }}>
+                                Acesse o relatório completo de eventos, erros e navegação dos usuários em tempo real.
+                            </p>
+                            <div style={{ display: 'flex', justifyContent: 'center' }}>
+                                <Botao 
+                                    variant="secundario" 
+                                    onClick={() => aoNavegar('logs_sistema')}
+                                    style={{ padding: '12px 24px' }}
+                                >
+                                    Abrir Painel de Logs Avançado <ChevronRight size={18} />
+                                </Botao>
+                            </div>
+                        </div>
+                    </CardEstatistica>
+                </div>
                 </div>
 
                 {/* ACORDEÃO: DEMOGRAFIA */}

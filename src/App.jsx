@@ -14,6 +14,7 @@ const PaginaAdminSistema = lazy(() => import('./paginas/Admin/PaginaAdminSistema
 const EquipeAdminDashboard = lazy(() => import('./paginas/Equipe/Admin/EquipeAdminDashboard'))
 const PaginaAdminUsuarios = lazy(() => import('./paginas/Admin/PaginaAdminUsuarios'))
 const PaginaAdminEstatisticas = lazy(() => import('./paginas/Admin/PaginaAdminEstatisticas'))
+const PaginaAdminLogs = lazy(() => import('./paginas/Admin/PaginaAdminLogs'))
 const PaginaNotificacoes = lazy(() => import('./paginas/Notificacoes/PaginaNotificacoes'))
 const Dashboard = lazy(() => import('./paginas/Inicio/Dashboard'))
 const LandingPage = lazy(() => import('./paginas/Landing/LandingPage'))
@@ -156,7 +157,9 @@ function App() {
       case 'usuarios_sistema':
         return <PaginaAdminUsuarios />
       case 'estatisticas':
-        return <PaginaAdminEstatisticas />
+        return <PaginaAdminEstatisticas aoNavegar={setTelaAtiva} />
+      case 'logs_sistema':
+        return <PaginaAdminLogs aoVoltar={() => setTelaAtiva('estatisticas')} />
       case 'explorar':
         return <PaginaExplorar aoVoltar={() => setTelaAtiva('inicio')} />
       case 'notificacoes':

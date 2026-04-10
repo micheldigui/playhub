@@ -9,6 +9,7 @@ import Botao from '../../componentes/Botao/Botao';
 import Tooltip from '../../componentes/Tooltip/Tooltip';
 import Modal from '../../componentes/Modal/Modal';
 import { CONTEUDO_TERMOS, CONTEUDO_PRIVACIDADE } from '../Legal/PaginasLegais';
+import { rastrear } from '../../servicos/rastreamento';
 
 const validarEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
@@ -48,6 +49,13 @@ const PaginaCadastro = ({ aoIrParaLogin, aoVoltar }) => {
   const [modalLegal, setModalLegal] = useState({ aberto: false, tipo: null });
   const [erros, setErros] = useState({});
   
+  // Rastreamento de Modais Legais no Cadastro
+  useEffect(() => {
+    if (modalLegal.aberto && modalLegal.tipo) {
+      rastrear.pagina(`Cadastro: Modal ${modalLegal.tipo === 'termos' ? 'Termos' : 'Privacidade'}`);
+    }
+  }, [modalLegal.aberto, modalLegal.tipo]);
+
   const numeroRef = useRef(null);
   const generoRef = useRef(null);
 
@@ -702,6 +710,7 @@ const PaginaCadastro = ({ aoIrParaLogin, aoVoltar }) => {
         footer={(
           <div style={{ width: '100%', display: 'flex', justifyContent: 'center' }}>
             <Botao onClick={() => {
+              rastrear.clique(`btn_aceitar_${modalLegal.tipo}`, `Aceitou ${modalLegal.tipo} no cadastro`);
               setAceitouTermos(true);
               setModalLegal({ ...modalLegal, aberto: false });
             }}>

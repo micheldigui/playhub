@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { ArrowLeft, FileText, Globe, ShieldCheck } from 'lucide-react';
+import { rastrear } from '../../servicos/rastreamento';
 
 export const CONTEUDO_TERMOS = (
     <>
@@ -56,11 +57,22 @@ export const CONTEUDO_PRIVACIDADE = (
 );
 
 const PaginaLegal = ({ titulo, subtitulo, conteudo, aoVoltar }) => {
+    // Teste de Log: Visualização de Página
+    useEffect(() => {
+        rastrear.pagina(`Legal: ${titulo}`);
+    }, [titulo]);
+
+    const handleVoltar = () => {
+        // Teste de Log: Clique em botão
+        rastrear.clique('btn_voltar_legal', `Voltou da página: ${titulo}`);
+        aoVoltar();
+    };
+
     return (
         <div className="animate-fade-in" style={{ padding: '2rem', maxWidth: '900px', margin: '0 auto' }}>
             <header style={{ marginBottom: '3rem', display: 'flex', alignItems: 'center', gap: '20px' }}>
                 <button 
-                    onClick={aoVoltar}
+                    onClick={handleVoltar}
                     style={{ 
                         background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', 
                         color: '#f8fafc', padding: '10px', borderRadius: '12px', cursor: 'pointer', 
