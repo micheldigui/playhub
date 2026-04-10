@@ -334,3 +334,113 @@
 
 @keyframes spin { to { transform: rotate(360deg); } }
 .anim-spin { animation: spin 1.5s linear infinite; }
+
+/* ============================================================
+   RESPONSIVIDADE (MOBILE)
+   ============================================================ */
+@media (max-width: 768px) {
+    .admin_logs_container {
+        padding: 1rem;
+    }
+
+    .admin-logs-header h1 {
+        font-size: 1.5rem;
+    }
+
+    .header-top {
+        gap: 12px;
+        margin-bottom: 1.5rem;
+    }
+
+    .logs-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 1rem;
+    }
+
+    .filters-group-logs {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .filter-select-wrapper {
+        flex: 1;
+    }
+
+    /* Transformar tabela em Cards no mobile */
+    .logs-main-table thead {
+        display: none; /* Esconder cabeçalho da tabela */
+    }
+
+    .logs-main-table, 
+    .logs-main-table tbody, 
+    .logs-main-table tr, 
+    .logs-main-table td {
+        display: block;
+        width: 100%;
+    }
+
+    .logs-main-table tr {
+        margin-bottom: 1.5rem;
+        background: rgba(255, 255, 255, 0.03);
+        border-radius: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        padding: 1rem;
+    }
+
+    .logs-main-table td {
+        border: none;
+        padding: 8px 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        text-align: right;
+    }
+
+    .logs-main-table td::before {
+        content: attr(data-label);
+        font-weight: 600;
+        color: #64748b;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        text-align: left;
+    }
+
+    .user-cell {
+        align-items: flex-end;
+    }
+
+    .col-mensagem {
+        flex-direction: column;
+        align-items: flex-start;
+        text-align: left;
+        max-width: 100%;
+    }
+
+    .col-mensagem::before {
+        margin-bottom: 4px;
+    }
+
+    .btn-view-log {
+        width: fit-content;
+        align-self: flex-end;
+        padding: 5px 12px;
+        margin-top: 4px;
+        font-size: 0.75rem;
+    }
+
+    /* Ajuste do Modal no mobile */
+    .modal-log-content {
+        width: 95%;
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+
+    .log-detail-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .detail-item.full {
+        grid-column: span 1;
+    }
+}

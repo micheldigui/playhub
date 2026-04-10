@@ -325,7 +325,53 @@
 }
 
 @media (max-width: 768px) {
+    .admin-stats-container {
+        padding: 1rem;
+    }
+
+    .admin-stats-header {
+        flex-direction: column;
+        align-items: flex-start !important;
+        gap: 1.5rem;
+    }
+
+    .btn-atualizar-stats {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .kpi-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
     .stats-sections-grid {
         grid-template-columns: 1fr;
+    }
+
+    .stats-card {
+        padding: 1.25rem;
+    }
+
+    .age-distribution {
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .age-box {
+        padding: 1rem;
+    }
+
+    .log-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    .log-stats {
+        text-align: left;
+        width: 100%;
+        padding-top: 8px;
+        border-top: 1px solid rgba(255, 255, 255, 0.05);
     }
 }

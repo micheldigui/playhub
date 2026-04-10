@@ -163,22 +163,22 @@ const PaginaAdminLogs = ({ aoVoltar }) => {
                                 ) : (
                                     logs.map((log) => (
                                         <tr key={log.log_id} className={`row-tipo-${log.tipo?.toLowerCase()}`}>
-                                            <td className="col-data">{formatarDataLog(log.criado_em)}</td>
-                                            <td className="col-usuario">
+                                            <td className="col-data" data-label="Data">{formatarDataLog(log.criado_em)}</td>
+                                            <td className="col-usuario" data-label="Usuário">
                                                 <div className="user-cell">
                                                     <strong>{log.usuario_nome || 'Visitante'}</strong>
                                                     <span>{log.usuario_email || 'Anônimo'}</span>
                                                 </div>
                                             </td>
-                                            <td className="col-tipo">
+                                            <td className="col-tipo" data-label="Tipo">
                                                 <span className={`tag-tipo-log ${log.tipo?.toLowerCase()}`}>
                                                     {getIconeTipo(log.tipo)}
                                                     {log.tipo}
                                                 </span>
                                             </td>
-                                            <td className="col-mensagem">{log.mensagem}</td>
-                                            <td className="col-pagina">{log.pagina}</td>
-                                            <td className="col-acoes">
+                                            <td className="col-mensagem" data-label="Mensagem">{log.mensagem}</td>
+                                            <td className="col-pagina" data-label="Página">{log.pagina}</td>
+                                            <td className="col-acoes" data-label="Ações">
                                                 <button onClick={() => setLogSelecionado(log)} className="btn-view-log">
                                                     <Eye size={16} /> Detalhes
                                                 </button>
