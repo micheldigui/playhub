@@ -19,18 +19,25 @@ CREATE OR REPLACE FUNCTION public.admin_listar_usuarios(
     p_ate    INTEGER DEFAULT 19
 )
 RETURNS TABLE (
-    id                UUID,
-    nome_completo     TEXT,
-    apelido           TEXT,
-    email             TEXT,
-    foto_url          TEXT,
-    telefone          TEXT,
-    cidade            TEXT,
-    estado            TEXT,
-    data_nascimento   DATE,
-    perfil_publico    BOOLEAN,
-    eh_super_admin    BOOLEAN,
-    admin_permissoes  JSONB
+    id                          UUID,
+    nome_completo               TEXT,
+    apelido                     TEXT,
+    email                       TEXT,
+    foto_url                    TEXT,
+    telefone                    TEXT,
+    genero                      TEXT,
+    data_nascimento             DATE,
+    cep                         TEXT,
+    rua                         TEXT,
+    numero                      TEXT,
+    complemento                 TEXT,
+    bairro                      TEXT,
+    cidade                      TEXT,
+    estado                      TEXT,
+    perfil_publico              BOOLEAN,
+    compartilhar_whatsapp_match BOOLEAN,
+    eh_super_admin              BOOLEAN,
+    admin_permissoes            JSONB
 )
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -53,10 +60,17 @@ BEGIN
         u.email,
         u.foto_url,
         u.telefone,
+        u.genero,
+        u.data_nascimento,
+        u.cep,
+        u.rua,
+        u.numero,
+        u.complemento,
+        u.bairro,
         u.cidade,
         u.estado,
-        u.data_nascimento,
         u.perfil_publico,
+        u.compartilhar_whatsapp_match,
         u.eh_super_admin,
         u.admin_permissoes
     FROM public.usuarios u

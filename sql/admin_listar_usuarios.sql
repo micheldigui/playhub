@@ -2,6 +2,8 @@
 -- PLAYHUB - FUNÇÃO: admin_listar_usuarios
 -- Execute este script no Supabase SQL Editor para restaurar
 -- a funcionalidade de busca de usuários no painel admin.
+-- CORRIGIDO: Agora retorna TODOS os campos de endereço
+-- (cep, rua, numero, complemento, bairro) que estavam faltando.
 -- ============================================================
 
 -- Remove versões antigas para evitar conflito de assinaturas
@@ -16,18 +18,27 @@ CREATE FUNCTION public.admin_listar_usuarios(
     p_ate    INTEGER DEFAULT 19
 )
 RETURNS TABLE (
-    id                UUID,
-    nome_completo     TEXT,
-    apelido           TEXT,
-    email             TEXT,
-    foto_url          TEXT,
-    telefone          TEXT,
-    cidade            TEXT,
-    estado            TEXT,
-    data_nascimento   DATE,
-    perfil_publico    BOOLEAN,
-    eh_super_admin    BOOLEAN,
-    admin_permissoes  JSONB
+    id                          UUID,
+    nome_completo               TEXT,
+    apelido                     TEXT,
+    email                       TEXT,
+    foto_url                    TEXT,
+    telefone                    TEXT,
+    genero                      TEXT,
+    data_nascimento             DATE,
+    -- Endereço completo (todos os campos)
+    cep                         TEXT,
+    rua                         TEXT,
+    numero                      TEXT,
+    complemento                 TEXT,
+    bairro                      TEXT,
+    cidade                      TEXT,
+    estado                      TEXT,
+    -- Privacidade e permissões
+    perfil_publico              BOOLEAN,
+    compartilhar_whatsapp_match BOOLEAN,
+    eh_super_admin              BOOLEAN,
+    admin_permissoes            JSONB
 )
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -51,10 +62,19 @@ BEGIN
         u.email,
         u.foto_url,
         u.telefone,
+        u.genero,
+        u.data_nascimento,
+        -- Endereço completo
+        u.cep,
+        u.rua,
+        u.numero,
+        u.complemento,
+        u.bairro,
         u.cidade,
         u.estado,
-        u.data_nascimento,
+        -- Privacidade e permissões
         u.perfil_publico,
+        u.compartilhar_whatsapp_match,
         u.eh_super_admin,
         u.admin_permissoes
     FROM public.usuarios u

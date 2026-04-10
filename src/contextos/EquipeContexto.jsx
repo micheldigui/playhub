@@ -119,7 +119,10 @@ export const EquipeProvedor = ({ children }) => {
             const listaCompleta = data.map(m => ({
                 ...m.equipes,
                 id: m.equipe_id, // Garante o ID mesmo se o join 'equipes' falhar por RLS
-                papel: m.papel,
+                // Se o usuário logado é o admin_id da equipe, garantir papel 'admin'
+                // independente do que está salvo em membros_equipe.papel.
+                // Isso evita inconsistências após transferências de titularidade.
+                papel: m.equipes?.admin_id === usuario.id ? 'admin' : m.papel,
                 vinculo: m.vinculo,
                 permissoes: m.permissoes || [],
                 membroStatus: m.status

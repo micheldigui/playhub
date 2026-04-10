@@ -41,6 +41,7 @@ const ModalPerfilAtleta = ({ isOpen, onClose, idAtleta, equipeId = null, aoPassa
     const [carregando, setCarregando] = useState(true);
     const [carregandoFin, setCarregandoFin] = useState(false);
     const [abaAtiva, setAbaAtiva] = useState('geral');
+    const [erroSessao, setErroSessao] = useState(false);
 
     const carregarDados = useCallback(async () => {
         if (!idAtleta) return;
@@ -87,6 +88,10 @@ const ModalPerfilAtleta = ({ isOpen, onClose, idAtleta, equipeId = null, aoPassa
             }
         } catch (error) {
             console.error('Erro ao carregar perfil unificado:', error);
+            // Detectar erro de sessão expirada (token inválido) para degradar graciosamente
+            if (error?.message?.includes('Refresh Token') || error?.message?.includes('JWT') || error?.code === 'PGRST301') {
+                setErroSessao(true);
+            }
         } finally {
             setCarregando(false);
         }
@@ -143,6 +148,12 @@ const ModalPerfilAtleta = ({ isOpen, onClose, idAtleta, equipeId = null, aoPassa
                     <div className="loading-perfil-centrado">
                         <Clock size={32} className="animate-spin" />
                         <p>Buscando ficha técnica...</p>
+                    </div>
+                ) : erroSessao ? (
+                    <div className="erro-perfil" style={{ textAlign: 'center', padding: '2rem', color: '#94a3b8' }}>
+                        <Lock size={32} color="#64748b" style={{ marginBottom: '12px' }} />
+                        <p style={{ color: '#f1f5f9', marginBottom: '8px' }}>Sessão expirada</p>
+                        <p style={{ fontSize: '0.85rem' }}>Sua sessão expirou. Faça login novamente para continuar.</p>
                     </div>
                 ) : !atleta ? (
                     <div className="erro-perfil">Atleta não encontrado.</div>
