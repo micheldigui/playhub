@@ -70,17 +70,21 @@ const PaginaAdminLogs = ({ aoVoltar }) => {
     const handleLimparBanco = async () => {
         try {
             setLimpando(true);
-            // Chama uma query direta de delete (ou RPC se preferir)
-            const { error } = await supabase.from('telemetria').delete().neq('log_id', '00000000-0000-0000-0000-000000000000');
+            
+            // Agora usa a RPC segura consolidada no banco MASTER
+            const { data, error } = await supabase.rpc('admin_limpar_logs_sistema');
             
             if (error) throw error;
             
-            setLogs([]);
-            setConfirmandoLimpeza(false);
-            alert('Banco de logs limpo com sucesso!');
+            if (data === true) {
+                setLogs([]);
+                setConfirmandoLimpeza(false);
+                alert('Base de logs limpa com sucesso!');
+                carregarLogs(); // Recarrega para mostrar o log de aviso de limpeza
+            }
         } catch (err) {
             console.error('Erro ao limpar banco:', err);
-            alert('Erro ao limpar base de dados.');
+            alert('Erro ao limpar base de dados: Verifique se você tem permissões de Super Admin.');
         } finally {
             setLimpando(false);
         }

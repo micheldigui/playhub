@@ -1374,3 +1374,45 @@ BEGIN
   RETURN TRUE;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- SECTION: ADMIN LIMPAR LOGS SISTEMA --
+
+-- ============================================================
+-- PLAYHUB - LIMPAR BASE DE LOGS (Sdz? Super Admin)
+-- 
+-- Esta fundz?dz?o remove todos os registros da tabela logs_sistema.
+-- Inclui validadz?dz?o de segurandz?a para garantir que apenas Super Admins
+-- possam realizar esta operadz?dz?o destrutiva.
+-- ============================================================
+
+CREATE OR REPLACE FUNCTION public.admin_limpar_logs_sistema()
+RETURNS BOOLEAN
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS 
+DECLARE
+    v_eh_super_admin BOOLEAN;
+BEGIN
+    -- Verificdz?dz?o de segurandz?a: Busca o status do usudz?rio atual
+    SELECT eh_super_admin INTO v_eh_super_admin 
+    FROM public.usuarios 
+    WHERE id = auth.uid();
+
+    IF v_eh_super_admin = TRUE THEN
+        -- Limpa a tabela de logs
+        DELETE FROM public.logs_sistema;
+        
+        -- Opcional: Registrar que a limpeza foi feita
+        INSERT INTO public.logs_sistema (tipo, mensagem, usuario_id, pagina)
+        VALUES ('AVISO', 'Base de logs limpa manualmente pelo Super Admin.', auth.uid(), '/admin/logs');
+        
+        RETURN TRUE;
+    ELSE
+        RAISE EXCEPTION 'Acesso Negado: Apenas Super Admins podem limpar os logs.';
+    END IF;
+END;
+;
+
+GRANT EXECUTE ON FUNCTION public.admin_limpar_logs_sistema() TO authenticated;
+

@@ -472,19 +472,32 @@
 
 /* --- UPGRADE PRO: ESTILOS DE AUDITORIA --- */
 .row-tipo-erro {
-    background: rgba(244, 63, 94, 0.08) !important;
+    background: rgba(244, 63, 94, 0.15) !important;
     border-left: 4px solid #f43f5e !important;
 }
 
+.row-tipo-erro td {
+    color: #fca5a5 !important;
+}
+
+.row-tipo-erro .col-mensagem {
+    font-weight: 500;
+}
+
+.row-tipo-erro .user-cell strong {
+    color: #fda4af;
+}
+
 .row-tipo-erro:hover {
-    background: rgba(244, 63, 94, 0.12) !important;
+    background: rgba(244, 63, 94, 0.2) !important;
 }
 
 .tag-tipo-log.erro {
-    background: rgba(244, 63, 94, 0.2);
-    color: #fca5a5;
-    border: 1px solid rgba(244, 63, 94, 0.3);
-    animation: pulse-error 2s infinite;
+    background: #f43f5e;
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    animation: pulse-error 1.5s infinite;
+    box-shadow: 0 0 15px rgba(244, 63, 94, 0.3);
 }
 
 @keyframes pulse-error {
