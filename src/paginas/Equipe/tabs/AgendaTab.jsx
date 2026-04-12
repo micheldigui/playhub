@@ -116,7 +116,9 @@ const AgendaTab = () => {
                                 alignItems: 'center',
                                 justifyContent: 'space-between',
                                 cursor: 'pointer',
-                                transition: 'all 0.2s'
+                                transition: 'all 0.2s',
+                                flexWrap: window.innerWidth < 500 ? 'wrap' : 'nowrap',
+                                gap: '12px'
                             }}
                             className="hover-card"
                             onClick={() => {
@@ -132,7 +134,13 @@ const AgendaTab = () => {
                                 }}>
                                     {formatarData(partida.data)} às {partida.hora.substring(0, 5)}
                                 </div>
-                                <div style={{ display: 'flex', gap: '16px', color: '#94a3b8', fontSize: '0.85rem' }}>
+                                <div style={{ 
+                                    display: 'flex', 
+                                    gap: window.innerWidth < 768 ? '8px 12px' : '16px', 
+                                    color: '#94a3b8', 
+                                    fontSize: '0.85rem',
+                                    flexWrap: 'wrap'
+                                }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                                         <MapPin size={14} /> {partida.local_nome || 'Local a definir'}
                                     </div>
@@ -144,7 +152,12 @@ const AgendaTab = () => {
                                     </div>
                                 </div>
                             </div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            <div style={{ 
+                                display: 'flex', 
+                                alignItems: 'center', 
+                                gap: '4px',
+                                marginLeft: window.innerWidth < 500 ? 'auto' : '0' 
+                            }}>
                                 {podeGerenciar && (
                                     <>
                                         <button 

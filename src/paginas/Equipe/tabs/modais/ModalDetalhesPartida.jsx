@@ -476,12 +476,12 @@ const ModalDetalhesPartida = ({ isOpen, onClose, partida }) => {
                                             const nomeDisplay = getNomeUsuario(userId, u);
                                             
                                             return (
-                                                <div key={p.id} style={{ 
+                                                <div key={p.id} className="atleta-row-partida" style={{ 
                                                     display: 'flex', 
                                                     alignItems: 'center', 
-                                                    gap: window.innerWidth < 768 ? '8px' : '12px', 
+                                                    gap: window.innerWidth < 768 ? '6px' : '12px', 
                                                     background: 'rgba(255,255,255,0.02)', 
-                                                    padding: window.innerWidth < 768 ? '6px 10px' : '8px 12px', 
+                                                    padding: window.innerWidth < 768 ? '6px 8px' : '8px 12px', 
                                                     borderRadius: '8px', 
                                                     borderLeft: '3px solid #10b981' 
                                                 }}>
@@ -495,7 +495,7 @@ const ModalDetalhesPartida = ({ isOpen, onClose, partida }) => {
                                                             </div>
                                                         )}
                                                     </div>
-                                                    <div style={{ flex: 1, color: '#f8fafc', fontWeight: '500', display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'space-between' }}>
+                                                    <div style={{ flex: 1, color: '#f8fafc', fontWeight: '500', display: 'flex', alignItems: 'center', gap: window.innerWidth < 768 ? '4px' : '8px', justifyContent: 'space-between', minWidth: 0 }}>
                                                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', overflow: 'hidden', flex: 1, minWidth: 0 }}>
                                                             <span style={{ 
                                                                 whiteSpace: 'nowrap', 
@@ -508,7 +508,7 @@ const ModalDetalhesPartida = ({ isOpen, onClose, partida }) => {
                                                         </div>
 
                                                         {/* ÁREA DE FREQUÊNCIA (Visível para todos, editável apenas p/ Admin) */}
-                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
+                                                        <div className="acoes-atleta-partida" style={{ display: 'flex', alignItems: 'center', gap: window.innerWidth < 768 ? '2px' : '4px', flexShrink: 0 }}>
                                                                 
                                                             {isAdmin ? (
                                                                 <>
@@ -522,10 +522,10 @@ const ModalDetalhesPartida = ({ isOpen, onClose, partida }) => {
                                                                             color: p.frequencia === 'P' ? '#fff' : '#10b981',
                                                                             border: p.frequencia === 'P' ? '1px solid #10b981' : '1px solid rgba(16, 185, 129, 0.3)', 
                                                                             cursor: 'pointer',
-                                                                            padding: window.innerWidth < 768 ? '4px 6px' : '4px 8px',
+                                                                            padding: window.innerWidth < 380 ? '4px 5px' : '4px 8px',
                                                                             borderRadius: '4px',
                                                                             display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                                            fontWeight: 'bold', fontSize: window.innerWidth < 768 ? '0.75rem' : '0.8rem', opacity: processandoAcao ? 0.5 : 1
+                                                                            fontWeight: 'bold', fontSize: window.innerWidth < 380 ? '0.7rem' : '0.8rem', opacity: processandoAcao ? 0.5 : 1
                                                                         }}
                                                                     >
                                                                         P
@@ -689,6 +689,20 @@ const ModalDetalhesPartida = ({ isOpen, onClose, partida }) => {
                                     color: #fff;
                                     font-size: 0.75rem;
                                     font-weight: 800;
+                                }
+
+                                @media (max-width: 400px) {
+                                    .atleta-row-partida {
+                                        padding: 6px 4px !important;
+                                        gap: 4px !important;
+                                    }
+                                    .acoes-atleta-partida button {
+                                        padding: 4px 6px !important;
+                                        font-size: 0.7rem !important;
+                                    }
+                                    .acoes-atleta-partida {
+                                        gap: 2px !important;
+                                    }
                                 }
                             `}</style>
 
