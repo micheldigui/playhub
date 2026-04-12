@@ -17,7 +17,7 @@
   .modal-overlay {
     top: 56px; /* Altura do layout-cabecalho no mobile */
     align-items: flex-start;
-    padding: 10px 10px;
+    padding: 5px 5px;
     overflow: hidden;
   }
 }
@@ -91,7 +91,7 @@
 
 @media (max-width: 768px) {
   .modal-body {
-    padding: 1rem;
+    padding: 0.75rem;
   }
 }
 

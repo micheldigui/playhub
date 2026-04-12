@@ -501,7 +501,8 @@ const ModalDetalhesPartida = ({ isOpen, onClose, partida }) => {
                                                                 whiteSpace: 'nowrap', 
                                                                 overflow: 'hidden', 
                                                                 textOverflow: 'ellipsis',
-                                                                flex: 1
+                                                                flex: 1,
+                                                                fontSize: window.innerWidth < 768 ? '0.85rem' : '1rem'
                                                             }} title={u?.nome_completo ? formatFullName(u.nome_completo) : (nomeDisplay ? formatFullName(nomeDisplay) : '')}>
                                                                 {nomeDisplay}{getEmojiPapel(userId)}{getEmojiVinculo(vinculo)}
                                                             </span>
@@ -693,12 +694,13 @@ const ModalDetalhesPartida = ({ isOpen, onClose, partida }) => {
 
                                 @media (max-width: 400px) {
                                     .atleta-row-partida {
-                                        padding: 6px 4px !important;
-                                        gap: 4px !important;
+                                        padding: 6px 3px !important;
+                                        gap: 3px !important;
                                     }
                                     .acoes-atleta-partida button {
-                                        padding: 4px 6px !important;
-                                        font-size: 0.7rem !important;
+                                        padding: 4px 5px !important;
+                                        font-size: 0.65rem !important;
+                                        min-width: 24px;
                                     }
                                     .acoes-atleta-partida {
                                         gap: 2px !important;
