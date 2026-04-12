@@ -11,28 +11,50 @@ import { usarNotificacoes } from '../../contextos/NotificacoesContexto';
 import { supabase } from '../../servicos/supabase';
 import Modal from '../Modal/Modal';
 import Botao from '../Botao/Botao';
+import ModalAjustePrivacidade from './ModalAjustePrivacidade';
 import './ModalPerfilAtleta.css';
 
 const formatarNome = (nomeCompleto) => {
-    if (!nomeCompleto) return '';
+    if (!nomeCompleto) return 'Atleta';
     const partes = nomeCompleto.trim().split(/\s+/);
     const capitalizar = (p) => p.charAt(0).toUpperCase() + p.slice(1).toLowerCase();
+    
     if (partes.length === 1) return capitalizar(partes[0]);
-    return `${capitalizar(partes[0])} ${capitalizar(partes[partes.length - 1])}`;
+    
+    const primeiro = capitalizar(partes[0]);
+    const ultimo = capitalizar(partes[partes.length - 1]);
+    return `${primeiro} ${ultimo}`;
 };
 
-const formatarApelido = (apelido) => {
-    if (!apelido) return 'atleta';
-    return apelido.trim().split(/\s+/).map(p => 
+const getIniciaisAtleta = (u) => {
+    if (!u) return '??';
+    const nome = u.nome_completo || '';
+    const apelido = u.apelido || '';
+    if (apelido) {
+      const partes = apelido.trim().split(/[\s._-]+/);
+      if (partes.length > 1) return (partes[0].charAt(0) + partes[1].charAt(0)).toUpperCase();
+      return apelido.substring(0, 2).toUpperCase();
+    }
+    if (!nome) return '??';
+    const partes = nome.trim().split(/\s+/);
+    if (partes.length === 1) return partes[0].substring(0, 2).toUpperCase();
+    return (partes[0].charAt(0) + partes[partes.length - 1].charAt(0)).toUpperCase();
+};
+
+const formatarHandleAtleta = (u) => {
+    if (!u) return '@Atleta';
+    const texto = u.apelido || u.nome_completo?.split(' ')[0] || 'Atleta';
+    const formatado = texto.trim().split(/\s+/).map(p => 
         p.charAt(0).toUpperCase() + p.slice(1).toLowerCase()
     ).join('');
+    return `@${formatado}`;
 };
 
 const ModalPerfilAtleta = ({ isOpen, onClose, idAtleta, equipeId = null, aoPassarBola = null }) => {
     const { dadosUsuario: eu, ehSuperAdmin } = usarAutenticacao();
-    const { equipeAtiva, temPermissaoEquipe, getLabelVinculo } = usarEquipe();
+    const { equipeAtiva, temPermissaoEquipe, getLabelVinculo, equipes } = usarEquipe();
     const { verificarSituacaoFinanceiraAtleta } = usarFinanceiro();
-    const { matchesConfirmados } = usarNotificacoes();
+    const { matchesConfirmados, matches } = usarNotificacoes();
 
     const [atleta, setAtleta] = useState(null);
     const [membro, setMembro] = useState(null);
@@ -42,6 +64,8 @@ const ModalPerfilAtleta = ({ isOpen, onClose, idAtleta, equipeId = null, aoPassa
     const [carregandoFin, setCarregandoFin] = useState(false);
     const [abaAtiva, setAbaAtiva] = useState('geral');
     const [erroSessao, setErroSessao] = useState(false);
+    const [ehGestorDoAtleta, setEhGestorDoAtleta] = useState(false);
+    const [mostrarAvisoPrivacidade, setMostrarAvisoPrivacidade] = useState(false);
 
     const carregarDados = useCallback(async () => {
         if (!idAtleta) return;
@@ -52,10 +76,15 @@ const ModalPerfilAtleta = ({ isOpen, onClose, idAtleta, equipeId = null, aoPassa
                 .from('usuarios')
                 .select('*')
                 .eq('id', idAtleta)
-                .single();
+                .maybeSingle();
 
             if (errUser) throw errUser;
-            setAtleta(user);
+            
+            if (!user) {
+                setAtleta(null); // Atleta não existe ou RLS bloqueou
+            } else {
+                setAtleta(user);
+            }
 
             // 2. Modalidades Detalhadas
             const { data: mods } = await supabase
@@ -92,6 +121,20 @@ const ModalPerfilAtleta = ({ isOpen, onClose, idAtleta, equipeId = null, aoPassa
                 setMembro(null);
                 setFinanceiro(null);
             }
+
+            // 5. Verificação de Liderança Global (Gestor de qualquer time do atleta)
+            const idsMinhasGeridas = equipes?.filter(e => e.papel === 'admin' || e.papel === 'sub_admin').map(e => e.id) || [];
+            if (idsMinhasGeridas.length > 0) {
+                const { data: v } = await supabase
+                    .from('membros_equipe')
+                    .select('equipe_id')
+                    .eq('usuario_id', idAtleta)
+                    .in('equipe_id', idsMinhasGeridas)
+                    .eq('status', 'ativo');
+                setEhGestorDoAtleta(v && v.length > 0);
+            } else {
+                setEhGestorDoAtleta(false);
+            }
         } catch (error) {
             console.error('Erro ao carregar perfil unificado:', error);
             // Detectar erro de sessão expirada (token inválido) para degradar graciosamente
@@ -101,7 +144,7 @@ const ModalPerfilAtleta = ({ isOpen, onClose, idAtleta, equipeId = null, aoPassa
         } finally {
             setCarregando(false);
         }
-    }, [idAtleta, equipeId, equipeAtiva, ehSuperAdmin, temPermissaoEquipe, verificarSituacaoFinanceiraAtleta]);
+    }, [idAtleta, equipeId, equipeAtiva, ehSuperAdmin, temPermissaoEquipe, verificarSituacaoFinanceiraAtleta, equipes]);
 
     useEffect(() => {
         if (isOpen && idAtleta) {
@@ -113,7 +156,9 @@ const ModalPerfilAtleta = ({ isOpen, onClose, idAtleta, equipeId = null, aoPassa
 
     const podeVerTudo = ehSuperAdmin || (membro && (equipeAtiva?.papel === 'admin' || equipeAtiva?.papel === 'sub_admin')) || idAtleta === eu?.id;
     const perfilPrivado = atleta && !atleta.perfil_publico && !podeVerTudo;
-    const ehMatch = matchesConfirmados?.has(idAtleta);
+    const idAtletaNormal = String(idAtleta || '').toLowerCase().trim();
+    const ehMatch = matchesConfirmados?.has(idAtletaNormal);
+    const jaEnviou = matches?.has(idAtletaNormal);
 
     const calcularIdade = (dataNasc) => {
         if (!dataNasc) return null;
@@ -125,10 +170,10 @@ const ModalPerfilAtleta = ({ isOpen, onClose, idAtleta, equipeId = null, aoPassa
         return idade;
     };
 
-    const formatarApelido = (val) => {
-        if (!val) return 'atleta';
-        // Remove espaços e capitaliza cada palavra
-        return val
+    const formatarHandleLocal = (val, completo) => {
+        if (!val && !completo) return '@Atleta';
+        const texto = val || completo?.split(' ')[0] || 'Atleta';
+        return '@' + texto
             .split(' ')
             .filter(parte => parte.length > 0)
             .map(parte => parte.charAt(0).toUpperCase() + parte.slice(1).toLowerCase())
@@ -136,6 +181,19 @@ const ModalPerfilAtleta = ({ isOpen, onClose, idAtleta, equipeId = null, aoPassa
     };
 
     const handleAcaoBotao = () => {
+        // NOVA TRAVA: Só pode passar a bola se VOCÊ e o ATLETA forem públicos
+        // (Se for apenas interesse sem contato, a regra pode ser mais leve, mas o user pediu trava estrita)
+        if (!eu?.perfil_publico || !eu?.compartilhar_whatsapp_match) {
+            setMostrarAvisoPrivacidade(true);
+            return;
+        }
+
+        // Se o ALVO tem zap privado, não pode passar a bola (Regra de Ouro)
+        if (!atleta?.compartilhar_whatsapp_match && eu.id !== atleta?.id) {
+            alert('Este atleta não autorizou o compartilhamento de WhatsApp para Matches. 🛡️');
+            return;
+        }
+
         if (aoPassarBola) {
             aoPassarBola(atleta);
             onClose();
@@ -143,6 +201,7 @@ const ModalPerfilAtleta = ({ isOpen, onClose, idAtleta, equipeId = null, aoPassa
     };
 
     return (
+        <>
         <Modal 
             isOpen={isOpen} 
             onClose={onClose} 
@@ -172,7 +231,7 @@ const ModalPerfilAtleta = ({ isOpen, onClose, idAtleta, equipeId = null, aoPassa
                                     <img src={atleta.foto_url} alt={atleta.nome_completo} className="perfil-foto" />
                                 ) : (
                                     <div className="perfil-foto-placeholder">
-                                        <User size={48} color="#64748b" />
+                                        {getIniciaisAtleta(atleta)}
                                     </div>
                                 )}
                                 {membro?.papel === 'admin' && <div className="badge-cargo gold" title="Capitão"><Crown size={16} /></div>}
@@ -182,7 +241,7 @@ const ModalPerfilAtleta = ({ isOpen, onClose, idAtleta, equipeId = null, aoPassa
 
                         <div className="perfil-info-basica">
                             <h2 className="perfil-nome">{formatarNome(atleta.nome_completo)}</h2>
-                            <span className="perfil-apelido">@{formatarApelido(atleta.apelido)}</span>
+                            <span className="perfil-apelido">{formatarHandleAtleta(atleta)}</span>
                         </div>
 
                         {/* NAVEGAÇÃO DE ABAS */}
@@ -312,54 +371,89 @@ const ModalPerfilAtleta = ({ isOpen, onClose, idAtleta, equipeId = null, aoPassa
                                 {/* AÇÕES E WHATSAPP - SEMPRE NO FINAL DA ABA ATIVA OU FORA DO SCROLL SE PREFERIR, 
                                     MAS AQUI COMO PARTE DO CONTENT PARA NÃO POLUIR O FOOTER FIXO SE NÃO QUISERMOS MUDAR O MODAL.JSX */}
                                 <div className="perfil-rodape-acoes">
-                                    {/* WhatsApp:
-                                        - Super Admin: sempre (suporte/operador da plataforma)
-                                        - Match confirmado: se atleta consentiu compartilhar
-                                        - Colega de equipe ativo: se atleta consentiu compartilhar
-                                        - Externo sem match: nunca
-                                    */}
                                     {(() => {
-                                        const ehColega = membro?.status === 'ativo';
-                                        const consentiu = atleta.compartilhar_whatsapp_match;
-                                        // Super Admin bypassa a configuração de privacidade (operador da plataforma)
-                                        const podeVerZap = atleta.telefone && (
-                                            ehSuperAdmin ||
-                                            (consentiu && (ehMatch || ehColega))
-                                        );
-                                        if (!podeVerZap) return null;
+                                        // Regras de acesso e labels contextuais (Regra de Ouro)
+                                        const liberadoPeloMatch = ehMatch && eu?.compartilhar_whatsapp_match && atleta.compartilhar_whatsapp_match;
+                                        const liberadoPelaGestao = atleta.telefone && (ehSuperAdmin || ehGestorDoAtleta);
+                                        
+                                        let motivoAcesso = "";
+                                        if (liberadoPelaGestao && !liberadoPeloMatch) {
+                                            motivoAcesso = ehSuperAdmin ? "🛡️ Acesso Administrativo" : "👑 Match por Gestão (Capitão/Vice)";
+                                        } else if (liberadoPeloMatch) {
+                                            motivoAcesso = "🔥 Match Confirmado!";
+                                        }
+
+                                        if (!liberadoPeloMatch && !liberadoPelaGestao) return null;
+
+                                        // Se liberado pela gestão mas ainda não houve match, mostramos o zap mas mantemos o botão de interação abaixo
+                                        // para que o admin possa participar do "jogo" de passar a bola.
+                                        // No entanto, se o usuário quer que SÓ apareça se retribuir, vamos esconder o botão verde de destaque 
+                                        // e mostrar apenas o link administrativo menor se não for match.
+                                        
+                                        if (liberadoPelaGestao && !liberadoPeloMatch) {
+                                            return (
+                                                <div className="admin-access-zap-only">
+                                                    <div className="motivo-acesso-zap">{motivoAcesso}</div>
+                                                    <Botao 
+                                                        variant="minimal"
+                                                        onClick={() => window.open(`https://wa.me/55${atleta.telefone.replace(/\D/g, '')}`, '_blank')}
+                                                        style={{ width: '100%', gap: '8px', fontSize: '0.85rem', color: '#10b981' }}
+                                                    >
+                                                        <MessageCircle size={16} /> Entrar em contato (Gestor)
+                                                    </Botao>
+                                                </div>
+                                            );
+                                        }
+
                                         return (
-                                            <a
-                                                href={`https://wa.me/55${atleta.telefone.replace(/\D/g, '')}`}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="btn-whatsapp-perfil"
-                                                title={!consentiu && ehSuperAdmin ? 'Acesso administrativo (WhatsApp privado)' : undefined}
-                                            >
-                                                <MessageCircle size={18} />
-                                                {!consentiu && ehSuperAdmin ? 'Zap (Admin)' : 'Conversar no Zap'}
-                                            </a>
+                                            <div className="whatsapp-wrapper">
+                                                {motivoAcesso && <div className="motivo-acesso-zap">{motivoAcesso}</div>}
+                                                <a
+                                                    href={`https://wa.me/55${atleta.telefone.replace(/\D/g, '')}`}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="btn-whatsapp-perfil"
+                                                >
+                                                    <MessageCircle size={18} />
+                                                    Conversar no Zap
+                                                </a>
+                                            </div>
                                         );
                                     })()}
 
-                                    {idAtleta !== eu?.id && aoPassarBola && (
-                                        <Botao 
-                                            onClick={handleAcaoBotao} 
-                                            variant={ehMatch ? "secundario" : "primario"}
-                                            style={{ 
-                                                width: '100%', 
-                                                marginTop: '8px', 
-                                                background: ehMatch ? 'rgba(37, 211, 102, 0.1)' : undefined,
-                                                color: ehMatch ? '#25D366' : undefined,
-                                                borderColor: ehMatch ? 'rgba(37, 211, 102, 0.4)' : undefined
-                                            }}
-                                        >
-                                            {ehMatch ? (
-                                                <><MessageCircle size={16} /> ⚽ Match! Conversar</>
-                                            ) : (
-                                                <>⚽ Passar a Bola (Interesse)</>
-                                            )}
-                                        </Botao>
-                                    )}
+                                    {(() => {
+                                        // O botão de interação SÓ some se houver um MATCH REAL (regra de ouro) ou se for o próprio perfil
+                                        const liberadoPeloMatch = ehMatch && eu?.compartilhar_whatsapp_match && atleta.compartilhar_whatsapp_match;
+                                        
+                                        if (liberadoPeloMatch) return null;
+                                        if (idAtleta === eu?.id || !aoPassarBola) return null;
+
+                                        return (
+                                            <Botao 
+                                                onClick={handleAcaoBotao} 
+                                                variant={ehMatch ? "secundario" : "primario"}
+                                                disabled={jaEnviou && !ehMatch}
+                                                style={{ 
+                                                    width: '100%', 
+                                                    marginTop: '8px', 
+                                                    background: ehMatch ? 'rgba(37, 211, 102, 0.1)' : 
+                                                                jaEnviou ? 'rgba(255, 255, 255, 0.05)' : undefined,
+                                                    color: ehMatch ? '#25D366' : 
+                                                           jaEnviou ? '#94a3b8' : undefined,
+                                                    borderColor: ehMatch ? 'rgba(37, 211, 102, 0.4)' : 
+                                                                 jaEnviou ? 'rgba(255, 255, 255, 0.1)' : undefined
+                                                }}
+                                            >
+                                                {jaEnviou ? (
+                                                    <>✓ Bola Passada</>
+                                                ) : !atleta?.compartilhar_whatsapp_match ? (
+                                                    <><Lock size={16} /> WhatsApp Privado</>
+                                                ) : (
+                                                    <>⚽ Passar a Bola (Interesse)</>
+                                                )}
+                                            </Botao>
+                                        );
+                                    })()}
                                 </div>
                             </div>
                         )}
@@ -367,6 +461,16 @@ const ModalPerfilAtleta = ({ isOpen, onClose, idAtleta, equipeId = null, aoPassa
                 )}
             </div>
         </Modal>
+
+        <ModalAjustePrivacidade 
+            isOpen={mostrarAvisoPrivacidade}
+            onClose={() => setMostrarAvisoPrivacidade(false)}
+            aoConcluir={() => {
+                setMostrarAvisoPrivacidade(false);
+                handleAcaoBotao();
+            }}
+        />
+        </>
     );
 };
 

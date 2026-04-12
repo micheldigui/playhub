@@ -122,88 +122,141 @@
 }
 
 .avatar-preview-container {
-    width: 100px;
-    height: 100px;
-    border-radius: 50%;
-    overflow: hidden;
-    border: 3px solid #0ea5e9;
-    background: #1e293b;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: relative;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  border: 4px solid #1e293b;
+  box-shadow: 0 0 25px rgba(0, 0, 0, 0.4);
+  padding: 4px;
+  background: rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+  transition: all 0.3s ease;
 }
 
 .avatar-preview-container img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
 }
 
 .avatar-placeholder {
-    font-size: 2.5rem;
-    font-weight: 700;
-    color: #94a3b8;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+  color: #fff;
+  font-size: 2.5rem;
+  font-weight: 800;
+  border-radius: 50%;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.3);
 }
 
-/* Checkboxes / Toggles */
+.btn-upload-admin {
+  transition: all 0.2s ease;
+}
+
+.btn-upload-admin:hover {
+  transform: scale(1.1);
+  background: #0ea5e9;
+  box-shadow: 0 0 15px rgba(14, 165, 233, 0.5);
+}
+
+.secao-titulo-modal {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  margin: 2rem 0 1.25rem 0;
+}
+
+.campo-input {
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: 0 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  transition: all 0.3s ease;
+}
+
+.campo-input:focus-within {
+  border-color: var(--primaria);
+  box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.15);
+  background: rgba(15, 23, 42, 0.9);
+}
+
+.campo-input input, 
+.campo-input select {
+  background: transparent;
+  border: none;
+  color: #f1f5f9;
+  padding: 12px 0;
+  width: 100%;
+  font-size: 0.95rem;
+  outline: none;
+}
+
+.campo-input select option {
+  background: #0f172a;
+  color: white;
+}
+
+.campo-input.desabilitado {
+  background: rgba(0, 0, 0, 0.2);
+  cursor: not-allowed;
+}
+
 .checkbox-label {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    cursor: pointer;
-    user-select: none;
-    padding: 0.5rem 0.75rem;
-    background: rgba(255, 255, 255, 0.02);
-    border-radius: 8px;
-    border: 1px solid transparent;
-    transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(255, 255, 255, 0.02);
+  padding: 1rem;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 
 .checkbox-label:hover {
-    background: rgba(255, 255, 255, 0.05);
-    border-color: rgba(255, 255, 255, 0.05);
-}
-
-.checkbox-label input[type="checkbox"] {
-    width: 1.25rem;
-    height: 1.25rem;
-    accent-color: #0ea5e9;
-    cursor: pointer;
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.1);
 }
 
 .checkbox-texto {
-    display: flex;
-    align-items: center;
-    gap: 0.6rem;
-    font-size: 0.9rem;
-    font-weight: 500;
-    color: #cbd5e1;
+  flex: 1;
+  font-size: 0.95rem;
+  color: #e2e8f0;
 }
 
-/* Mensagens */
 .mensagem-alerta {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 1rem;
-    border-radius: 12px;
-    margin-bottom: 1.5rem;
-    font-size: 0.9rem;
-    font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 1rem;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  margin-bottom: 1.5rem;
+  animation: slideDown 0.3s ease-out;
 }
 
 .mensagem-alerta.sucesso {
-    background: rgba(16, 185, 129, 0.1);
-    border: 1px solid rgba(16, 185, 129, 0.3);
-    color: #10b981;
+  background: rgba(16, 185, 129, 0.1);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.2);
 }
 
 .mensagem-alerta.erro {
-    background: rgba(244, 63, 94, 0.1);
-    border: 1px solid rgba(244, 63, 94, 0.3);
-    color: #f43f5e;
 }
 
 /* Seções */

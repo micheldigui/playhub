@@ -18,6 +18,15 @@ const formatarNome = (nomeCompleto) => {
     return `${capitalizar(partes[0])} ${capitalizar(partes[partes.length - 1])}`;
 };
 
+const getIniciaisAtleta = (u) => {
+    if (!u) return '??';
+    const nome = u.nome_completo || '';
+    if (!nome) return '??';
+    const partes = nome.trim().split(/\s+/);
+    if (partes.length === 1) return partes[0].substring(0, 2).toUpperCase();
+    return (partes[0].charAt(0) + partes[partes.length - 1].charAt(0)).toUpperCase();
+};
+
 const PaginaNotificacoes = ({ aoVoltar, abrirEquipeTab }) => {
     const { notificacoes, carregarNotificacoes, limparNotificacoes, matches } = usarNotificacoes();
     const { usuario, dadosUsuario } = usarAutenticacao();
@@ -122,8 +131,18 @@ const PaginaNotificacoes = ({ aoVoltar, abrirEquipeTab }) => {
             alert('Bola passada com sucesso! ⚽');
             carregarNotificacoes();
         } catch (err) {
-            console.error('Erro ao retribuir:', err);
-            alert('Erro ao passar a bola de volta.');
+            console.error('Erro detalhado ao retribuir:', err);
+            
+            // Se for erro de duplicidade (23505), tratamos como sucesso/match já processado
+            if (err.code === '23505' || err.message?.includes('duplicate key')) {
+                console.log('Interação já existe. Provavelmente um match simultâneo.');
+                alert('Vocês deram Match! ⚽ Atualizando sua lista...');
+                carregarNotificacoes();
+                return;
+            }
+
+            const mensagemErro = err.message || 'Erro de conexão';
+            alert(`Erro ao passar a bola de volta: ${mensagemErro}`);
         }
     };
 
@@ -227,8 +246,8 @@ const PaginaNotificacoes = ({ aoVoltar, abrirEquipeTab }) => {
                                         {notificacao.remetente?.foto_url ? (
                                             <img src={notificacao.remetente.foto_url} alt="Candidato" />
                                         ) : (
-                                            <div className="avatar-placeholder" style={{ background: 'rgba(56, 189, 248, 0.1)', color: '#38bdf8' }}>
-                                                <User size={20} />
+                                            <div className="avatar-placeholder">
+                                                {getIniciaisAtleta(notificacao.remetente)}
                                             </div>
                                         )}
                                     </div>
@@ -254,9 +273,12 @@ const PaginaNotificacoes = ({ aoVoltar, abrirEquipeTab }) => {
                         }
 
                         // 2. Renderização de Interações ("Passar a bola")
-                        const ehMatch = matches.has(notificacao.remetente_id);
+                        const remetenteIdNormal = String(notificacao.remetente_id || '').toLowerCase().trim();
+                        const ehMatch = matches.has(remetenteIdNormal);
                         const idadeRemetente = calcularIdade(notificacao.remetente?.data_nascimento);
-                        const ambosMaiores = idadeUsuario >= 18 && idadeRemetente >= 18;
+                        
+                        // Só aplicamos restrição se os dados de ambos existirem.
+                        const ambosMaiores = notificacao.remetente && idadeUsuario >= 18 && idadeRemetente >= 18;
                         const ambosAutorizaram = dadosUsuario?.compartilhar_whatsapp_match && notificacao.remetente?.compartilhar_whatsapp_match;
                         const contatoLiberado = ehMatch && ambosMaiores && ambosAutorizaram;
 
@@ -267,13 +289,13 @@ const PaginaNotificacoes = ({ aoVoltar, abrirEquipeTab }) => {
                                         <img src={notificacao.remetente.foto_url} alt="Remetente" />
                                     ) : (
                                         <div className="avatar-placeholder">
-                                            <User size={20} />
+                                            {getIniciaisAtleta(notificacao.remetente)}
                                         </div>
                                     )}
                                 </div>
                                 <div className="notificacao-conteudo">
                                     <p>
-                                        <strong>{notificacao.remetente?.nome_completo ? formatarNome(notificacao.remetente.nome_completo) : 'Atleta'}</strong> {ehMatch ? '⚽ Match! Vocês passaram a bola um para o outro.' : 'passou a bola para você! ⚽'}
+                                        <strong>{notificacao.remetente?.nome_completo ? formatarNome(notificacao.remetente.nome_completo) : (notificacao.remetente?.apelido || `Atleta (${notificacao.remetente_id?.slice(0,5)})`)}</strong> {ehMatch ? '⚽ Match! Vocês passaram a bola um para o outro.' : 'passou a bola para você! ⚽'}
                                     </p>
                                     <span className="notificacao-data">
                                         {new Date(notificacao.criado_em).toLocaleDateString()} às {new Date(notificacao.criado_em).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -286,7 +308,7 @@ const PaginaNotificacoes = ({ aoVoltar, abrirEquipeTab }) => {
                                                 <Botao 
                                                     variant="minimal" 
                                                     style={{ padding: '8px 12px', fontSize: '0.8rem', gap: '6px' }}
-                                                    onClick={() => setAtletaSelecionado(notificacao.remetente)}
+                                                    onClick={() => setAtletaSelecionado(notificacao.remetente || { id: notificacao.remetente_id })}
                                                 >
                                                     <User size={14} /> Perfil
                                                 </Botao>
@@ -307,7 +329,7 @@ const PaginaNotificacoes = ({ aoVoltar, abrirEquipeTab }) => {
                                             <Botao 
                                                 variant="minimal" 
                                                 style={{ padding: '8px 12px', fontSize: '0.8rem', gap: '6px' }}
-                                                onClick={() => setAtletaSelecionado(notificacao.remetente)}
+                                                onClick={() => setAtletaSelecionado(notificacao.remetente || { id: notificacao.remetente_id })}
                                             >
                                                 <User size={14} /> Perfil
                                             </Botao>

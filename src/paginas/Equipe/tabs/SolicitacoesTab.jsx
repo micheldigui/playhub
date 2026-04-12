@@ -24,6 +24,15 @@ const formatarNome = (nomeCompleto) => {
     return `${capitalizar(partes[0])} ${capitalizar(partes[partes.length - 1])}`;
 };
 
+const getIniciaisAtleta = (u) => {
+    if (!u) return '??';
+    const nome = u.nome_completo || '';
+    if (!nome) return '??';
+    const partes = nome.trim().split(/\s+/);
+    if (partes.length === 1) return partes[0].substring(0, 2).toUpperCase();
+    return (partes[0].charAt(0) + partes[partes.length - 1].charAt(0)).toUpperCase();
+};
+
 const SolicitacoesTab = () => {
     const { 
         equipeAtiva, carregarSolicitacoes, responderSolicitacao, 
@@ -157,7 +166,13 @@ const SolicitacoesTab = () => {
                                         title="Clique para ver o Perfil Esportivo"
                                     >
                                         <div className="avatar-mini">
-                                            {sol.usuarios?.foto_url ? <img src={sol.usuarios.foto_url} alt={sol.usuarios.apelido} /> : <Users size={18} />}
+                                            {sol.usuarios?.foto_url ? (
+                                                <img src={sol.usuarios.foto_url} alt={sol.usuarios.apelido} />
+                                            ) : (
+                                                <div className="avatar-iniciais-solicitacao">
+                                                    {getIniciaisAtleta(sol.usuarios)}
+                                                </div>
+                                            )}
                                         </div>
                                         <div>
                                             <p className="nome">{formatarNome(sol.usuarios?.nome_completo) || 'Atleta não localizado'}</p>
@@ -197,7 +212,13 @@ const SolicitacoesTab = () => {
                                         <div className="card-corpo" onClick={() => resolvido && toggleExpandido(conv.id)}>
                                             <div className="info-atleta">
                                                 <div className="avatar-mini">
-                                                    {conv.jogador?.foto_url ? <img src={conv.jogador.foto_url} alt="atleta" /> : <Users size={18} />}
+                                                    {conv.jogador?.foto_url ? (
+                                                        <img src={conv.jogador.foto_url} alt="atleta" />
+                                                    ) : (
+                                                        <div className="avatar-iniciais-solicitacao">
+                                                            {getIniciaisAtleta(conv.jogador)}
+                                                        </div>
+                                                    )}
                                                 </div>
                                                 <div>
                                                     <p className="nome">{formatarNome(conv.jogador?.nome_completo) || 'Atleta Convidado'}</p>
@@ -236,6 +257,18 @@ const SolicitacoesTab = () => {
                 .card-solicitacao { background: rgba(15, 23, 42, 0.6); padding: 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center; }
                 .info-atleta { display: flex; align-items: center; gap: 12px; }
                 .avatar-mini { width: 36px; height: 36px; border-radius: 50%; overflow: hidden; background: rgba(255,255,255,0.05); display: flex; align-items: center; justifyContent: center; flex-shrink: 0; }
+                
+                .avatar-iniciais-solicitacao {
+                    width: 100%;
+                    height: 100%;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+                    color: #fff;
+                    font-size: 0.8rem;
+                    font-weight: 800;
+                }
                 .avatar-mini img { width: 100%; height: 100%; object-fit: cover; }
                 .nome { font-size: 0.9rem; font-weight: 600; color: #f1f5f9; }
                 .sub { font-size: 0.75rem; color: #64748b; display: flex; align-items: center; gap: 4px; }

@@ -34,6 +34,37 @@ const PaginaEquipe = ({ abaAtiva, setAbaAtiva, aoVoltar }) => {
         modalCriacaoAberto, setModalCriacaoAberto, getLabelVinculo
     } = usarEquipe();
     const { ehSuperAdmin, usuario } = usarAutenticacao();
+
+    const formatarIdentidadeAtleta = useCallback((u) => {
+        if (!u || (!u.nome_completo && !u.apelido)) return 'Atleta';
+        
+        const nomeParaUsar = u.nome_completo || u.apelido;
+        const partes = nomeParaUsar.trim().split(/\s+/);
+        
+        if (partes.length === 1) {
+            return partes[0].charAt(0).toUpperCase() + partes[0].slice(1).toLowerCase();
+        }
+        
+        const primeiro = partes[0].charAt(0).toUpperCase() + partes[0].slice(1).toLowerCase();
+        const ultimo = partes[partes.length - 1].charAt(0).toUpperCase() + partes[partes.length - 1].slice(1).toLowerCase();
+        
+        return `${primeiro} ${ultimo}`;
+    }, []);
+
+    const getIniciaisAtleta = useCallback((u) => {
+        if (!u) return '??';
+        if (u.apelido) {
+            // Se o apelido for uma palavra só, pega as 2 primeiras letras. 
+            // Se tiver duas palavras, pega a inicial de cada.
+            const partes = u.apelido.trim().split(/\s+/);
+            if (partes.length > 1) return (partes[0].charAt(0) + partes[1].charAt(0)).toUpperCase();
+            return u.apelido.substring(0, 2).toUpperCase();
+        }
+        if (!u.nome_completo) return '??';
+        const partes = u.nome_completo.trim().split(/\s+/);
+        if (partes.length === 1) return partes[0].substring(0, 2).toUpperCase();
+        return (partes[0].charAt(0) + partes[partes.length - 1].charAt(0)).toUpperCase();
+    }, []);
     
     const [modalEditarAberto, setModalEditarAberto] = useState(false);
     const [copiado, setCopiado] = useState(false);
@@ -70,10 +101,12 @@ const PaginaEquipe = ({ abaAtiva, setAbaAtiva, aoVoltar }) => {
         const total = membros.length;
         const mensalistas = membros.filter(m => m.vinculo === 'mensalista').length;
         const avulsos = membros.filter(m => m.vinculo === 'avulso').length;
-        const viceCapitaes = membros.filter(m => m.papel === 'sub_admin' && m.usuarios).map(m => m.usuarios.apelido || m.usuarios.nome_completo.split(' ')[0]);
+        const viceCapitaes = membros
+            .filter(m => m.papel === 'sub_admin' && m.usuarios)
+            .map(m => formatarIdentidadeAtleta(m.usuarios));
         
         return { total, mensalistas, avulsos, viceCapitaes };
-    }, [membros]);
+    }, [membros, formatarIdentidadeAtleta]);
 
     // URL de convite
     const urlConvite = equipeAtiva?.slug_convite ? `${window.location.origin}/convite/${equipeAtiva.slug_convite}` : '';
@@ -176,7 +209,7 @@ const PaginaEquipe = ({ abaAtiva, setAbaAtiva, aoVoltar }) => {
                                             const adminId = equipeAtiva.admin_id;
                                             const adminMembro = membros.find(m => m.usuario_id === adminId || m.usuarios?.id === adminId);
                                             const u = adminMembro?.usuarios || equipeAtiva.admin || {};
-                                            return u.apelido || (u.nome_completo ? u.nome_completo.split(' ')[0] : 'Capitão');
+                                            return formatarIdentidadeAtleta(u);
                                         })()}
                                     </span>
                                     {stats.viceCapitaes.length > 0 && (
@@ -293,14 +326,14 @@ const PaginaEquipe = ({ abaAtiva, setAbaAtiva, aoVoltar }) => {
                                                     <img src={u.foto_url} alt={u.apelido || u.nome_completo} />
                                                 ) : (
                                                     <div className="atleta-avatar-fallback">
-                                                        {(u.apelido || u.nome_completo).charAt(0).toUpperCase()}
+                                                        {getIniciaisAtleta(u)}
                                                     </div>
                                                 )}
                                                 {membro.papel === 'admin' && <div className="tag-lider" title="Capitão"><Crown size={12} /></div>}
                                                 {membro.papel === 'sub_admin' && <div className="tag-lider" title="Vice-Capitão" style={{ background: '#94a3b8' }}><Shield size={12} /></div>}
                                             </div>
                                             <div className="atleta-info-box">
-                                                <h4>{u.apelido || u.nome_completo.split(' ')[0]}</h4>
+                                                <h4>{formatarIdentidadeAtleta(u)}</h4>
                                                 <span className="atleta-posicao">{p.posicao_principal || 'Atleta'}</span>
                                                 <div className="atleta-nivel-tag">{p.nivel_tecnico || 'Lazer'}</div>
                                             </div>
@@ -370,7 +403,7 @@ const PaginaEquipe = ({ abaAtiva, setAbaAtiva, aoVoltar }) => {
                 
                 
                 .badge-capitao { background: rgba(251, 191, 36, 0.1) !important; color: #fbbf24 !important; border-color: rgba(251, 191, 36, 0.2) !important; }
-                .badge-vice { background: rgba(56, 189, 248, 0.1) !important; color: #38bdf8 !important; border-color: rgba(56, 189, 248, 0.2) !important; }
+                .badge-vice { background: rgba(16, 185, 129, 0.1) !important; color: #10b981 !important; border-color: rgba(16, 185, 129, 0.2) !important; }
                 
                 .stats-equipe { display: flex; gap: 16px; margin-top: 10px; }
                 .stat-item { display: flex; flex-direction: column; }
@@ -388,8 +421,21 @@ const PaginaEquipe = ({ abaAtiva, setAbaAtiva, aoVoltar }) => {
                 
                 .atleta-avatar-box { position: relative; width: 64px; height: 64px; margin-bottom: 10px; }
                 .atleta-avatar-box img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; border: 2px solid var(--primaria); padding: 2px; }
-                .atleta-avatar-fallback { width: 100%; height: 100%; border-radius: 50%; background: #334155; display: flex; align-items: center; justifyContent: center; font-size: 1.5rem; font-weight: bold; color: #94a3b8; }
-                .tag-lider { position: absolute; bottom: 0; right: 0; background: #fbbf24; color: #000; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justifyContent: center; border: 2px solid #1e293b; }
+                .atleta-avatar-fallback { 
+                    width: 100%; 
+                    height: 100%; 
+                    border-radius: 50%; 
+                    background: linear-gradient(135deg, #1e293b 0%, #334155 100%); 
+                    display: flex; 
+                    align-items: center; 
+                    justify-content: center; 
+                    font-size: 1.2rem; 
+                    font-weight: 800; 
+                    color: #f1f5f9; 
+                    border: 1px solid rgba(255,255,255,0.1);
+                    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+                }
+                .tag-lider { position: absolute; bottom: 0; right: 0; background: #fbbf24; color: #000; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid #0f172a; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
 
                 .atleta-info-box h4 { font-size: 0.95rem; color: #f1f5f9; margin: 0 0 4px 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; width: 100%; }
                 .atleta-posicao { font-size: 0.75rem; color: #94a3b8; display: block; margin-bottom: 6px; }

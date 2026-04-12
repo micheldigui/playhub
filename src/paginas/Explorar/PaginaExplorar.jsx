@@ -2,30 +2,48 @@ import { useState, useCallback, useEffect } from 'react';
 
 // Formata "Primeiro Último" com iniciais maiúsculas
 const formatarNome = (nomeCompleto) => {
-  if (!nomeCompleto) return '';
+  if (!nomeCompleto) return 'Atleta';
   const partes = nomeCompleto.trim().split(/\s+/);
   const capitalizar = (p) => p.charAt(0).toUpperCase() + p.slice(1).toLowerCase();
-  // Se tiver só um nome, retorna ele
+  
   if (partes.length === 1) return capitalizar(partes[0]);
-  // Retorna primeiro nome + último sobrenome
-  return `${capitalizar(partes[0])} ${capitalizar(partes[partes.length - 1])}`;
+  
+  const primeiro = capitalizar(partes[0]);
+  const ultimo = capitalizar(partes[partes.length - 1]);
+  return `${primeiro} ${ultimo}`;
 };
 
-const formatarApelido = (apelido) => {
-  if (!apelido) return 'atleta';
-  return apelido.trim().split(/\s+/).map(p => 
+const formatarHandleAtleta = (u) => {
+  if (!u) return '@Atleta';
+  const texto = u.apelido || u.nome_completo?.split(' ')[0] || 'Atleta';
+  const formatado = texto.trim().split(/\s+/).map(p => 
       p.charAt(0).toUpperCase() + p.slice(1).toLowerCase()
   ).join('');
+  return `@${formatado}`;
+};
+
+const getIniciaisAtleta = (u) => {
+    if (!u) return '??';
+    if (u.apelido) {
+        const partes = u.apelido.trim().split(/\s+/);
+        if (partes.length > 1) return (partes[0].charAt(0) + partes[1].charAt(0)).toUpperCase();
+        return u.apelido.substring(0, 2).toUpperCase();
+    }
+    if (!u.nome_completo) return '??';
+    const partes = u.nome_completo.trim().split(/\s+/);
+    if (partes.length === 1) return partes[0].substring(0, 2).toUpperCase();
+    return (partes[0].charAt(0) + partes[partes.length - 1].charAt(0)).toUpperCase();
 };
 import { usarEquipe } from '../../contextos/EquipeContexto';
 import { usarAutenticacao } from '../../contextos/AutenticacaoContexto';
 import { usarNotificacoes } from '../../contextos/NotificacoesContexto';
 import { supabase } from '../../servicos/supabase';
 import { rastrear } from '../../servicos/rastreamento';
-import { Globe, MapPin, Trophy, Users, Search, ArrowLeft, Crown, User, Phone, MessageCircle, Ban } from 'lucide-react';
+import { Globe, MapPin, Trophy, Users, Search, ArrowLeft, Crown, User, Phone, MessageCircle, Ban, Lock } from 'lucide-react';
 import Botao from '../../componentes/Botao/Botao';
 import ModalPerfilAtleta from '../../componentes/Modais/ModalPerfilAtleta';
 import ModalPerfilEquipe from '../../componentes/Modais/ModalPerfilEquipe';
+import ModalAjustePrivacidade from '../../componentes/Modais/ModalAjustePrivacidade';
 import './PaginaExplorar.css';
 
 const MODALIDADES = [
@@ -61,7 +79,7 @@ const PaginaExplorar = ({ aoVoltar }) => {
   const [buscando, setBuscando] = useState(false);
   const { solicitarIngresso, cancelarSolicitacaoIngresso, equipes: minhasEquipes, minhasSolicitacoes } = usarEquipe();
   const { usuario, dadosUsuario } = usarAutenticacao();
-  const { matchesConfirmados } = usarNotificacoes();
+  const { matchesConfirmados, matches, carregarNotificacoes } = usarNotificacoes();
   
   const [abaAtiva, setAbaAtiva] = useState('equipes'); // 'equipes' ou 'atletas'
   const [pagina, setPagina] = useState(0);
@@ -71,6 +89,8 @@ const PaginaExplorar = ({ aoVoltar }) => {
   const [solicitadosGatilho, setSolicitadosGatilho] = useState({});
   const [processando, setProcessando] = useState(null);
   const [equipeSelecionada, setEquipeSelecionada] = useState(null);
+  const [mostrarAvisoPrivacidade, setMostrarAvisoPrivacidade] = useState(false);
+  const [atletaPendente, setAtletaPendente] = useState(null);
   const [atletaSelecionado, setAtletaSelecionado] = useState(null);
   const [idsColega, setIdsColega] = useState(new Set()); // atletas que já são da equipe do usuário
 
@@ -183,10 +203,17 @@ const PaginaExplorar = ({ aoVoltar }) => {
     executarBusca();
   };
 
-    const handleCutucar = async (atletaAlvo) => {
+  const handleCutucar = async (atletaAlvo) => {
     if (!usuario || !dadosUsuario) {
       alert('Carregando seus dados... Tente novamente em instantes ou certifique-se de estar logado.');
       return;
+    }
+
+    // NOVA TRAVA: Só pode passar a bola se o SEU perfil for público e whatsapp liberado
+    if (!dadosUsuario.perfil_publico || !dadosUsuario.compartilhar_whatsapp_match) {
+        setAtletaPendente(atletaAlvo);
+        setMostrarAvisoPrivacidade(true);
+        return;
     }
 
     const idadeEu = calcularIdade(dadosUsuario.data_nascimento);
@@ -204,14 +231,14 @@ const PaginaExplorar = ({ aoVoltar }) => {
     }
 
     // Se já é um match histórico
+    // Se ocorrer um Match Mútuo (ambos passaram a bola), o contato é liberado automaticamente
     if (matchesConfirmados?.has(atletaAlvo.id)) {
-        const ambosAutorizaram = dadosUsuario.compartilhar_whatsapp_match && atletaAlvo.compartilhar_whatsapp_match;
-        if (ambosAutorizaram && atletaAlvo.telefone) {
+        if (atletaAlvo.telefone) {
             const numeroLimpo = atletaAlvo.telefone.replace(/\D/g, '');
             const msg = `Fala craque! Vi que demos match no PlayHub ⚽. Bora jogar?`;
             window.open(`https://api.whatsapp.com/send?phone=55${numeroLimpo}&text=${encodeURIComponent(msg)}`, '_blank');
         } else {
-            alert('Vocês já deram Match! Mas um dos perfis (ou ambos) está com o compartilhamento de WhatsApp ocultado nas configurações do painel.');
+            alert('Vocês deram Match! ⚽ Mas este atleta ainda não cadastrou um número de WhatsApp.');
         }
         return;
     }
@@ -232,9 +259,15 @@ const PaginaExplorar = ({ aoVoltar }) => {
       
       rastrear.clique('explorar_passou_bola', 'Passou a bola para um atleta como demonstração de interesse');
       alert('Você passou a bola para este atleta! ⚽');
+      carregarNotificacoes(); // Atualiza instantaneamente os botões para match ou espera
     } catch (err) {
       console.error('Erro ao interagir:', err);
-      alert(`Erro ao passar a bola: ${err.message || 'Verifique se rodou o comando SQL no banco.'}`);
+      // Se for duplicidade, apenas ignoramos o alerta de erro e atualizamos
+      if (err.code === '23505' || err.message?.includes('duplicate key')) {
+        carregarNotificacoes();
+        return;
+      }
+      alert(`Erro ao passar a bola: ${err.message || 'Verifique sua conexão.'}`);
     }
   };
 
@@ -455,13 +488,14 @@ const PaginaExplorar = ({ aoVoltar }) => {
                       <img src={atleta.foto_url} alt={atleta.nome_completo} className="atleta-avatar" />
                     ) : (
                       <div className="atleta-avatar-placeholder">
-                        {formatarNome(atleta.nome_completo)?.charAt(0).toUpperCase()}
+                        {getIniciaisAtleta(atleta)}
                       </div>
                     )}
                     <div className="atleta-info">
                       <h4>{formatarNome(atleta.nome_completo)}</h4>
                       <div className="atleta-slug-idade">
-                        <span>@{formatarApelido(atleta.apelido)}</span>
+                        <span>{formatarHandleAtleta(atleta)}</span>
+                        {atleta.id === usuario.id && <span className="badge-voce">VOCÊ</span>}
                         {atleta.data_nascimento && (
                           <span className="badge-idade">{calcularIdade(atleta.data_nascimento)} anos</span>
                         )}
@@ -484,7 +518,17 @@ const PaginaExplorar = ({ aoVoltar }) => {
                     >
                       <User size={14} /> Ver Perfil
                     </Botao>
-                    {idsColega.has(atleta.id) ? (
+                    {atleta.id === usuario.id ? (
+                      <div style={{
+                        flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        gap: '6px', fontSize: '0.8rem', fontWeight: '700',
+                        color: '#3498db', background: 'rgba(52, 152, 219, 0.1)',
+                        border: '1px solid rgba(52, 152, 219, 0.25)', borderRadius: '8px',
+                        padding: '6px 8px', cursor: 'pointer'
+                      }} onClick={() => setAtletaSelecionado(atleta)}>
+                        <User size={14}/> Meu Perfil
+                      </div>
+                    ) : idsColega.has(atleta.id) ? (
                       <div style={{
                         flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
                         gap: '4px', fontSize: '0.75rem', fontWeight: '700',
@@ -494,17 +538,51 @@ const PaginaExplorar = ({ aoVoltar }) => {
                       }}>
                         ✓ Colega de Equipe
                       </div>
-                    ) : (
-                      <Botao
-                        variant="secundario"
-                        style={{ flex: 1, fontSize: '0.8rem', gap: '4px', background: matchesConfirmados?.has(atleta.id) ? 'rgba(37, 211, 102, 0.1)' : undefined, color: matchesConfirmados?.has(atleta.id) ? '#25D366' : undefined, borderColor: matchesConfirmados?.has(atleta.id) ? 'rgba(37, 211, 102, 0.4)' : undefined }}
-                        onClick={() => handleCutucar(atleta)}
-                        disabled={atleta.id === usuario.id}
-                        title={matchesConfirmados?.has(atleta.id) ? "Vocês já deram Match!" : "Mostrar interesse"}
-                      >
-                        {matchesConfirmados?.has(atleta.id) ? <><MessageCircle size={14}/> Match!</> : '⚽ Passar a bola'}
-                      </Botao>
-                    )}
+                    ) : (() => {
+                          const idNormal = String(atleta.id).toLowerCase().trim();
+                          const ehMatchMútuo = matchesConfirmados?.has(idNormal);
+                          const euPasseiABola = matches?.has(idNormal);
+
+                          return (
+                            <Botao
+                              variant="secundario"
+                              onClick={() => {
+                                if (atleta.id === usuario.id) {
+                                  setAtletaSelecionado(atleta);
+                                } else if (ehMatchMútuo) {
+                                  const tel = atleta.telefone?.replace(/\D/g, '');
+                                  if (tel) window.open(`https://wa.me/55${tel}`, '_blank');
+                                } else {
+                                  handleCutucar(atleta);
+                                }
+                              }}
+                              style={{ 
+                                flex: 1, 
+                                fontSize: '0.8rem', 
+                                gap: '4px',
+                                background: atleta.id === usuario.id ? 'rgba(255, 255, 255, 0.05)' :
+                                            ehMatchMútuo ? 'rgba(37, 211, 102, 0.15)' : 
+                                            euPasseiABola ? 'rgba(255, 255, 255, 0.05)' : undefined,
+                                color: atleta.id === usuario.id ? '#94a3b8' :
+                                       ehMatchMútuo ? '#25D366' : 
+                                       euPasseiABola ? '#94a3b8' : undefined,
+                                borderColor: atleta.id === usuario.id ? 'rgba(255, 255, 255, 0.1)' :
+                                             ehMatchMútuo ? 'rgba(37, 211, 102, 0.4)' : 
+                                             euPasseiABola ? 'rgba(255, 255, 255, 0.1)' : undefined
+                              }}
+                              disabled={(euPasseiABola && !ehMatchMútuo) || (!atleta.compartilhar_whatsapp_match && atleta.id !== usuario.id)}
+                              title={atleta.id === usuario.id ? 'Ver meu perfil' :
+                                     ehMatchMútuo ? 'Match! Clique para conversar' : 
+                                     !atleta.compartilhar_whatsapp_match ? 'O WhatsApp deste atleta está privado 🛡️' :
+                                     euPasseiABola ? 'Você já passou a bola. Aguarde a retribuição!' : 'Passar a bola'}
+                            >
+                              {atleta.id === usuario.id ? <><User size={14}/> Meu Perfil</> :
+                               ehMatchMútuo ? <><MessageCircle size={14}/> Conversar</> : 
+                               !atleta.compartilhar_whatsapp_match ? <><Lock size={14}/> Bola Bloqueada</> :
+                               euPasseiABola ? '✓ Bola Passada' : '⚽ Passar a bola'}
+                            </Botao>
+                          );
+                        })()}
                   </div>
                 </div>
               ))
@@ -555,6 +633,21 @@ const PaginaExplorar = ({ aoVoltar }) => {
         aoPassarBola={handleCutucar}
       />
       )}
+
+      {/* Trava de Privacidade */}
+      <ModalAjustePrivacidade 
+        isOpen={mostrarAvisoPrivacidade}
+        onClose={() => {
+            setMostrarAvisoPrivacidade(false);
+            setAtletaPendente(null);
+        }}
+        aoConcluir={() => {
+            setMostrarAvisoPrivacidade(false);
+            if (atletaPendente) {
+                handleCutucar(atletaPendente);
+            }
+        }}
+      />
     </div>
   );
 };

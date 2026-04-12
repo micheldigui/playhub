@@ -48,8 +48,12 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: #1e293b;
+    background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
     border-radius: 50%;
+    color: #fff;
+    font-size: 2.2rem;
+    font-weight: 800;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
 }
 
 .badge-cargo {
@@ -328,6 +332,32 @@
     text-decoration: none;
     transition: filter 0.2s;
     font-size: 0.95rem;
+}
+
+.whatsapp-wrapper {
+    margin-bottom: 12px;
+}
+
+.admin-access-zap-only {
+    margin-bottom: 16px;
+    padding: 12px;
+    background: rgba(16, 185, 129, 0.05);
+    border-radius: 12px;
+    border: 1px dashed rgba(16, 185, 129, 0.2);
+}
+
+.motivo-acesso-zap {
+    font-size: 0.7rem;
+    color: #94a3b8;
+    margin-bottom: 6px;
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
 }
 
 .perfil-bio {

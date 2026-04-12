@@ -109,6 +109,15 @@ const ModalDetalhesPartida = ({ isOpen, onClose, partida }) => {
         ).join(' ');
     };
 
+    const getIniciaisAtleta = (u) => {
+        if (!u) return '??';
+        const nome = u.nome_completo || '';
+        if (!nome) return '??';
+        const partes = nome.trim().split(/\s+/);
+        if (partes.length === 1) return partes[0].substring(0, 2).toUpperCase();
+        return (partes[0].charAt(0) + partes[partes.length - 1].charAt(0)).toUpperCase();
+    };
+
     // Função auxiliar para buscar o nome do usuário lidando com perfis privados / null
     const getNomeUsuario = (userId, usuarioPayload) => {
         // 1. Tenta pegar do payload direto da presenca (p.usuarios)
@@ -477,8 +486,14 @@ const ModalDetalhesPartida = ({ isOpen, onClose, partida }) => {
                                                     borderLeft: '3px solid #10b981' 
                                                 }}>
                                                     <span style={{ width: '20px', color: '#64748b', fontSize: '0.85rem' }}>{index + 1}.</span>
-                                                    <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'rgba(255,255,255,0.1)', overflow: 'hidden' }}>
-                                                        {u?.foto_url ? <img src={u.foto_url} alt="avatar" style={{width:'100%', height:'100%', objectFit:'cover'}}/> : <Users size={16} style={{margin:'8px'}}/>}
+                                                    <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'rgba(255,255,255,0.1)', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                        {u?.foto_url ? (
+                                                            <img src={u.foto_url} alt="avatar" style={{width:'100%', height:'100%', objectFit:'cover'}}/>
+                                                        ) : (
+                                                            <div className="avatar-iniciais-partida">
+                                                                {getIniciaisAtleta(u)}
+                                                            </div>
+                                                        )}
                                                     </div>
                                                     <div style={{ flex: 1, color: '#f8fafc', fontWeight: '500', display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'space-between' }}>
                                                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', overflow: 'hidden', flex: 1, minWidth: 0 }}>
@@ -662,6 +677,20 @@ const ModalDetalhesPartida = ({ isOpen, onClose, partida }) => {
                                      );
                                  })()}
                             </div>
+                            
+                            <style>{`
+                                .avatar-iniciais-partida {
+                                    width: 100%;
+                                    height: 100%;
+                                    display: flex;
+                                    align-items: center;
+                                    justify-content: center;
+                                    background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+                                    color: #fff;
+                                    font-size: 0.75rem;
+                                    font-weight: 800;
+                                }
+                            `}</style>
 
                             {/* FILA DE ESPERA */}
                             {listaEspera.length > 0 && (
@@ -688,8 +717,14 @@ const ModalDetalhesPartida = ({ isOpen, onClose, partida }) => {
                                                     opacity: 0.8 
                                                 }}>
                                                     <span style={{ width: '20px', color: '#64748b', fontSize: '0.85rem' }}>{index + 1}.</span>
-                                                    <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'rgba(255,255,255,0.1)', overflow: 'hidden' }}>
-                                                        {u?.foto_url ? <img src={u.foto_url} alt="avatar" style={{width:'100%', height:'100%', objectFit:'cover'}}/> : <Users size={16} style={{margin:'8px'}}/>}
+                                                    <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'rgba(255,255,255,0.1)', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                        {u?.foto_url ? (
+                                                            <img src={u.foto_url} alt="avatar" style={{width:'100%', height:'100%', objectFit:'cover'}}/>
+                                                        ) : (
+                                                            <div className="avatar-iniciais-partida">
+                                                                {getIniciaisAtleta(u)}
+                                                            </div>
+                                                        )}
                                                     </div>
                                                     <div style={{ flex: 1, color: '#e2e8f0', display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden', minWidth: 0 }}>
                                                         <span style={{ 

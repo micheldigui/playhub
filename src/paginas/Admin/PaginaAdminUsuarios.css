@@ -38,164 +38,186 @@
 
 /* Índice Alfabético */
 .indice-alfabetico {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-bottom: 2rem;
-    padding: 10px;
-    background: rgba(15, 23, 42, 0.3);
-    border-radius: 12px;
-    justify-content: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 2.5rem;
+  justify-content: center;
 }
 
 .btn-letra {
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    color: #94a3b8;
-    width: 32px;
-    height: 32px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 6px;
-    font-size: 0.8rem;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all 0.2s;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: rgba(30, 41, 59, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  color: #64748b;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .btn-letra:hover {
-    background: rgba(255, 255, 255, 0.1);
-    color: white;
-    border-color: var(--primaria);
+  background: rgba(30, 41, 59, 0.8);
+  color: #f1f5f9;
+  transform: translateY(-2px);
 }
 
 .btn-letra.ativo {
-    background: var(--primaria);
-    color: #0f172a;
-    border-color: var(--primaria);
+  background: var(--primaria);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3);
 }
 
 .btn-letra:first-child {
-    width: auto;
-    padding: 0 12px;
-}
-
-/* Carregar Mais */
-.carregar-mais {
-    display: flex;
-    justify-content: center;
-    margin: 3rem 0;
+  width: auto;
+  padding: 0 1rem;
 }
 
 .grade-admin-usuarios {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-    gap: 1.5rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 3rem;
 }
 
 .card-usuario-admin {
-    background: rgba(15, 23, 42, 0.6);
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    border-radius: 16px;
-    padding: 1.5rem;
-    transition: all 0.2s ease;
-    display: flex;
-    flex-direction: column;
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.4) 0%, rgba(15, 23, 42, 0.6) 100%);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 20px;
+  padding: 1.5rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
 }
 
 .card-usuario-admin:hover {
-    border-color: rgba(14, 165, 233, 0.3);
-    transform: translateY(-4px);
-    background: rgba(15, 23, 42, 0.8);
+  transform: translateY(-5px);
+  border-color: rgba(14, 165, 233, 0.3);
+  box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.6);
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.6) 0%, rgba(15, 23, 42, 0.8) 100%);
 }
 
 .card-usuario-topo {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    margin-bottom: 1rem;
+  display: flex;
+  gap: 1.25rem;
+  align-items: center;
+  margin-bottom: 1.5rem;
 }
 
 .usuario-avatar-admin {
-    width: 56px;
-    height: 56px;
-    border-radius: 50%;
-    overflow: hidden;
-    background: #1e293b;
-    border: 2px solid rgba(255, 255, 255, 0.1);
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  padding: 3px;
+  background: rgba(0, 0, 0, 0.2);
+  flex-shrink: 0;
+  overflow: hidden;
 }
 
 .usuario-avatar-admin img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
 }
 
 .avatar-admin-placeholder {
-    width: 100%;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.5rem;
-    font-weight: 600;
-    color: #64748b;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+  color: #fff;
+  font-weight: 800;
+  font-size: 1.2rem;
+  border-radius: 50%;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+  border: 1px solid rgba(255,255,255,0.1);
 }
 
 .usuario-info-admin h4 {
-    color: #f1f5f9;
-    font-size: 1.1rem;
-    margin-bottom: 0.2rem;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #f8fafc;
+  margin-bottom: 0.25rem;
+  line-height: 1.2;
 }
 
 .usuario-email-admin {
-    font-size: 0.85rem;
-    color: #94a3b8;
-    display: flex;
-    align-items: center;
-    gap: 0.4rem;
+  font-size: 0.8rem;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
-.usuario-meta-admin {
-    font-size: 0.9rem;
-    color: #cbd5e1;
-    line-height: 1.6;
+.usuario-corpo-admin {
+  flex: 1;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 14px;
+  margin-bottom: 1.25rem;
 }
 
-.usuario-meta-admin strong {
-    color: #94a3b8;
-    font-weight: 500;
+.usuario-meta-admin p {
+  font-size: 0.85rem;
+  color: #94a3b8;
+  margin-bottom: 0.5rem;
+  display: flex;
+  justify-content: space-between;
+}
+
+.usuario-meta-admin p strong {
+  color: #64748b;
+  font-weight: 500;
 }
 
 .tag-visibilidade {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.4rem;
-    font-size: 0.75rem;
-    font-weight: 600;
-    padding: 4px 8px;
-    border-radius: 6px;
-    text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
 }
 
 .tag-visibilidade.publica {
-    background: rgba(14, 165, 233, 0.1);
-    color: #0ea5e9;
+  background: rgba(16, 185, 129, 0.1);
+  color: #10b981;
 }
 
 .tag-visibilidade.privada {
-    background: rgba(100, 116, 139, 0.1);
-    color: #64748b;
+  background: rgba(244, 63, 94, 0.1);
+  color: #f43f5e;
 }
 
 .admin-vazio {
-    padding: 4rem 1rem;
-    text-align: center;
-    color: #64748b;
-    background: rgba(15, 23, 42, 0.4);
-    border-radius: 16px;
-    border: 1px dashed rgba(255, 255, 255, 0.1);
+  text-align: center;
+  padding: 5rem 2rem;
+  color: #64748b;
+  background: rgba(30, 41, 59, 0.2);
+  border-radius: 20px;
+  border: 1px dashed rgba(255, 255, 255, 0.1);
+}
+
+.carregar-mais {
+  display: flex;
+  justify-content: center;
+  margin-top: 2rem;
 }
 
 @media (max-width: 640px) {

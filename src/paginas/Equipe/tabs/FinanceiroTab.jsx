@@ -337,7 +337,22 @@ const FinanceiroTab = ({ abaExterna, modoLeitura = false, membrosIniciais = [] }
         ).join('');
     };
 
-    // Mapa usuario_id -> papel (admin | sub_admin | jogador)
+    const getIniciaisAtleta = (u) => {
+    if (!u) return '??';
+    const nome = u.nome_completo || '';
+    const apelido = u.apelido || '';
+    if (apelido) {
+      const partes = apelido.trim().split(/[\s._-]+/);
+      if (partes.length > 1) return (partes[0].charAt(0) + partes[1].charAt(0)).toUpperCase();
+      return apelido.substring(0, 2).toUpperCase();
+    }
+    if (!nome) return '??';
+    const partes = nome.trim().split(/\s+/);
+    if (partes.length === 1) return partes[0].substring(0, 2).toUpperCase();
+    return (partes[0].charAt(0) + partes[partes.length - 1].charAt(0)).toUpperCase();
+};
+
+// Mapa usuario_id -> papel (admin | sub_admin | jogador)
     const mapaPapeis = React.useMemo(() => {
         const mapa = {};
         todosMembros.forEach(m => { if (m.usuario_id) mapa[m.usuario_id] = m.papel; });
@@ -562,7 +577,13 @@ const FinanceiroTab = ({ abaExterna, modoLeitura = false, membrosIniciais = [] }
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                                             <span style={{ color: '#64748b', fontSize: '0.85rem', width: '20px', textAlign: 'right' }}>{index + 1}.</span>
                                             <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'rgba(255,255,255,0.05)', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                                {pag.usuarios?.foto_url ? <img src={pag.usuarios.foto_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <User size={20} color="#64748b" />}
+                                                {pag.usuarios?.foto_url ? (
+                                                    <img src={pag.usuarios.foto_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                ) : (
+                                                    <div className="avatar-iniciais-mini">
+                                                        {getIniciaisAtleta(pag.usuarios)}
+                                                    </div>
+                                                )}
                                             </div>
                                             <div>
                                                 <p style={{ color: '#f8fafc', fontWeight: '600', fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: '5px' }}>
@@ -650,7 +671,15 @@ const FinanceiroTab = ({ abaExterna, modoLeitura = false, membrosIniciais = [] }
                                 return (
                                     <div key={m.id} style={{ padding: '10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                            <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'rgba(255,255,255,0.05)', overflow: 'hidden' }}>{m.usuarios?.foto_url ? <img src={m.usuarios.foto_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <User size={16} color="#64748b" />}</div>
+                                            <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'rgba(255,255,255,0.05)', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                {m.usuarios?.foto_url ? (
+                                                    <img src={m.usuarios.foto_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                ) : (
+                                                    <div className="avatar-iniciais-micro">
+                                                        {getIniciaisAtleta(m.usuarios)}
+                                                    </div>
+                                                )}
+                                            </div>
                                             <span style={{ fontSize: '0.9rem', color: '#f8fafc', fontWeight: '500' }}>{formatName(m.usuarios?.nome_completo)}</span>
                                         </div>
                                         <button onClick={() => !jaNoCiclo && handleAdicionarAoCiclo(m)} disabled={jaNoCiclo || !!processando} style={{ background: 'rgba(56,189,248,0.1)', border: '1px solid rgba(56,189,248,0.3)', color: '#38bdf8', padding: '4px 10px', borderRadius: '6px', fontSize: '0.75rem', cursor: jaNoCiclo ? 'default' : 'pointer' }}>{jaNoCiclo ? 'No ciclo' : '+ Adicionar'}</button>
@@ -678,6 +707,30 @@ const FinanceiroTab = ({ abaExterna, modoLeitura = false, membrosIniciais = [] }
                 .campo label { font-size: 0.85rem; color: #94a3b8; display: flex; align-items: center; gap: 6px; }
                 .campo input { background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 10px; color: #fff; outline: none; }
                 .campo input:focus { border-color: #38bdf8; }
+                
+                .avatar-iniciais-mini {
+                    width: 100%;
+                    height: 100%;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+                    color: #fff;
+                    font-size: 0.85rem;
+                    font-weight: 800;
+                }
+
+                .avatar-iniciais-micro {
+                    width: 100%;
+                    height: 100%;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+                    color: #fff;
+                    font-size: 0.65rem;
+                    font-weight: 800;
+                }
                 
                 .legenda-ativa { 
                     background: #38bdf8; 

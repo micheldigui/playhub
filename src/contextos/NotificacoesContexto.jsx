@@ -19,25 +19,7 @@ export const NotificacoesProvedor = ({ children }) => {
         if (!usuario) return;
         
         try {
-            // 1. Buscar notificações recebidas (Passar a bola)
-            const promessaInteracoes = supabase
-                .from('interacoes')
-                .select(`
-                    *,
-                    remetente:usuarios!remetente_id (
-                        id,
-                        nome_completo,
-                        apelido,
-                        foto_url,
-                        telefone,
-                        data_nascimento,
-                        compartilhar_whatsapp_match
-                    )
-                `)
-                .eq('destinatario_id', usuario.id)
-                .order('criado_em', { ascending: false });
-
-            // 1.1 Buscar convites de equipe pendentes
+            // 1. Buscar convites de equipe pendentes
             const promessaConvites = supabase
                 .from('convites_equipe')
                 .select(`
@@ -50,51 +32,86 @@ export const NotificacoesProvedor = ({ children }) => {
                 .eq('jogador_id', usuario.id)
                 .eq('status', 'pendente');
 
-            // 2. Buscar interações enviadas (para checar matches)
-            const promessaEnviadas = supabase
+            // 1. Buscar notificações recebidas (Passar a bola)
+            // Fazemos uma busca simples e depois buscamos os perfis para garantir dados mesmo sem foreign key formal
+            const { data: interacoesPuras, error: erroInter } = await supabase
                 .from('interacoes')
-                .select('destinatario_id')
-                .eq('remetente_id', usuario.id);
+                .select('*')
+                .eq('destinatario_id', usuario.id)
+                .neq('tipo', 'bola_arquivada')
+                .order('criado_em', { ascending: false });
 
-            const [resInteracoes, resConvites, resEnviadas] = await Promise.all([
-                promessaInteracoes, 
-                promessaConvites, 
-                promessaEnviadas
-            ]);
+            // 2. Buscar dados dos remetentes manualmente (Manual Join)
+            let interacoesComPerfil = [];
+            if (interacoesPuras && interacoesPuras.length > 0) {
+                const idsRemetentes = [...new Set(interacoesPuras.map(i => i.remetente_id))];
+                const { data: perfis } = await supabase
+                    .from('usuarios')
+                    .select('*')
+                    .in('id', idsRemetentes);
 
-            if (resInteracoes.error) throw resInteracoes.error;
-            if (resConvites.error) throw resConvites.error;
-            if (resEnviadas.error) throw resEnviadas.error;
+                const mapaPerfis = (perfis || []).reduce((acc, p) => ({ ...acc, [p.id]: p }), {});
+                interacoesComPerfil = interacoesPuras.map(i => ({
+                    ...i,
+                    remetente: mapaPerfis[i.remetente_id] || null
+                }));
+            }
 
-            const interacoesFormatadas = (resInteracoes.data || []).map(i => ({ 
-                ...i, 
-                // Se o tipo já veio do banco (ex: solicitacao_ingresso), mantém. 
-                // Se for nulo ou o padrão antigo, podemos rotular como 'interacao'.
-                tipo: i.tipo || 'interacao' 
-            }));
-            const convitesFormatados = (resConvites.data || []).map(c => ({ ...c, tipo: 'convite_equipe' }));
+            const resConvites = await promessaConvites;
 
-            const todasNotificacoes = [...interacoesFormatadas, ...convitesFormatados].sort((a, b) => 
-                new Date(b.criado_em).getTime() - new Date(a.criado_em).getTime()
-            );
+            // 3. Buscar TODAS as interações para lógica de Matches (enviadas e recebidas)
+            const { data: todasRelacoes } = await supabase
+                .from('interacoes')
+                .select('remetente_id, destinatario_id, tipo')
+                .or(`remetente_id.eq.${usuario.id},destinatario_id.eq.${usuario.id}`);
 
-            const idsEnviados = new Set((resEnviadas.data || []).map(e => e.destinatario_id));
-            setMatches(idsEnviados);
-            
-            // Um "Match Confirmado" é quando EU enviei e eles me enviaram (mesmo que a notificação deles esteja arquivada)
-            const idsRecebidos = new Set(
-                (resInteracoes.data || [])
-                .filter(i => i.tipo === 'bola' || i.tipo === 'bola_arquivada')
-                .map(i => i.remetente_id)
-            );
-            const matchesMutuos = [...idsEnviados].filter(id => idsRecebidos.has(id));
+            // Lógica de Processamento de Matches (Regra de Ouro)
+            const normalizarId = (id) => String(id || '').toLowerCase().trim();
+            const ehTipoBolaValido = (tipo) => {
+                if (!tipo) return true;
+                const t = String(tipo).toLowerCase().trim();
+                return t === 'bola' || t === 'bola_arquivada' || t === 'interação' || t === 'interacao';
+            };
+
+            const enviadas = new Set();
+            const recebidas = new Set();
+            const meuIdNormal = normalizarId(usuario.id);
+
+            (todasRelacoes || []).forEach(inter => {
+                if (ehTipoBolaValido(inter.tipo)) {
+                    const remId = normalizarId(inter.remetente_id);
+                    const destId = normalizarId(inter.destinatario_id);
+
+                    if (remId === meuIdNormal) enviadas.add(destId);
+                    if (destId === meuIdNormal) recebidas.add(remId);
+                }
+            });
+
+            setMatches(enviadas);
+            const matchesMutuos = [...enviadas].filter(id => recebidas.has(id));
             setMatchesConfirmados(new Set(matchesMutuos));
-            
+
+            // Formatação final das notificações para o componente
+            const notificacoesFormatadas = interacoesComPerfil.map(i => ({
+                ...i,
+                tipo: i.tipo || 'interacao'
+            }));
+
+            const convitesFormatados = (resConvites.data || []).map(c => ({
+                ...c,
+                tipo: 'convite_equipe'
+            }));
+
+            const todasNotificacoes = [...notificacoesFormatadas, ...convitesFormatados].sort((a, b) => 
+                new Date(b.criado_em) - new Date(a.criado_em)
+            );
+
             // Só conta como notificação lida/não-lida pra UI as que NÃO estão arquivadas explicitamente ou via localStorage
             const apagadasMemoriaArr = JSON.parse(localStorage.getItem(`playhub_arquivadas_${usuario.id}`) || '[]');
             const apagadasMemoria = new Set(apagadasMemoriaArr.map(String));
             const notificacoesVisiveis = todasNotificacoes.filter(n => 
                  n.tipo !== 'bola_arquivada' && 
+                 n.tipo !== 'bola_ignorada' &&
                  !apagadasMemoria.has(String(n.id)) &&
                  !ocultasSessaoRef.current.has(String(n.id))
             );
@@ -118,6 +135,14 @@ export const NotificacoesProvedor = ({ children }) => {
                     schema: 'public', 
                     table: 'interacoes',
                     filter: `destinatario_id=eq.${usuario.id}`
+                }, (payload) => {
+                    carregarNotificacoes();
+                })
+                .on('postgres_changes', { 
+                    event: '*', 
+                    schema: 'public', 
+                    table: 'interacoes',
+                    filter: `remetente_id=eq.${usuario.id}`
                 }, (payload) => {
                     carregarNotificacoes();
                 })

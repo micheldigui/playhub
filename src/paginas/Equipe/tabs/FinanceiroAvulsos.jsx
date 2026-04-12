@@ -6,6 +6,15 @@ import { usarFinanceiro } from '../../../contextos/FinanceiroContexto';
 import { usarAutenticacao } from '../../../contextos/AutenticacaoContexto';
 import { rastrear } from '../../../servicos/rastreamento';
 
+const getIniciaisAtleta = (u) => {
+    if (!u) return '??';
+    const nome = u.nome_completo || '';
+    if (!nome) return '??';
+    const partes = nome.trim().split(/\s+/);
+    if (partes.length === 1) return partes[0].substring(0, 2).toUpperCase();
+    return (partes[0].charAt(0) + partes[partes.length - 1].charAt(0)).toUpperCase();
+};
+
 const FinanceiroAvulsos = ({ membrosIniciais = [] }) => {
     const { equipeAtiva, temPermissaoEquipe } = usarEquipe();
     const { obterCicloAtual, obterMesAtual, formatarPeriodoParaExibicao } = usarFinanceiro();
@@ -218,8 +227,14 @@ const FinanceiroAvulsos = ({ membrosIniciais = [] }) => {
                                 opacity: processando === p.id ? 0.5 : 1
                             }}>
                                 <span style={{ color: '#64748b', fontSize: '0.85rem', width: '20px', textAlign: 'right', marginRight: '12px' }}>{index + 1}.</span>
-                                <div style={{width: 40, height: 40, borderRadius: '50%', background: 'rgba(255,255,255,0.1)', overflow: 'hidden', marginRight: '16px'}}>
-                                    {p.usuarios?.foto_url ? <img src={p.usuarios.foto_url} alt="jogador" style={{width:'100%', height:'100%', objectFit:'cover'}}/> : <User size={20} style={{margin:'10px', color:'#94a3b8'}}/>}
+                                <div style={{width: 40, height: 40, borderRadius: '50%', background: 'rgba(255,255,255,0.1)', overflow: 'hidden', marginRight: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
+                                    {p.usuarios?.foto_url ? (
+                                        <img src={p.usuarios.foto_url} alt="jogador" style={{width:'100%', height:'100%', objectFit:'cover'}}/>
+                                    ) : (
+                                        <div className="avatar-iniciais-mini">
+                                            {getIniciaisAtleta(p.usuarios)}
+                                        </div>
+                                    )}
                                 </div>
                                 <div style={{ flex: 1 }}>
                                     <div style={{ fontWeight: '600', color: '#f8fafc', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -277,6 +292,20 @@ const FinanceiroAvulsos = ({ membrosIniciais = [] }) => {
                     </div>
                 </div>
             )}
+            <style>{`
+                .avatar-iniciais-mini {
+                    width: 100%;
+                    height: 100%;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+                    color: #fff;
+                    font-size: 0.85rem;
+                    font-weight: 800;
+                    text-transform: uppercase;
+                }
+            `}</style>
         </div>
     );
 };

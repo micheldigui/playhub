@@ -155,53 +155,109 @@ const PaginaAdminUsuarios = () => {
             <div className="grade-admin-usuarios">
               {usuarios.map((u) => {
                   const ehO_Root = u.email === 'michelssouza@gmail.com';
+                  
+                  // Função padronizada para iniciais (mesma dos membros)
+                  const getIniciaisAtleta = (u) => {
+                    if (!u) return '??';
+                    if (u.apelido) {
+                      const partes = u.apelido.trim().split(/[\s._-]+/);
+                      if (partes.length > 1) return (partes[0].charAt(0) + partes[1].charAt(0)).toUpperCase();
+                      return u.apelido.substring(0, 2).toUpperCase();
+                    }
+                    if (!u.nome_completo) return '??';
+                    const partes = u.nome_completo.trim().split(/\s+/);
+                    if (partes.length === 1) return partes[0].substring(0, 2).toUpperCase();
+                    return (partes[0].charAt(0) + partes[partes.length - 1].charAt(0)).toUpperCase();
+                  };
+
+                  // Formatação Premium: Primeiro Nome + Último Sobrenome capitalizados
+                  const formatarNomePremium = (nome) => {
+                    if (!nome) return 'Sem Nome';
+                    const partes = nome.trim().split(/\s+/);
+                    if (partes.length === 1) return partes[0].charAt(0).toUpperCase() + partes[0].slice(1).toLowerCase();
+                    
+                    const primeiro = partes[0].charAt(0).toUpperCase() + partes[0].slice(1).toLowerCase();
+                    const ultimo = partes[partes.length - 1].charAt(0).toUpperCase() + partes[partes.length - 1].slice(1).toLowerCase();
+                    return `${primeiro} ${ultimo}`;
+                  };
+
+                  // Padronização PascalCase para o apelido no Admin
+                  const handlePascal = u.apelido 
+                    ? u.apelido.split(/[\s._-]+/)
+                        .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+                        .join('')
+                    : null;
+
                   return (
-                    <div key={u.id} className="card-usuario-admin">
-                    <div className="card-usuario-topo">
+                    <div key={u.id} className="card-usuario-admin animacao-entrada-suave">
+                      <div className="card-usuario-topo">
                         <div className="usuario-avatar-admin" style={{ borderColor: ehO_Root ? '#fbbf24' : 'rgba(255,255,255,0.1)' }}>
-                        {u.foto_url ? (
-                            <img src={u.foto_url} alt={formatarNomeAdmin(u.nome_completo)} />
-                        ) : (
-                            <div className="avatar-admin-placeholder">
-                            {formatarNomeAdmin(u.nome_completo)?.charAt(0).toUpperCase()}
-                            </div>
-                        )}
+                          {u.foto_url ? (
+                              <img src={u.foto_url} alt={u.nome_completo} />
+                          ) : (
+                              <div className="avatar-admin-placeholder">
+                                {getIniciaisAtleta(u)}
+                              </div>
+                          )}
                         </div>
                         <div className="usuario-info-admin">
-                        <h4 style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                            {formatarNomeAdmin(u.nome_completo)} 
-                            {ehO_Root && <ShieldCheck size={14} color="#fbbf24" title="Super Admin Root" />}
-                            {!ehO_Root && u.eh_super_admin && <Shield size={14} color="#94a3b8" title="Administrador" />}
-                        </h4>
-                        <span className="usuario-email-admin"><Mail size={12} /> {u.email}</span>
+                          <h4 style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                              {formatarNomePremium(u.nome_completo)} 
+                              {ehO_Root && <ShieldCheck size={14} color="#fbbf24" title="Super Admin Root" />}
+                              {!ehO_Root && u.eh_super_admin && <Shield size={14} color="#94a3b8" title="Administrador" />}
+                          </h4>
+                          <span className="usuario-email-admin"><Mail size={12} /> {u.email}</span>
                         </div>
-                    </div>
+                      </div>
 
-                    <div className="usuario-corpo-admin">
+                      <div className="usuario-corpo-admin">
                         <div className="usuario-meta-admin">
-                        {u.apelido && <p><strong>Apelido:</strong> @{u.apelido}</p>}
-                        <p><strong>Local:</strong> {u.cidade || 'Não inf.'}, {u.estado || '??'}</p>
-                        <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+                          {handlePascal && (
+                            <p>
+                              <strong>Apelido:</strong> 
+                              <span style={{ color: 'var(--primaria)', fontWeight: '600' }}>@{handlePascal}</span>
+                            </p>
+                          )}
+                          <p>
+                            <strong>Local:</strong> 
+                            <span>{u.cidade || 'Não inf.'}{u.estado ? `, ${u.estado}` : ''}</span>
+                          </p>
+                          
+                          <div style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
                             <span className={`tag-visibilidade ${u.perfil_publico ? 'publica' : 'privada'}`}>
-                            {u.perfil_publico ? <Eye size={12} /> : <EyeOff size={12} />}
-                            {u.perfil_publico ? 'Público' : 'Privado'}
+                              {u.perfil_publico ? <Eye size={12} /> : <EyeOff size={12} />}
+                              {u.perfil_publico ? 'Público' : 'Privado'}
                             </span>
+                            
                             {u.eh_super_admin && (
-                                <span className="tag-visibilidade" style={{ background: ehO_Root ? 'rgba(251, 191, 36, 0.1)' : 'rgba(255,255,255,0.05)', color: ehO_Root ? '#fbbf24' : '#94a3b8' }}>
-                                    {ehO_Root ? 'ROOT' : 'ADMIN'}
-                                </span>
+                              <span style={{ 
+                                fontSize: '0.7rem', fontWeight: 'bold', padding: '4px 10px', borderRadius: '8px',
+                                background: ehO_Root ? 'rgba(251, 191, 36, 0.15)' : 'rgba(16, 185, 129, 0.15)',
+                                color: ehO_Root ? '#fbbf24' : '#10b981',
+                                border: `1px solid ${ehO_Root ? 'rgba(251, 191, 36, 0.2)' : 'rgba(16, 185, 129, 0.2)'}`,
+                                textTransform: 'uppercase'
+                              }}>
+                                {ehO_Root ? 'ROOT' : 'ADMIN'}
+                              </span>
                             )}
+                          </div>
                         </div>
-                        </div>
-                    </div>
+                      </div>
 
-                    <Botao 
+                      <Botao 
                         onClick={() => abrirEdicao(u)} 
                         variant="secundario"
-                        style={{ width: '100%', marginTop: '1rem', justifyContent: 'center', gap: '0.5rem', fontSize: '0.85rem' }}
-                    >
+                        style={{ 
+                          width: '100%', 
+                          justifyContent: 'center', 
+                          gap: '0.5rem', 
+                          fontSize: '0.85rem',
+                          borderRadius: '12px',
+                          background: 'rgba(255,255,255,0.03)'
+                        }}
+                      >
                         <UserCog size={16} /> Gerenciar Usuário
-                    </Botao>
+                      </Botao>
                     </div>
                   );
               })}

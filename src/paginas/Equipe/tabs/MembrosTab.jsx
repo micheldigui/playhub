@@ -49,22 +49,42 @@ const MembrosTab = ({ membrosIniciais = [], recarregar }) => {
         return idade;
     };
 
-    const formatName = (fullName) => {
-        if (!fullName) return '';
-        const parts = fullName.trim().toLowerCase().split(/\s+/);
-        if (parts.length === 1) return parts[0].charAt(0).toUpperCase() + parts[0].slice(1);
+    const formatarIdentidadeAtleta = (u) => {
+        if (!u || (!u.nome_completo && !u.apelido)) return 'Membro';
         
-        const first = parts[0].charAt(0).toUpperCase() + parts[0].slice(1);
-        const last = parts[parts.length - 1].charAt(0).toUpperCase() + parts[parts.length - 1].slice(1);
+        const nomeParaUsar = u.nome_completo || u.apelido;
+        const partes = nomeParaUsar.trim().split(/\s+/);
         
-        return `${first} ${last}`;
+        if (partes.length === 1) {
+            return partes[0].charAt(0).toUpperCase() + partes[0].slice(1).toLowerCase();
+        }
+        
+        const primeiro = partes[0].charAt(0).toUpperCase() + partes[0].slice(1).toLowerCase();
+        const ultimo = partes[partes.length - 1].charAt(0).toUpperCase() + partes[partes.length - 1].slice(1).toLowerCase();
+        
+        return `${primeiro} ${ultimo}`;
     };
 
-    const formatarApelido = (apelido) => {
-        if (!apelido) return '';
-        return apelido.trim().split(/\s+/).map(p => 
+    const formatarHandleAtleta = (u) => {
+        if (!u) return '@Atleta';
+        const texto = u.apelido || u.nome_completo?.split(' ')[0] || 'Atleta';
+        const formatado = texto.trim().split(/\s+/).map(p => 
             p.charAt(0).toUpperCase() + p.slice(1).toLowerCase()
         ).join('');
+        return `@${formatado}`;
+    };
+
+    const getIniciaisAtleta = (u) => {
+        if (!u) return '??';
+        if (u.apelido) {
+            const partes = u.apelido.trim().split(/\s+/);
+            if (partes.length > 1) return (partes[0].charAt(0) + partes[1].charAt(0)).toUpperCase();
+            return u.apelido.substring(0, 2).toUpperCase();
+        }
+        if (!u.nome_completo) return '??';
+        const partes = u.nome_completo.trim().split(/\s+/);
+        if (partes.length === 1) return partes[0].substring(0, 2).toUpperCase();
+        return (partes[0].charAt(0) + partes[partes.length - 1].charAt(0)).toUpperCase();
     };
 
     const formatFullName = (fullName) => {
@@ -184,7 +204,13 @@ const MembrosTab = ({ membrosIniciais = [], recarregar }) => {
                                                     flexShrink: 0 
                                                 }}
                                             >
-                                                {u.foto_url ? <img src={u.foto_url} alt={u.apelido} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <Users size={18} color="#64748b" />}
+                                                {u.foto_url ? (
+                                                    <img src={u.foto_url} alt={u.apelido} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                ) : (
+                                                    <div className="atleta-avatar-fallback-mini">
+                                                        {getIniciaisAtleta(u)}
+                                                    </div>
+                                                )}
                                             </div>
                                             <div>
                                                 <div 
@@ -192,22 +218,26 @@ const MembrosTab = ({ membrosIniciais = [], recarregar }) => {
                                                     style={{ fontWeight: '600', color: '#f1f5f9', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', whiteSpace: 'nowrap' }}
                                                     title={u.nome_completo ? formatFullName(u.nome_completo) : ''}
                                                 >
-                                                    {u.nome_completo ? formatName(u.nome_completo) : 'Membro'}
+                                                    {formatarIdentidadeAtleta(u)}
                                                     {m.papel === 'admin' && <Crown size={12} color="#fbbf24" style={{ marginLeft: '4px', flexShrink: 0 }} title="Capitão" />}
                                                     {m.papel === 'sub_admin' && <Crown size={12} color="#cbd5e1" style={{ marginLeft: '4px', flexShrink: 0 }} title="Vice-Capitão" />}
                                                 </div>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                                    <div style={{ fontSize: '0.8rem', color: '#64748b', whiteSpace: 'nowrap' }}>{u.apelido ? `@${formatarApelido(u.apelido)}` : 'Sem apelido'}</div>
-                                                    {u.telefone && idade >= 18 ? (
+                                                    <div style={{ fontSize: '0.8rem', color: '#64748b', whiteSpace: 'nowrap' }}>{formatarHandleAtleta(u)}</div>
+                                                    {u.telefone && idade >= 18 && (
+                                                        equipeAtiva?.papel === 'admin' || 
+                                                        equipeAtiva?.papel === 'sub_admin' || 
+                                                        u.compartilhar_whatsapp_match
+                                                    ) ? (
                                                         <a 
                                                             href={`https://wa.me/55${u.telefone.replace(/\D/g, '')}`} 
                                                             target="_blank" 
                                                             rel="noopener noreferrer"
-                                                            style={{ color: '#25D366', display: 'flex', alignItems: 'center' }}
-                                                            title="Conversar no WhatsApp"
+                                                            className="btn-whatsapp-grid"
+                                                            title="Chamar no WhatsApp"
                                                             onClick={() => rastrear.clique('equipe_contatou_membro_whatsapp')}
                                                         >
-                                                            <MessageCircle size={12} />
+                                                            <MessageCircle size={14} />
                                                         </a>
                                                     ) : u.telefone && (
                                                         <span title="Contato restrito para menores" style={{ color: '#64748b', opacity: 0.5, display: 'flex', alignItems: 'center' }}>
@@ -354,37 +384,32 @@ const MembrosTab = ({ membrosIniciais = [], recarregar }) => {
                                     {u.foto_url ? (
                                         <img src={u.foto_url} alt={u.apelido} style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
                                     ) : (
-                                        <div style={{ 
-                                            width: '100%', 
-                                            height: '100%', 
-                                            borderRadius: '50%', 
-                                            background: '#1e293b', 
-                                            display: 'flex', 
-                                            alignItems: 'center', 
-                                            justifyContent: 'center', 
-                                            color: '#64748b' 
-                                        }}>
-                                            <Users size={20} />
+                                        <div className="atleta-avatar-fallback-mini">
+                                            {getIniciaisAtleta(u)}
                                         </div>
                                     )}
                                     {m.papel === 'admin' && <div className="badge-lider"><Crown size={12} /></div>}
                                 </div>
                                 <div className="card-membro-infos">
                                     <div className="nome-atleta" onClick={() => abrirPerfil(m)} style={{ cursor: 'pointer' }}>
-                                        {u.nome_completo ? formatName(u.nome_completo) : 'Membro'}
+                                        {formatarIdentidadeAtleta(u)}
                                         {m.papel === 'sub_admin' && <ShieldCheck size={14} color="#10b981" />}
                                     </div>
                                     <div className="apelido-atleta">
-                                        {u.apelido ? `@${formatarApelido(u.apelido)}` : 'Sem apelido'}
+                                        {formatarHandleAtleta(u)}
                                         {u.telefone && idade >= 18 && (
+                                            equipeAtiva?.papel === 'admin' || 
+                                            equipeAtiva?.papel === 'sub_admin' || 
+                                            u.compartilhar_whatsapp_match
+                                        ) && (
                                             <a 
                                                 href={`https://wa.me/55${u.telefone.replace(/\D/g, '')}`} 
                                                 target="_blank" 
                                                 rel="noopener noreferrer" 
-                                                className="btn-zap"
+                                                className="link-whatsapp-mobile"
                                                 onClick={() => rastrear.clique('equipe_contatou_membro_whatsapp')}
                                             >
-                                                <MessageCircle size={14} />
+                                                <MessageCircle size={12} />
                                             </a>
                                         )}
                                     </div>
@@ -494,7 +519,22 @@ const MembrosTab = ({ membrosIniciais = [], recarregar }) => {
                 .card-membro-topo { display: flex; align-items: center; gap: 12px; }
                 .card-membro-avatar { position: relative; width: 48px; height: 48px; flex-shrink: 0; }
                 .card-membro-avatar img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
-                .avatar-placeholder { width: 48px; height: 48px; border-radius: 50%; background: #1e293b; display: flex; align-items: center; justify-content: center; color: #64748b; }
+                
+                .atleta-avatar-fallback-mini { 
+                    width: 100%; 
+                    height: 100%; 
+                    border-radius: 50%; 
+                    background: linear-gradient(135deg, #1e293b 0%, #334155 100%); 
+                    display: flex; 
+                    align-items: center; 
+                    justify-content: center; 
+                    font-size: 0.9rem; 
+                    font-weight: 800; 
+                    color: #f1f5f9; 
+                    border: 1px solid rgba(255,255,255,0.1);
+                    text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+                }
+
                 .badge-lider { position: absolute; bottom: -2px; right: -2px; background: #fbbf24; color: #000; border-radius: 50%; width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; border: 2px solid #1e293b; }
                 
                 .card-membro-infos { flex: 1; min-width: 0; }
