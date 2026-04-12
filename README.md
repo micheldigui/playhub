@@ -1,35 +1,36 @@
-# PlayHub - Gestão Esportiva Inteligente
+# PlayHub - Gestão Esportiva Inteligente ⚽🏀🏐
 
-O PlayHub é uma plataforma completa para gestão de equipes esportivas, agendamento de partidas e controle de atletas. Desenvolvido para facilitar a vida de administradores de equipes e jogadores.
+O PlayHub é uma plataforma premium para gestão de equipes esportivas, oferecendo controle total sobre finanças, atletas e partidas. Desenvolvido com foco em alta fidelidade visual e facilidade de uso para capitães e jogadores.
 
-## 🚀 Funcionalidades Principais
+## 🚀 Funcionalidades Atuais
 
-- **Gestão de Equipes:** Criação e edição de equipes com brasão, modalidade e localização.
-- **Controle de Membros:** Gestão de papéis (Admin, Co-Admin, Jogador) e tipos de vínculo (Mensalista, Avulso).
-- **Agendamento de Partidas:** Sistema de criação de jogos com controle de vagas e horários.
-- **Lista de Presença:** Confirmação de presença em tempo real com lista de espera automática.
-- **Painel Super Admin:** Gestão global de todas as equipes do sistema para suporte e moderação.
-- **Modo de Manutenção:** Acesso administrativo seguro às equipes para resolução de problemas técnicos.
-- **Convites Dinâmicos:** Sistema de busca de atletas e convites para integrar novos jogadores.
+- **Padronização de Identidade (Premium):** Exibição profissional de nomes (Primeiro + Último) e avatares estilizados com iniciais para atletas sem foto.
+- **Gestão Financeira Completa:** Controle rigoroso de mensalidades, pagamentos avulsos e status de inadimplência (Cartão Vermelho automático).
+- **Agendamento e Presença:** Criação de partidas com lista de presença em tempo real, fila de espera automática e compartilhamento via WhatsApp.
+- **Interação Social:** Sistema "Passar a bola" para integração entre atletas e convites dinâmicos de membros.
+- **Privacidade Adaptativa:** Controle de visibilidade de perfil e compartilhamento de contatos baseado em regras de privacidade.
+- **Central de Notificações:** Avisos de convites, solicitações de ingresso e interações entre atletas.
+- **Painel Super Admin:** Visão global fundamentada em estatísticas reais do sistema para moderação completa.
 
 ## 🛠️ Tecnologias Utilizadas
 
-- **Frontend:** React.js, Vite
-- **Estilização:** Vanilla CSS (Design Premium & Glassmorphism)
-- **Banco de Dados & Auth:** Supabase (PostgreSQL)
+- **Frontend:** React.js + Vite (Performance extrema)
+- **Estilização:** Vanilla CSS (Design Premium, Glassmorphism & Micro-animações)
+- **Banco de Dados & Auth:** Supabase (PostgreSQL) com segurança via RLS
 - **Ícones:** Lucide-React
-- **Segurança:** Row Level Security (RLS) no banco de dados
+- **PWA:** Funcionalidades de aplicativo instalado com suporte offline básico.
 
-## 📂 Estrutura do Banco de Dados
+## 📂 Banco de Dados
 
-O schema atualizado e consolidado pode ser encontrado em `banco/schema_completo.sql`. Ele inclui todas as definições necessárias de tabelas, triggers e políticas de segurança.
+O banco de dados foi unificado para manter a integridade e facilitar consultas manuais.
+- **Referência Master:** `docs/database/PLAYHUB_DB_MASTER.sql`
 
-## 🔜 O que vem por aí (Roadmap)
+## 🔜 Próximos Passos (Roadmap)
 
-- [ ] **Módulo Financeiro:** Gestão completa de mensalidades e pagamentos de avulsos.
-- [ ] **Configurações Avançadas de Partida:** Regras de cancelamento, punições automáticas e prazos de inscrição.
-- [ ] **Sistema de Notificações:** Avisos via Push/Email para novos convites e convocações.
-- [ ] **Estatísticas de Atletas:** Histórico de frequência e desempenho.
+- [ ] **Rankings e Níveis:** Sistema de pontuação baseado em frequência e avaliações.
+- [ ] **Módulo de Torneios:** Gestão de tabelas e mata-mata para campeonatos internos.
+- [ ] **Estatísticas de Desempenho:** Gols, assistências e prêmios de "Craque do Jogo".
+- [ ] **Chat Interno:** Comunicação direta entre membros dentro do ambiente da equipe.
 
 ---
-Desenvolvido com ❤️ para a comunidade esportiva.
+Desenvolvido com ❤️ para elevar o nível da gestão esportiva amadora.
