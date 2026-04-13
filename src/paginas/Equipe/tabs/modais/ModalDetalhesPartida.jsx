@@ -8,7 +8,7 @@ import { rastrear } from '../../../../servicos/rastreamento';
 import Botao from '../../../../componentes/Botao/Botao';
 import Modal from '../../../../componentes/Modal/Modal';
 
-const ModalDetalhesPartida = ({ isOpen, onClose, partida }) => {
+const ModalDetalhesPartida = ({ isOpen, onClose, partida, aoNavegar, setDadosNavegacao }) => {
     const { usuario } = usarAutenticacao();
     const { buscarPresencas, confirmarPresenca, cancelarPresenca, lancarFrequencia, removerInscricaoAdmin, adicionarInscricaoAdmin, alternarPagamentoAvulso, buscarPagamentosAvulsosPartida, registrarPagamentoAvulso, removerPagamentoAvulso, buscarPunicoesPartida } = usarPartidas();
     const { equipeAtiva, carregarMembrosEquipe, temPermissaoEquipe, getLabelVinculo } = usarEquipe();
@@ -162,7 +162,7 @@ const ModalDetalhesPartida = ({ isOpen, onClose, partida }) => {
     }
 
     // Regras de Tempo (Novo)
-    const isAdmin = equipeAtiva?.papel === 'admin' || temPermissaoEquipe('gerenciar_partidas') || temPermissaoEquipe('gerenciar_punicoes');
+    const isAdmin = ['admin', 'sub_admin'].includes(equipeAtiva?.papel) || temPermissaoEquipe('gerenciar_partidas') || temPermissaoEquipe('gerenciar_punicoes');
     const regras = equipeAtiva?.regras || {};
     const openDays = regras.dias_abertura_inscricao || 7;
     const closeHours = regras.horas_limite_inscricao || 1;
@@ -460,7 +460,32 @@ const ModalDetalhesPartida = ({ isOpen, onClose, partida }) => {
                                     </div>
                                     {isAdmin && (
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                            <span style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: 'normal', textTransform: 'uppercase' }}>Gestão</span>
+                                            <button 
+                                                onClick={() => {
+                                                    setDadosNavegacao({ 
+                                                        partida, 
+                                                        participantes: listaConfirmados,
+                                                        modalidadePrincipal: equipeAtiva?.modalidade
+                                                    });
+                                                    aoNavegar('sorteio');
+                                                    onClose();
+                                                }}
+                                                style={{
+                                                    background: 'rgba(56, 189, 248, 0.1)',
+                                                    border: '1px solid rgba(56, 189, 248, 0.2)',
+                                                    color: '#38bdf8',
+                                                    padding: '6px 12px',
+                                                    borderRadius: '8px',
+                                                    fontSize: '0.75rem',
+                                                    fontWeight: '700',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '6px',
+                                                    cursor: 'pointer'
+                                                }}
+                                            >
+                                                <Users size={14} /> Sortear Equipes ⚖️
+                                            </button>
                                         </div>
                                     )}
                                 </h3>

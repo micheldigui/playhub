@@ -9,7 +9,7 @@ import ModalDetalhesPartida from './modais/ModalDetalhesPartida';
 import ModalCriacaoPartida from '../Admin/tabs/modais/ModalCriacaoPartida';
 import ModalEdicaoPartida from '../Admin/tabs/modais/ModalEdicaoPartida';
 
-const AgendaTab = () => {
+const AgendaTab = ({ aoNavegar, setDadosNavegacao, dadosNavegacao }) => {
     const { partidasCarregadas, carregarPartidas, excluirPartida } = usarPartidas();
     const { equipeAtiva, temPermissaoEquipe } = usarEquipe();
     const [carregando, setCarregando] = useState(true);
@@ -25,6 +25,29 @@ const AgendaTab = () => {
             carregarPartidas(equipeAtiva.id).finally(() => setCarregando(false));
         }
     }, [equipeAtiva]);
+
+    // Efeito para reabrir modal ao voltar do sorteio
+    useEffect(() => {
+        if (dadosNavegacao?.reabrirPartidaId && partidasCarregadas.length > 0) {
+            const partidaParaAbrir = partidasCarregadas.find(p => p.id === dadosNavegacao.reabrirPartidaId);
+            if (partidaParaAbrir) {
+                // Se a partida for passada, garante que o histórico está visível
+                const dataPartida = new Date(partidaParaAbrir.data + 'T' + partidaParaAbrir.hora);
+                if (dataPartida < new Date()) {
+                    setExibirHistorico(true);
+                }
+                
+                setPartidaSelecionada(partidaParaAbrir);
+                
+                // Limpa o sinalizador para não abrir de novo
+                setDadosNavegacao(prev => {
+                    const novo = { ...prev };
+                    delete novo.reabrirPartidaId;
+                    return novo;
+                });
+            }
+        }
+    }, [dadosNavegacao, partidasCarregadas]);
 
     // Filtra partidas futuras
     const partidasFuturas = partidasCarregadas.filter(p => {
@@ -203,6 +226,8 @@ const AgendaTab = () => {
                     isOpen={!!partidaSelecionada}
                     partida={partidaSelecionada}
                     onClose={() => setPartidaSelecionada(null)}
+                    aoNavegar={aoNavegar}
+                    setDadosNavegacao={setDadosNavegacao}
                 />
             )}
 

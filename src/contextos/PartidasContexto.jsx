@@ -499,6 +499,53 @@ export const PartidasProvider = ({ children }) => {
         }
     };
 
+    const buscarHabilidadesParticipantes = async (usuarioIds, equipeId = null) => {
+        try {
+            if (!usuarioIds || usuarioIds.length === 0) return { sucesso: true, habilidades: [], usuariosData: [], notasLideranca: [] };
+
+            // 1. Busca todas as habilidades cadastradas por esses usuários
+            const { data: habilidades, error: errHab } = await supabase
+                .from('jogador_modalidades')
+                .select('usuario_id, modalidade, nivel_habilidade, posicao')
+                .in('usuario_id', usuarioIds);
+
+            if (errHab) throw errHab;
+
+            // 2. Busca dados básicos (gênero e idade) para esses usuários
+            const { data: usuarios, error: errUser } = await supabase
+                .from('usuarios')
+                .select('id, genero, data_nascimento')
+                .in('id', usuarioIds);
+            
+            if (errUser) throw errUser;
+
+            // 3. Busca notas privadas da liderança se houver uma equipe no contexto
+            let notasLideranca = [];
+            if (equipeId) {
+                const { data: notas, error: errNotas } = await supabase
+                    .from('membros_equipe')
+                    .select('usuario_id, nivel_lideranca')
+                    .eq('equipe_id', equipeId)
+                    .in('usuario_id', usuarioIds)
+                    .not('nivel_lideranca', 'is', null);
+                
+                if (!errNotas) {
+                    notasLideranca = notas;
+                }
+            }
+
+            return { 
+                sucesso: true, 
+                habilidades: habilidades || [],
+                usuariosData: usuarios || [],
+                notasLideranca
+            };
+        } catch (error) {
+            console.error('Erro ao buscar habilidades dos participantes:', error);
+            return { sucesso: false, erro: error.message };
+        }
+    };
+
     return (
         <PartidasContexto.Provider value={{
             partidasCarregadas,
@@ -516,7 +563,8 @@ export const PartidasProvider = ({ children }) => {
             removerInscricaoAdmin,
             adicionarInscricaoAdmin,
             alternarPagamentoAvulso,
-            buscarPunicoesPartida
+            buscarPunicoesPartida,
+            buscarHabilidadesParticipantes
         }}>
             {children}
         </PartidasContexto.Provider>

@@ -26,7 +26,7 @@ import EquipePermissoesTab from './Admin/tabs/EquipePermissoesTab';
 
 import './PaginaEquipe.css';
 
-const PaginaEquipe = ({ abaAtiva, setAbaAtiva, aoVoltar }) => {
+const PaginaEquipe = ({ abaAtiva, setAbaAtiva, aoVoltar, aoNavegar, setDadosNavegacao, dadosNavegacao }) => {
     const { 
         equipeAtiva, excluirEquipe, sairDaEquipe, 
         aceitarTransferenciaPosse, recusarTransferenciaPosse,
@@ -351,7 +351,7 @@ const PaginaEquipe = ({ abaAtiva, setAbaAtiva, aoVoltar }) => {
                     </section>
                 )}
 
-                {abaAtiva === 'agenda' && <AgendaTab />}
+                {abaAtiva === 'agenda' && <AgendaTab aoNavegar={aoNavegar} setDadosNavegacao={setDadosNavegacao} dadosNavegacao={dadosNavegacao} />}
                 
                 {abaAtiva === 'financeiro-mensal' && <FinanceiroTab abaExterna="gestao" modoLeitura={!temPermissaoEquipe('gerenciar_financeiro')} membrosIniciais={membros} />}
                 {abaAtiva === 'financeiro-avulsos' && <FinanceiroTab abaExterna="avulsos" modoLeitura={!temPermissaoEquipe('gerenciar_financeiro')} membrosIniciais={membros} />}

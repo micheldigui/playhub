@@ -128,6 +128,23 @@ const MembrosTab = ({ membrosIniciais = [], recarregar }) => {
         setProcessando(null);
     };
 
+    const handleSetNivelLideranca = async (membroId, novoNivel) => {
+        setProcessando(membroId);
+        
+        // Se clicar na mesma quantidade de estrelas que já tem, remove a nota (volta para nulo)
+        const membroAtual = membros.find(m => m.id === membroId);
+        const valorFinal = membroAtual?.nivel_lideranca === novoNivel ? null : novoNivel;
+
+        const res = await atualizarMembro(membroId, { nivel_lideranca: valorFinal });
+        if (res.sucesso) {
+            rastrear.clique('equipe_avaliar_membro_admin', 'Alterou nota privada do atleta', { nivel: valorFinal });
+            setMembros(prev => prev.map(m => m.id === membroId ? { ...m, nivel_lideranca: valorFinal } : m));
+        } else {
+            alert('Erro ao salvar nota: ' + res.erro);
+        }
+        setProcessando(null);
+    };
+
     const handleRemover = async (membroId, nome) => {
         if (!window.confirm(`Tem certeza que deseja remover ${nome} da equipe?`)) return;
         
@@ -163,6 +180,12 @@ const MembrosTab = ({ membrosIniciais = [], recarregar }) => {
                     <thead>
                         <tr style={{ background: 'rgba(255,255,255,0.02)' }}>
                             <th style={{ padding: '16px', color: '#64748b', fontSize: '0.75rem', fontWeight: 'bold', textTransform: 'uppercase' }}>Atleta</th>
+                            {temPermissaoEquipe('gerenciar_membros') && (
+                                <th style={{ padding: '16px', color: '#64748b', fontSize: '0.75rem', fontWeight: 'bold', textTransform: 'uppercase' }}>
+                                    Nível (Privado) 🔒
+                                    <InfoTooltip texto="Nota atribuída pela liderança para equilibrar o sorteio. Só você e o vice com permissão veem." />
+                                </th>
+                            )}
                             <th style={{ padding: '16px', color: '#64748b', fontSize: '0.75rem', fontWeight: 'bold', textTransform: 'uppercase' }}>
                                 Cargo
                                 <InfoTooltip texto="Capitão: Dono e gestor total. Vice-Capitão: Auxilia na gestão com permissões específicas. Jogador: Membro comum." />
@@ -248,6 +271,33 @@ const MembrosTab = ({ membrosIniciais = [], recarregar }) => {
                                             </div>
                                         </div>
                                     </td>
+                                    {temPermissaoEquipe('gerenciar_membros') && (
+                                        <td style={{ padding: '16px' }}>
+                                            <div style={{ display: 'flex', gap: '2px' }}>
+                                                {[1, 2, 3, 4, 5].map(star => (
+                                                    <button
+                                                        key={star}
+                                                        disabled={processando === m.id}
+                                                        onClick={() => handleSetNivelLideranca(m.id, star)}
+                                                        style={{
+                                                            background: 'none',
+                                                            border: 'none',
+                                                            cursor: processando === m.id ? 'default' : 'pointer',
+                                                            padding: '2px',
+                                                            color: star <= (m.nivel_lideranca || 0) ? '#fbbf24' : 'rgba(148, 163, 184, 0.2)',
+                                                            transition: 'all 0.2s',
+                                                            transform: processando === m.id ? 'scale(0.9)' : 'scale(1)'
+                                                        }}
+                                                    >
+                                                        <ShieldCheck 
+                                                            size={18} 
+                                                            fill={star <= (m.nivel_lideranca || 0) ? '#fbbf24' : 'transparent'} 
+                                                        />
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </td>
+                                    )}
                                     <td style={{ padding: '16px' }}>
                                         <span style={{ 
                                             fontSize: '0.7rem', fontWeight: 'bold', padding: '4px 10px', borderRadius: '8px',
@@ -415,6 +465,34 @@ const MembrosTab = ({ membrosIniciais = [], recarregar }) => {
                                     </div>
                                 </div>
                             </div>
+
+                            {temPermissaoEquipe('gerenciar_membros') && (
+                                <div style={{ background: 'rgba(251, 191, 36, 0.05)', padding: '10px', borderRadius: '8px', border: '1px solid rgba(251, 191, 36, 0.1)' }}>
+                                    <div style={{ fontSize: '0.7rem', color: '#fbbf24', fontWeight: 'bold', marginBottom: '6px', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                        Rank de Liderança 🔒
+                                    </div>
+                                    <div style={{ display: 'flex', gap: '8px' }}>
+                                        {[1, 2, 3, 4, 5].map(star => (
+                                            <button
+                                                key={star}
+                                                disabled={processando === m.id}
+                                                onClick={() => handleSetNivelLideranca(m.id, star)}
+                                                style={{
+                                                    background: 'none',
+                                                    border: 'none',
+                                                    cursor: processando === m.id ? 'default' : 'pointer',
+                                                    color: star <= (m.nivel_lideranca || 0) ? '#fbbf24' : 'rgba(148, 163, 184, 0.2)',
+                                                }}
+                                            >
+                                                <ShieldCheck 
+                                                    size={22} 
+                                                    fill={star <= (m.nivel_lideranca || 0) ? '#fbbf24' : 'transparent'} 
+                                                />
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
 
                             <div className="card-membro-tags">
                                 <div className="tag-status" style={{ 

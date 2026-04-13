@@ -905,6 +905,7 @@ export const EquipeProvedor = ({ children }) => {
                         vinculo: m.vinculo,
                         status: m.status,
                         entrou_em: m.entrou_em,
+                        nivel_lideranca: m.nivel_lideranca,
                         usuarios: {
                             id: m.usuario_id,
                             nome_completo: m.nome_completo,
@@ -926,6 +927,7 @@ export const EquipeProvedor = ({ children }) => {
                     vinculo,
                     status,
                     entrou_em,
+                    nivel_lideranca,
                     usuarios (
                         id,
                         nome_completo,
@@ -1089,7 +1091,6 @@ export const EquipeProvedor = ({ children }) => {
                 throw new Error('Não foi possível localizar o usuário para transferência.');
             }
 
-            console.log(`[Transfer] Solicitando transferência via RPC de ${equipeId} para ${novoMembroDados.usuario_id}`);
             
             // Usar RPC para ignorar falsos bloqueios de RLS
             const { error: errEquipe } = await supabase.rpc('solicitar_transferencia_posse', {

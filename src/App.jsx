@@ -22,6 +22,7 @@ const GerenciarEquipes = lazy(() => import('./paginas/Equipe/GerenciarEquipes'))
 const PaginaConfiguracoes = lazy(() => import('./paginas/Configuracoes/PaginaConfiguracoes'))
 const PaginaTermos = lazy(() => import('./paginas/Legal/PaginasLegais').then(m => ({ default: m.PaginaTermos })));
 const PaginaPrivacidade = lazy(() => import('./paginas/Legal/PaginasLegais').then(m => ({ default: m.PaginaPrivacidade })));
+const PaginaSorteio = lazy(() => import('./paginas/Equipe/PaginaSorteio'));
 
 const CarregandoTela = () => (
   <div style={{ 
@@ -85,6 +86,7 @@ function App() {
   
   const [querFazerLogin, setQuerFazerLogin] = useState(false);
   const [telaAuth, setTelaAuth] = useState('login');
+  const [dadosNavegacao, setDadosNavegacao] = useState(null); // Parâmetros extras para troca de tela
 
   // Sincroniza a URL sem persistir a tela no localStorage
   useEffect(() => {
@@ -145,6 +147,9 @@ function App() {
         return (
           <PaginaEquipe 
             aoVoltar={() => setTelaAtiva('inicio')} 
+            aoNavegar={setTelaAtiva}
+            dadosNavegacao={dadosNavegacao}
+            setDadosNavegacao={setDadosNavegacao}
             abrirGestao={() => setAbaEquipe('gestao')} 
             abaAtiva={abaEquipe}
             setAbaAtiva={setAbaEquipe}
@@ -187,6 +192,17 @@ function App() {
         return <PaginaTermos aoVoltar={() => setTelaAtiva('configuracoes')} />
       case 'privacidade':
         return <PaginaPrivacidade aoVoltar={() => setTelaAtiva('configuracoes')} />
+      case 'sorteio':
+        return <PaginaSorteio 
+          aoVoltar={() => {
+            setDadosNavegacao(prev => ({ ...prev, reabrirPartidaId: prev?.partida?.id }));
+            setTelaAtiva('equipe');
+            setAbaEquipe('agenda');
+          }} 
+          participantes={dadosNavegacao?.participantes}
+          partida={dadosNavegacao?.partida}
+          modalidadePrincipal={dadosNavegacao?.modalidadePrincipal}
+        />
       case 'inicio':
       default:
         return <Dashboard 
