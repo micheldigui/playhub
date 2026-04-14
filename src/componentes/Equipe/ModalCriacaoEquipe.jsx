@@ -12,9 +12,9 @@ import FormEnderecoEquipe from './FormEnderecoEquipe';
 import './ModalCriacaoEquipe.css';
 
 const MODALIDADES = [
-  'Futebol de Campo', 'Futsal', 'Futebol Society / Suíço', 
-  'Vôlei de Quadra', 'Vôlei de Areia / Praia', 'Futevôlei',
-  'Basquete', 'Beach Tennis', 'Padel', 'Tênis', 'Handebol', 'E-Sports'
+  'Basquete', 'Beach Tennis', 'E-Sports', 'Futebol de Campo', 'Futebol Society', 
+  'Futsal', 'Futevôlei', 'Handebol', 'Padel', 'Tênis', 
+  'Vôlei de Areia / Praia', 'Vôlei de Quadra'
 ];
 
 const ModalCriacaoEquipe = ({ isOpen, onClose, aoSucesso, equipeParaEditar = null }) => {

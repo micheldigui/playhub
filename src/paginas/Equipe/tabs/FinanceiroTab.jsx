@@ -508,9 +508,11 @@ const FinanceiroTab = ({ abaExterna, modoLeitura = false, membrosIniciais = [] }
 
                 <div style={{ background: 'rgba(15,23,42,0.6)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)', overflow: 'hidden' }}>
                     <div style={{ padding: '16px 20px', borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                            <h4 style={{ fontWeight: '600', color: '#f8fafc' }}>{mensalidades.length > 0 ? `Atletas no Ciclo (${mensalidades.length})` : 'Status do Ciclo'}</h4>
-                            {hoverBotao && <span className="legenda-ativa animacao-entrada">{hoverBotao}</span>}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minHeight: '30px' }}>
+                            <h4 style={{ fontWeight: '600', color: '#f8fafc', whiteSpace: 'nowrap' }}>{mensalidades.length > 0 ? `Atletas no Ciclo (${mensalidades.length})` : 'Status do Ciclo'}</h4>
+                            <div style={{ minWidth: '120px', display: 'flex', alignItems: 'center' }}>
+                                {hoverBotao && <span className="legenda-ativa animacao-entrada">{hoverBotao}</span>}
+                            </div>
                         </div>
                         {!modoLeitura && (
                             mensalidades.length > 0 ? (
@@ -698,8 +700,8 @@ const FinanceiroTab = ({ abaExterna, modoLeitura = false, membrosIniciais = [] }
                 .card-financeiro .label { color: #94a3b8; font-size: 0.8rem; }
                 .card-financeiro .valor { color: #f8fafc; font-size: 1.25rem; font-weight: 700; margin-top: 4px; }
                 .item-mensalidade { padding: 12px 20px; border-bottom: 1px solid rgba(255,255,255,0.02); display: flex; align-items: center; justify-content: space-between; }
-                .btn-toggle { background: transparent; border: none; cursor: pointer; transition: all 0.2s ease; }
-                .btn-toggle:hover { transform: scale(1.1); }
+                .btn-toggle { background: transparent; border: none; cursor: pointer; transition: all 0.2s ease; opacity: 0.8; }
+                .btn-toggle:hover { opacity: 1; filter: brightness(1.2); }
                 .btn-excluir { background: transparent; border: none; color: #64748b; cursor: pointer; padding: 6px; border-radius: 8px; transition: all 0.2s ease; }
                 .btn-excluir:hover:not(:disabled) { background: rgba(244,63,94,0.1); color: #f43f5e; }
                 .btn-excluir.confirmacao-ativa { background: rgba(244,63,94,0.2); color: #f43f5e; animation: pulse 1.5s infinite; }

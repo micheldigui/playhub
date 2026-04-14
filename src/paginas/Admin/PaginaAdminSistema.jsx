@@ -146,16 +146,18 @@ const PaginaAdminSistema = ({ aoSelecionarEquipe }) => {
             onChange={(e) => setModalidadeBusca(e.target.value)}
           >
             <option value="">Todas as Modalidades</option>
-            <option value="Vôlei de Quadra">Vôlei de Quadra</option>
-            <option value="Vôlei de Praia">Vôlei de Praia</option>
-            <option value="Futevôlei">Futevôlei</option>
-            <option value="Beach Tennis">Beach Tennis</option>
-            <option value="Futsal">Futsal</option>
-            <option value="Futebol Society">Futebol Society</option>
             <option value="Basquete">Basquete</option>
+            <option value="Beach Tennis">Beach Tennis</option>
+            <option value="E-Sports">E-Sports</option>
+            <option value="Futebol de Campo">Futebol de Campo</option>
+            <option value="Futebol Society">Futebol Society</option>
+            <option value="Futsal">Futsal</option>
+            <option value="Futevôlei">Futevôlei</option>
             <option value="Handebol">Handebol</option>
-            <option value="Tênis">Tênis</option>
             <option value="Padel">Padel</option>
+            <option value="Tênis">Tênis</option>
+            <option value="Vôlei de Areia / Praia">Vôlei de Areia / Praia</option>
+            <option value="Vôlei de Quadra">Vôlei de Quadra</option>
           </select>
         </div>
         <div className="grupo-input-admin">

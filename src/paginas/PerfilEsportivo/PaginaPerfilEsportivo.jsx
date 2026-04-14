@@ -19,7 +19,7 @@ import './PaginaPerfilEsportivo.css';
 const ESPORTES_DATA = {
   "Futsal": ["Goleiro", "Fixo", "Ala", "Pivô", "Qualquer Posição"],
   "Futebol de Campo": ["Goleiro", "Zagueiro", "Lateral", "Volante", "Meio-Campo", "Ponta", "Atacante", "Qualquer Posição"],
-  "Futebol Society / Suíço": ["Goleiro", "Zagueiro", "Fixo", "Ala", "Meio-Campo", "Pivô", "Atacante", "Qualquer Posição"],
+  "Futebol Society": ["Goleiro", "Zagueiro", "Fixo", "Ala", "Meio-Campo", "Pivô", "Atacante", "Qualquer Posição"],
   "Vôlei de Quadra": ["Levantador", "Líbero", "Central", "Ponteiro", "Oposto", "Qualquer Posição"],
   "Vôlei de Areia / Praia": ["Levantador", "Atacante", "Defensor", "Bloqueador", "Qualquer Posição"],
   "Futevôlei": ["Atacante", "Levantador", "Qualquer Posição"],

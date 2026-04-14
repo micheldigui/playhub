@@ -26,7 +26,7 @@ const NIVEL_VALORES = {
 };
 
 const GRUPOS_ESPORTES = {
-    'Soccer': ['Futsal', 'Futebol de Campo', 'Futebol Society / Suíço'],
+    'Soccer': ['Futsal', 'Futebol de Campo', 'Futebol Society'],
     'Volley': ['Vôlei de Quadra', 'Vôlei de Areia / Praia', 'Futevôlei'],
     'Racket': ['Beach Tennis', 'Padel', 'Tênis'],
     'Contact': ['Handebol', 'Basquete']

@@ -1,8 +1,18 @@
 import React from 'react';
 import {
-  Trophy, Users, Calendar, Shield,
-  ArrowRight, CheckCircle2, Star, Zap,
-  Smartphone, Share2, Gavel, Wallet
+  Trophy, 
+  Users, 
+  Calendar, 
+  Shield,
+  ArrowRight, 
+  CheckCircle2, 
+  Star, 
+  Zap,
+  Smartphone, 
+  Share2, 
+  Gavel, 
+  Wallet, 
+  Globe
 } from 'lucide-react';
 import { rastrear } from '../../servicos/rastreamento';
 import InfoTooltip from '../../componentes/Tooltip/InfoTooltip';
@@ -36,8 +46,8 @@ const LandingPage = ({ aoLogin }) => {
           <span style={{ color: '#38bdf8' }}>em um só lugar.</span>
         </h1>
         <p className="hero-subheadline">
-          A plataforma completa para organizar suas partidas, gerenciar o caixa do time e o nível dos seus jogadores. 
-          Feito de jogador para jogador.
+          Organize suas partidas de <strong>Futebol de Campo</strong>, Futsal, Society, Vôlei e muito mais. 
+          A plataforma completa para gerenciar o caixa do time e o nível dos seus jogadores.
         </p>
         <div className="hero-cta-group">
           <button className="btn-hero-primary" onClick={() => handleCTA('hero_header_central')}>
@@ -55,6 +65,17 @@ const LandingPage = ({ aoLogin }) => {
         <h2 className="section-title">Tudo para uma gestão organizada</h2>
 
         <div className="features-grid">
+          <div className="feature-card">
+            <div className="feature-icon-box" style={{ color: '#22c55e', background: 'rgba(34, 197, 94, 0.1)' }}>
+              <Globe size={32} />
+            </div>
+            <h3>
+              Explorar e Conectar
+              <InfoTooltip texto="Encontre atletas por modalidade e cidade ou peça para entrar em novas equipes." />
+            </h3>
+            <p>Aumente sua rede esportiva. Busque por novos craques para o seu time ou encontre a equipe perfeita para você jogar.</p>
+          </div>
+
           <div className="feature-card">
             <div className="feature-icon-box" style={{ color: '#38bdf8', background: 'rgba(56, 189, 248, 0.1)' }}>
               <Users size={32} />
@@ -113,6 +134,17 @@ const LandingPage = ({ aoLogin }) => {
             </div>
             <h3>Agenda de Partidas</h3>
             <p>Histórico de todos os jogos e as próximas partidas marcadas. Lista de espera automática para ninguém ficar de fora.</p>
+          </div>
+
+          <div className="feature-card">
+            <div className="feature-icon-box" style={{ color: '#0ea5e9', background: 'rgba(14, 165, 233, 0.1)' }}>
+              <Zap size={32} />
+            </div>
+            <h3>
+              Sorteio de Times
+              <InfoTooltip texto="Balanceamos os times automaticamente com base no nível técnico de cada atleta." />
+            </h3>
+            <p>Acabe com as panelinhas! Nosso algoritmo equilibra as equipes de forma justa usando as notas reais dos jogadores.</p>
           </div>
         </div>
       </section>

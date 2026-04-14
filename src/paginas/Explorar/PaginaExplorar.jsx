@@ -47,16 +47,18 @@ import ModalAjustePrivacidade from '../../componentes/Modais/ModalAjustePrivacid
 import './PaginaExplorar.css';
 
 const MODALIDADES = [
-  'Vôlei de Quadra',
-  'Vôlei de Praia',
-  'Futevôlei',
-  'Beach Tennis',
-  'Futsal',
-  'Futebol Society',
   'Basquete',
+  'Beach Tennis',
+  'E-Sports',
+  'Futebol de Campo',
+  'Futebol Society',
+  'Futsal',
+  'Futevôlei',
   'Handebol',
-  'Tênis',
   'Padel',
+  'Tênis',
+  'Vôlei de Areia / Praia',
+  'Vôlei de Quadra',
 ];
 
 const calcularIdade = (dataNascimento) => {
