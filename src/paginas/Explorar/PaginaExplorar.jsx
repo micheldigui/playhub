@@ -152,7 +152,8 @@ const PaginaExplorar = ({ aoVoltar }) => {
           query = query.ilike('cidade', `%${cidadeBusca}%`);
         }
         if (modalidadeBusca) {
-          query = query.contains('esportes_interesse', [modalidadeBusca]);
+          // Ajuste para colunas JSONB: o valor precisa ser uma string JSON válida (array)
+          query = query.contains('esportes_interesse', JSON.stringify([modalidadeBusca]));
         }
       }
 

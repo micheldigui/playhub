@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Calendar, MapPin, Clock, Users, Star, DollarSign, MessageCircle } from 'lucide-react';
+import { X, Calendar, MapPin, Clock, Users, Star, DollarSign, MessageCircle, Zap } from 'lucide-react';
 import { usarPartidas } from '../../../../contextos/PartidasContexto';
 import { usarEquipe } from '../../../../contextos/EquipeContexto';
 import { usarAutenticacao } from '../../../../contextos/AutenticacaoContexto';
@@ -467,13 +467,13 @@ const ModalDetalhesPartida = ({ isOpen, onClose, partida, aoNavegar, setDadosNav
                                                         participantes: listaConfirmados,
                                                         modalidadePrincipal: equipeAtiva?.modalidade
                                                     });
-                                                    aoNavegar('sorteio');
+                                                    aoNavegar('sorteio_v4');
                                                     onClose();
                                                 }}
                                                 style={{
-                                                    background: 'rgba(56, 189, 248, 0.1)',
-                                                    border: '1px solid rgba(56, 189, 248, 0.2)',
-                                                    color: '#38bdf8',
+                                                    background: 'rgba(139, 92, 246, 0.1)',
+                                                    border: '1px solid rgba(139, 92, 246, 0.2)',
+                                                    color: '#a78bfa',
                                                     padding: '6px 12px',
                                                     borderRadius: '8px',
                                                     fontSize: '0.75rem',
@@ -484,7 +484,7 @@ const ModalDetalhesPartida = ({ isOpen, onClose, partida, aoNavegar, setDadosNav
                                                     cursor: 'pointer'
                                                 }}
                                             >
-                                                <Users size={14} /> Sortear Equipes ⚖️
+                                                <Zap size={14} /> Sortear Times ⚡
                                             </button>
                                         </div>
                                     )}

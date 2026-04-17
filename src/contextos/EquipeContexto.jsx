@@ -700,9 +700,9 @@ export const EquipeProvedor = ({ children }) => {
             }
 
             if (filtros.modalidade) {
-                // Filtra jogadores que tenham a modalidade nos esportes de interesse (se for array)
-                // Ou podemos usar cs (contains) se for TEXT[]
-                query = query.contains('esportes_interesse', [filtros.modalidade]);
+                // Se a coluna esportes_interesse for JSONB, precisamos passar o valor como string JSON
+                // para que o Postgres use o operador jsonb @> jsonb em vez de jsonb @> text[]
+                query = query.contains('esportes_interesse', JSON.stringify([filtros.modalidade]));
             }
 
             const { data, error } = await query.limit(24);

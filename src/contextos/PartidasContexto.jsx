@@ -114,6 +114,22 @@ export const PartidasProvider = ({ children }) => {
         }
     };
 
+    const buscarPartidaPorId = async (id) => {
+        try {
+            const { data, error } = await supabase
+                .from('partidas')
+                .select('*')
+                .eq('id', id)
+                .single();
+
+            if (error) throw error;
+            return { sucesso: true, partida: data };
+        } catch (error) {
+            console.error('Erro ao buscar partida por ID:', error);
+            return { sucesso: false, erro: error.message };
+        }
+    };
+
     const buscarPresencas = async (partidaId) => {
         try {
             // Utiliza a nova RPC segura que contorna o RLS para membros da mesma equipe
@@ -564,7 +580,8 @@ export const PartidasProvider = ({ children }) => {
             adicionarInscricaoAdmin,
             alternarPagamentoAvulso,
             buscarPunicoesPartida,
-            buscarHabilidadesParticipantes
+            buscarHabilidadesParticipantes,
+            buscarPartidaPorId
         }}>
             {children}
         </PartidasContexto.Provider>

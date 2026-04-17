@@ -58,7 +58,10 @@ const DescobrirTab = () => {
         setBuscando(true);
         try {
             const res = await buscarAtletas({ termo, modalidade, cidade });
-            setResultados(res || []);
+            
+            // Filtro dinâmico: remove quem já faz parte da equipe
+            const atualizados = (res || []).filter(atleta => !idsMembrosEquipe.has(atleta.id));
+            setResultados(atualizados);
             
             // Carrega convites enviados para marcar no card
             const enviados = await carregarConvitesEnviados(equipeAtiva.id);
@@ -281,8 +284,9 @@ const DescobrirTab = () => {
             <style>{`
                 .campo-busca { display: flex; flex-direction: column; gap: 6px; }
                 .campo-busca label { font-size: 0.75rem; color: #64748b; font-weight: 700; display: flex; align-items: center; gap: 6px; }
-                .campo-busca input, .campo-busca select { background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 10px; color: white; outline: none; transition: border-color 0.2s; }
-                .campo-busca input:focus { border-color: var(--primaria); }
+                .campo-busca input, .campo-busca select { background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 10px; color: white; outline: none; transition: border-color 0.2s; }
+                .campo-busca select option { background: #1e293b; color: white; }
+                .campo-busca input:focus, .campo-busca select:focus { border-color: var(--primaria); }
                 
                 .tag-convite { text-align: center; color: #fbbf24; background: rgba(251, 191, 36, 0.1); padding: 8px; border-radius: 8px; font-size: 0.8rem; font-weight: 700; border: 1px solid rgba(251, 191, 36, 0.2); }
                 .tag-membro { text-align: center; color: #10b981; background: rgba(16, 185, 129, 0.1); padding: 8px; border-radius: 8px; font-size: 0.8rem; font-weight: 700; border: 1px solid rgba(16, 185, 129, 0.2); }

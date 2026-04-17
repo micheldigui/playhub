@@ -1,0 +1,525 @@
+.pagina-sorteio-v4 {
+    min-height: 100vh;
+    background: #0f172a;
+    color: #f8fafc;
+    padding-bottom: 120px;
+    
+    /* Variáveis de Cores por Nível */
+    --cor-nivel-5: #fbbf24; /* Ouro */
+    --cor-nivel-4: #10b981; /* Verde */
+    --cor-nivel-3: #3b82f6; /* Azul */
+    --cor-nivel-2: #64748b; /* Cinza */
+    --cor-nivel-1: #94a3b8; /* Cinza Claro */
+}
+
+/* Layout Header */
+.sorteio-header {
+    background: rgba(15, 23, 42, 0.9);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    padding: 16px 20px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.header-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.btn-voltar-v4 {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #f1f5f9;
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-voltar-v4:hover {
+    background: #8b5cf6;
+    border-color: #8b5cf6;
+    transform: translateX(-4px);
+}
+
+.header-titles h1 {
+    font-size: 1.4rem;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    color: #fff;
+}
+
+.header-titles p {
+    font-size: 0.85rem;
+    color: #94a3b8;
+    margin: 2px 0 0 0;
+}
+
+.badge-v4 {
+    background: #8b5cf6;
+    color: white;
+    font-size: 0.65rem;
+    padding: 2px 8px;
+    border-radius: 99px;
+    text-transform: uppercase;
+    vertical-align: middle;
+    margin-left: 8px;
+    letter-spacing: 1px;
+}
+
+/* Regras Config */
+.secao-regras-config {
+    margin: 24px 16px;
+    background: rgba(30, 41, 59, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    padding: 20px;
+    border-radius: 20px;
+}
+
+.secao-regras-config h3 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
+    color: #8b5cf6;
+}
+
+.secao-regras-config p {
+    font-size: 0.85rem;
+    color: #94a3b8;
+    margin-bottom: 20px;
+}
+
+.grid-regras {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+}
+
+.card-regra {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    padding: 12px 16px;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.card-regra:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(139, 92, 246, 0.3);
+}
+
+.card-regra.ativa {
+    background: rgba(139, 92, 246, 0.1);
+    border-color: #8b5cf6;
+}
+
+.regra-check {
+    color: #94a3b8;
+}
+
+.card-regra.ativa .regra-check {
+    color: #8b5cf6;
+}
+
+.regra-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.regra-info strong {
+    font-size: 0.9rem;
+    color: #f1f5f9;
+}
+
+.regra-info span {
+    font-size: 0.75rem;
+    color: #64748b;
+}
+
+/* Card Configuração Jogadores */
+.sorteio-secao-config {
+    margin: 0 16px 24px 16px;
+}
+
+.card-config-v4 {
+    background: rgba(30, 41, 59, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 16px;
+    padding: 16px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.config-label {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-weight: 600;
+    color: #e2e8f0;
+}
+
+.contador-vagas-v4 {
+    display: flex;
+    align-items: center;
+    background: #0f172a;
+    border-radius: 12px;
+    padding: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.contador-vagas-v4 button {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    border: none;
+    background: rgba(255, 255, 255, 0.05);
+    color: white;
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.contador-vagas-v4 button:hover {
+    background: #8b5cf6;
+}
+
+.valor-vagas {
+    padding: 0 20px;
+    font-size: 1.2rem;
+    font-weight: 800;
+    color: #fff;
+    min-width: 60px;
+    text-align: center;
+}
+
+/* Botão de Ação Fixo no Rodapé */
+.sorteio-acoes-final {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: center;
+    padding: 24px 16px;
+    background: linear-gradient(to top, #0f172a 70%, transparent 100%);
+    backdrop-filter: blur(4px);
+    z-index: 90;
+}
+
+.btn-sortear-v4 {
+    background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%) !important;
+    box-shadow: 0 10px 25px -5px rgba(139, 92, 246, 0.5) !important;
+    border: none !important;
+    font-weight: 800 !important;
+    height: 60px !important;
+    font-size: 1.2rem !important;
+    padding: 0 50px !important;
+    min-width: 300px;
+    border-radius: 99px !important;
+    color: white !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    transition: all 0.3s ease;
+}
+
+.btn-sortear-v4:hover:not(:disabled) {
+    transform: translateY(-4px) scale(1.02);
+    box-shadow: 0 15px 30px -5px rgba(139, 92, 246, 0.6) !important;
+}
+
+.btn-sortear-v4:active {
+    transform: translateY(0) scale(0.98);
+}
+
+.btn-sortear-v4:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: #334155 !important;
+    box-shadow: none !important;
+}
+
+.v4-select-nivel {
+    background: #1e293b;
+    border: 1px solid rgba(139, 92, 246, 0.3);
+    color: #fbbf24;
+    font-size: 0.7rem;
+    font-weight: bold;
+    border-radius: 4px;
+    padding: 2px 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.v4-select-nivel:hover:not(:disabled) {
+    border-color: #8b5cf6;
+    background: #0f172a;
+}
+
+.v4-select-nivel:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Lista Atletas V4 */
+.lista-atletas-v4 {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 16px;
+    padding: 0 16px;
+}
+
+.item-atleta-v4 {
+    background: rgba(30, 41, 59, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    padding: 16px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    position: relative;
+    transition: all 0.2s;
+    min-height: 80px;
+}
+
+.item-atleta-v4:hover {
+    transform: translateY(-2px);
+    background: rgba(30, 41, 59, 0.9);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.v4-card-sem-nota {
+    border: 1px solid #f43f5e !important;
+    animation: pulsar-erro 2s infinite;
+}
+
+@keyframes pulsar-erro {
+    0% { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.4); }
+    70% { box-shadow: 0 0 0 10px rgba(244, 63, 94, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0); }
+}
+
+/* Diferenciação por Nível Técnica */
+.nivel-card-5 { background: rgba(251, 191, 36, 0.05); }
+.nivel-card-4 { background: rgba(16, 185, 129, 0.05); }
+.nivel-card-3 { background: rgba(59, 130, 246, 0.05); }
+
+.v4-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: #334155;
+    overflow: hidden;
+    flex-shrink: 0;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+}
+
+.v4-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.v4-info {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    flex: 1;
+}
+
+.v4-nome {
+    font-size: 1.1rem;
+    font-weight: 700;
+    white-space: normal;
+    word-break: break-word;
+    color: #f1f5f9;
+    margin-bottom: 2px;
+}
+
+.v4-tags {
+    display: flex;
+    gap: 4px;
+    margin-top: 6px;
+    flex-wrap: wrap;
+}
+
+.tag-nivel {
+    font-size: 0.6rem;
+    padding: 1px 4px;
+    border-radius: 4px;
+    font-weight: bold;
+}
+
+.tag-nivel.n-5 { background: var(--cor-nivel-5); color: #000; }
+.tag-nivel.n-4 { background: var(--cor-nivel-4); color: white; }
+.tag-nivel.n-3 { background: var(--cor-nivel-3); color: white; }
+.tag-nivel.n-2 { background: var(--cor-nivel-2); color: white; }
+.tag-nivel.n-1 { background: var(--cor-nivel-1); color: white; }
+
+.tag-pilar { background: #8b5cf6; font-size: 0.6rem; padding: 1px 4px; border-radius: 4px; color: white; }
+.tag-posicao { 
+    background: rgba(255,255,255,0.05); 
+    border: 1px solid rgba(255,255,255,0.1); 
+    font-size: 0.55rem; 
+    padding: 1px 4px; 
+    border-radius: 4px; 
+    color: #94a3b8; 
+    display: inline-block;
+}
+.avatar-iniciais {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+    color: #8b5cf6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+/* Resultados V4 */
+.sorteio-resultados {
+    margin-top: 80px;
+    padding-top: 40px;
+    border-top: 2px dashed rgba(255, 255, 255, 0.05);
+}
+
+.secao-titulo-resultados {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.btn-share-v4 {
+    background: #25D366 !important;
+    box-shadow: 0 4px 15px rgba(37, 211, 102, 0.3) !important;
+    border: none !important;
+    height: 48px !important;
+    font-size: 0.95rem !important;
+    padding: 0 24px !important;
+    color: white !important;
+    border-radius: 12px !important;
+    font-weight: 700 !important;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+}
+
+.btn-share-v4:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(37, 211, 102, 0.4) !important;
+    filter: brightness(1.1);
+}
+
+.cartao-equipe-v4 {
+    background: rgba(30, 41, 59, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 20px;
+    padding: 16px;
+    margin-bottom: 20px;
+}
+
+.equipe-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    padding-bottom: 12px;
+    margin-bottom: 12px;
+}
+
+.equipe-nome {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 800;
+    color: #e2e8f0;
+}
+
+.equipe-media {
+    font-size: 0.75rem;
+    color: #94a3b8;
+    background: rgba(255, 255, 255, 0.03);
+    padding: 4px 8px;
+    border-radius: 6px;
+}
+
+.equipe-jogador-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+}
+
+.equipe-jogador-item span {
+    font-size: 0.85rem;
+    color: #cbd5e1;
+}
+
+.stars-mini {
+    display: flex;
+    gap: 3px;
+}
+
+.stars-mini .dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.stars-mini .dot.active {
+    background: #fbbf24;
+    box-shadow: 0 0 5px rgba(251, 191, 36, 0.5);
+}
+
+/* Responsividade Geral */
+@media (min-width: 768px) {
+    .grid-regras {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+@media (max-width: 600px) {
+    .card-config-v4 {
+        flex-direction: column;
+        gap: 16px;
+        text-align: center;
+    }
+    
+    .header-container {
+        gap: 12px;
+    }
+    
+    .header-titles h1 {
+        font-size: 1.1rem;
+    }
+}
