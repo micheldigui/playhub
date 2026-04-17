@@ -143,7 +143,9 @@ const PaginaSorteio = ({ aoVoltar, participantes = [], partida, modalidadePrinci
                 nivelOriginal: habilidadeSugerida?.modalidade || 'Geral',
                 nivelAjustado: nivelFinal,
                 modalidade: habilidadeSugerida?.modalidade || 'Geral',
-                fonte: modoFonte
+                fonte: modoFonte,
+                presente: true, // Todos começam como presentes
+                separar: false // Pilares para separar nos times
             };
         });
 
@@ -173,50 +175,145 @@ const PaginaSorteio = ({ aoVoltar, participantes = [], partida, modalidadePrinci
 
     const handleAjustarNivel = (id, novoNivel) => {
         setJogadores(prev => prev.map(j => 
-            j.id === id ? { ...j, nivelAjustado: parseInt(novoNivel) } : j
+            j.id === id ? { ...j, nivelAjustado: parseInt(novoNivel), fonte: 'Liderança' } : j
+        ));
+    };
+
+    const handleAlternarPresenca = (id) => {
+        setJogadores(prev => prev.map(j => 
+            j.id === id ? { ...j, presente: !j.presente } : j
+        ));
+    };
+
+    const handleAlternarSeparar = (id) => {
+        setJogadores(prev => prev.map(j => 
+            j.id === id ? { ...j, separar: !j.separar } : j
         ));
     };
 
     const realizarSorteio = () => {
-        if (jogadores.length < 2) return;
+        const jogadoresPresentes = jogadores.filter(j => j.presente);
+        
+        if (jogadoresPresentes.length < 2) {
+            alert("É necessário pelo menos 2 jogadores presentes para realizar um sorteio.");
+            return;
+        }
+
+        // Bloqueio se algum jogador presente NÃO tiver classificação da liderança definida
+        if (jogadoresPresentes.some(j => j.fonte !== 'Liderança')) {
+            alert("Atenção: Todos os jogadores PRESENTES precisam de um Rank Técnico antes do sorteio. Ajuste a nota de quem está sem rank da Liderança.");
+            return;
+        }
 
         // 1. Preparar jogadores com Score Técnico Pesado
         // Peso das estrelas é 10.000 para garantir que mandem em tudo.
         // Idade entra como fator secundário (mais novos = score levemente maior).
-        const listaSorteio = jogadores.map(j => ({
+        const listaSorteio = jogadoresPresentes.map(j => ({
             ...j,
             score: (j.nivelAjustado * 10000) + (100 - j.idade)
         }));
 
-        // 2. Definir número de times
+        // 2. Definir número de times base
         const numTimes = Math.max(2, Math.ceil(listaSorteio.length / jogadoresPorTime));
         const gridTimes = Array.from({ length: numTimes }, () => []);
 
-        // 3. Ordenação rigorosa por Rank Técnico (Estrelas)
-        // Isso garante que os "Pro" (5 estrelas) sejam os primeiros a serem distribuídos entre os times.
-        const mulheres = listaSorteio.filter(j => j.genero === 'Feminino').sort((a, b) => b.score - a.score);
-        const homens = listaSorteio.filter(j => j.genero !== 'Feminino').sort((a, b) => b.score - a.score);
-
+        // 3. Separar Pilares (Goleiros, Craques, etc) para distribuí-ons no grid primeiro
+        const pilares = listaSorteio.filter(j => j.separar).sort((a, b) => b.score - a.score);
+        const restantes = listaSorteio.filter(j => !j.separar);
+        
         let timeAtual = 0;
         let direcao = 1;
 
-        // Distribui Mulheres (Snake Draft)
+        // Distribui os Pilares primeiro (1 por time idealmente)
+        pilares.forEach(p => {
+            gridTimes[timeAtual].push(p);
+            timeAtual += direcao;
+            if (timeAtual >= numTimes) {
+                timeAtual = numTimes - 1;
+                direcao = -1;
+            } else if (timeAtual < 0) {
+                timeAtual = 0;
+                direcao = 1;
+            }
+        });
+
+        // 4. Ordenação rigorosa por Rank Técnico do restante
+        const mulheres = restantes.filter(j => j.genero === 'Feminino').sort((a, b) => b.score - a.score);
+        const homens = restantes.filter(j => j.genero !== 'Feminino').sort((a, b) => b.score - a.score);
+
+        // Retoma o Snake Draft para as Mulheres, tentando distribuir níveis iguais em equipes diferentes
+        // Mantemos um mapa de níveis já presentes em cada equipe para as mulheres
+        const niveisMulheresPorEquipe = Array.from({ length: numTimes }, () => new Set());
         mulheres.forEach(m => {
-            gridTimes[timeAtual].push(m);
-            timeAtual += direcao;
-            if (timeAtual >= numTimes) {
-                timeAtual = numTimes - 1;
-                direcao = -1;
-            } else if (timeAtual < 0) {
-                timeAtual = 0;
-                direcao = 1;
+            // Determina o tamanho mínimo atual das equipes
+            const tamanhoMin = Math.min(...gridTimes.map(t => t.length));
+            // Equipes que ainda não têm esse nível e têm tamanho mínimo
+            const equipesSemNivel = gridTimes
+                .map((t, i) => ({ idx: i, tamanho: t.length, temNivel: niveisMulheresPorEquipe[i].has(m.nivelAjustado) }))
+                .filter(e => e.tamanho === tamanhoMin && !e.temNivel);
+            let equipeEscolhidaIdx;
+            if (equipesSemNivel.length > 0) {
+                // Escolhe a primeira equipe disponível (pode ser aleatória)
+                equipeEscolhidaIdx = equipesSemNivel[0].idx;
+            } else {
+                // Caso todas as equipes já tenham esse nível, escolhe a equipe com tamanho mínimo
+                const equipesTamanhoMin = gridTimes
+                    .map((t, i) => ({ idx: i, tamanho: t.length }))
+                    .filter(e => e.tamanho === tamanhoMin);
+                equipeEscolhidaIdx = equipesTamanhoMin[0].idx;
             }
+            gridTimes[equipeEscolhidaIdx].push(m);
+            // Registra o nível na equipe escolhida
+            niveisMulheresPorEquipe[equipeEscolhidaIdx].add(m.nivelAjustado);
         });
 
-        // Continua com homens de onde parou ou reinicia? Melhor balancear densidade
-        // Para manter equilíbrio, vamos distribuir o restante nos times com menos gente primeiro ou seguindo a cobra
+        // Pós‑processamento: garantir que nenhuma equipe tenha duas mulheres do mesmo nível quando houver outra equipe disponível
+        for (let i = 0; i < numTimes; i++) {
+            const contagemNiveis = {};
+            gridTimes[i].forEach(p => {
+                if (p.genero === 'Feminino') {
+                    const nivel = p.nivelAjustado;
+                    contagemNiveis[nivel] = (contagemNiveis[nivel] || 0) + 1;
+                }
+            });
+            Object.entries(contagemNiveis).forEach(([nivelStr, cnt]) => {
+                const nivel = parseInt(nivelStr);
+                if (cnt > 1) {
+                    // procura outra equipe que ainda não tenha esse nível entre as mulheres
+                    for (let j = 0; j < numTimes; j++) {
+                        if (j === i) continue;
+                        const temNivel = gridTimes[j].some(p => p.genero === 'Feminino' && p.nivelAjustado === nivel);
+                        if (!temNivel) {
+                            const idx = gridTimes[i].findIndex(p => p.genero === 'Feminino' && p.nivelAjustado === nivel);
+                            if (idx !== -1) {
+                                const [player] = gridTimes[i].splice(idx, 1);
+                                gridTimes[j].push(player);
+                                // atualiza os sets de níveis
+                                niveisMulheresPorEquipe[i].delete(nivel);
+                                niveisMulheresPorEquipe[j].add(nivel);
+                            }
+                            break;
+                        }
+                    }
+                }
+            });
+        }
+
         homens.forEach(h => {
-            gridTimes[timeAtual].push(h);
+            // Tenta colocar no time com menos jogadores no momento para balancear
+            const numMinJogadores = Math.min(...gridTimes.map(t => t.length));
+            const timesComVaga = gridTimes.map((t, i) => ({ t, i })).filter(obj => obj.t.length === numMinJogadores);
+            
+            // Se houver times com vaga, coloca no primeiro disponível via snake draft
+            let timeEscolhido = timeAtual;
+            if (!timesComVaga.some(obj => obj.i === timeAtual)) {
+                // Se o time atual não for o com menos jogadores, joga no time mais vazio
+                timeEscolhido = timesComVaga[0].i;
+            }
+
+            gridTimes[timeEscolhido].push(h);
+
+            // Continua movimento da cobra no sentido normal
             timeAtual += direcao;
             if (timeAtual >= numTimes) {
                 timeAtual = numTimes - 1;
@@ -227,7 +324,37 @@ const PaginaSorteio = ({ aoVoltar, participantes = [], partida, modalidadePrinci
             }
         });
 
+        // Pós‑processamento de balanceamento global de níveis entre equipes
+        // Calcula média de nível técnico de cada equipe e tenta equalizar trocando jogadores
+        const MAX_ITER = 10; // limite de iterações para evitar loops infinitos
+        let iter = 0;
+        const calcularMedia = (equipe) => {
+            if (equipe.length === 0) return 0;
+            const soma = equipe.reduce((acc, p) => acc + p.nivelAjustado, 0);
+            return soma / equipe.length;
+        };
+        while (iter < MAX_ITER) {
+            // calcula médias
+            const medias = gridTimes.map(calcularMedia);
+            // encontra equipe com maior média e menor média
+            const idxMax = medias.indexOf(Math.max(...medias));
+            const idxMin = medias.indexOf(Math.min(...medias));
+            const diff = medias[idxMax] - medias[idxMin];
+            if (diff <= 0.5) break; // diferença aceitável
+            // tenta encontrar jogador de nível alto na equipe max e jogador de nível baixo na equipe min
+            const candidatoAlto = gridTimes[idxMax].find(p => p.nivelAjustado > 1 && p.separar === false);
+            const candidatoBaixo = gridTimes[idxMin].find(p => p.nivelAjustado < 5 && p.separar === false);
+            if (!candidatoAlto || !candidatoBaixo) break; // não há candidatos elegíveis
+            // troca
+            const idxAlto = gridTimes[idxMax].indexOf(candidatoAlto);
+            const idxBaixo = gridTimes[idxMin].indexOf(candidatoBaixo);
+            gridTimes[idxMax].splice(idxAlto, 1, candidatoBaixo);
+            gridTimes[idxMin].splice(idxBaixo, 1, candidatoAlto);
+            iter++;
+        }
+        
         setEquipes(gridTimes);
+        
     };
 
     const compartilharWhatsApp = () => {
@@ -282,10 +409,10 @@ const PaginaSorteio = ({ aoVoltar, participantes = [], partida, modalidadePrinci
                 <section className="sorteio-secao-ajustes">
                     <div className="secao-titulo">
                         <h3>Ajuste Técnico ⚖️</h3>
-                        <span>{jogadores.length} atletas disponíveis</span>
+                        <span>{jogadores.filter(j => j.presente).length} atletas presentes</span>
                     </div>
 
-                    {jogadores.some(j => j.fonte !== 'Liderança') && (
+                    {jogadores.filter(j => j.presente).some(j => j.fonte !== 'Liderança') && (
                         <div style={{ 
                             background: 'rgba(239, 68, 68, 0.1)', 
                             border: '1px solid rgba(239, 68, 68, 0.2)', 
@@ -307,32 +434,99 @@ const PaginaSorteio = ({ aoVoltar, participantes = [], partida, modalidadePrinci
                         {jogadores.map(j => (
                             <div key={j.id} className="item-atleta-ajuste" style={{ 
                                 borderLeft: j.fonte !== 'Liderança' ? '4px solid #f87171' : '4px solid #10b981',
-                                background: j.fonte !== 'Liderança' ? 'rgba(239, 68, 68, 0.02)' : 'transparent'
+                                background: j.fonte !== 'Liderança' ? 'rgba(239, 68, 68, 0.02)' : 'transparent',
+                                opacity: j.presente ? 1 : 0.5
                             }}>
                                 <div className="atleta-info-base">
                                     <div className="atleta-avatar">
                                         {j.foto ? <img src={j.foto} alt="" /> : <User size={18} />}
                                     </div>
                                     <div className="atleta-nome-hab">
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                            <span className="nome">{formatarNomeAtleta(j.nome)}</span>
-                                            {j.fonte !== 'Liderança' && <span title="Sem Rank de Liderança" style={{ color: '#f87171' }}><ShieldAlert size={12} /></span>}
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                                            <span className="nome" style={{ textDecoration: !j.presente ? 'line-through' : 'none', wordBreak: 'break-word' }}>{formatarNomeAtleta(j.nome)}</span>
+                                            {j.fonte !== 'Liderança' ? (
+                                                <span title="Sem Rank de Liderança" style={{ color: '#f87171', background: 'rgba(239, 68, 68, 0.1)', padding: '4px', borderRadius: '4px', display: 'flex' }}>
+                                                    <ShieldAlert size={14} />
+                                                </span>
+                                            ) : (
+                                                <span title="Rank validado pelo Capitão" style={{ color: '#10b981', background: 'rgba(16, 185, 129, 0.1)', padding: '4px', borderRadius: '4px', display: 'flex' }}>
+                                                    <ShieldCheck size={14} />
+                                                </span>
+                                            )}
                                         </div>
                                         <span className="modalidade-link">{j.modalidade} • {j.idade} anos</span>
                                     </div>
                                 </div>
-                                <div className="atleta-rank-ajuste">
-                                    <select 
-                                        value={j.nivelAjustado} 
-                                        onChange={(e) => handleAjustarNivel(j.id, e.target.value)}
-                                        className={`rank-select val-${j.nivelAjustado}`}
+
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', justifyContent: 'flex-end', flex: 1 }}>
+                                    <button 
+                                        onClick={() => handleAlternarSeparar(j.id)}
+                                        title={j.separar ? "Pilar do time (Goleiro, Craque). Não cairá com outro Pilar." : "Marcar como Pilar para separar no sorteio"}
+                                        style={{ 
+                                            background: j.separar ? '#8b5cf6' : 'rgba(255,255,255,0.05)',
+                                            border: 'none',
+                                            color: j.separar ? '#fff' : '#94a3b8',
+                                            padding: '6px 8px',
+                                            borderRadius: '8px',
+                                            cursor: 'pointer',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            fontSize: '0.75rem',
+                                            fontWeight: 'bold',
+                                            gap: '4px'
+                                        }}
                                     >
-                                        <option value="1">1⭐ - Lazer</option>
-                                        <option value="2">2⭐ - Iniciante</option>
-                                        <option value="3">3⭐ - Intermed.</option>
-                                        <option value="4">4⭐ - Avançado</option>
-                                        <option value="5">5⭐ - Pro</option>
-                                    </select>
+                                        <ShieldCheck size={14} /> <span className="hide-mobile">Separar</span>
+                                    </button>
+
+                                    <button 
+                                        onClick={() => handleAlternarPresenca(j.id)}
+                                        style={{ 
+                                            background: j.presente ? 'rgba(16, 185, 129, 0.1)' : 'transparent',
+                                            border: j.presente ? '1px solid #10b981' : '1px solid rgba(255,255,255,0.1)',
+                                            color: j.presente ? '#10b981' : '#64748b',
+                                            padding: '6px 12px',
+                                            borderRadius: '8px',
+                                            cursor: 'pointer',
+                                            fontSize: '0.8rem',
+                                            fontWeight: 'bold'
+                                        }}
+                                    >
+                                        {j.presente ? '✓' : '✕'}
+                                    </button>
+
+                                    <div className="atleta-rank-ajuste" style={{ display: 'flex', gap: '4px' }}>
+                                        {j.fonte !== 'Liderança' && j.presente && (
+                                            <button 
+                                                onClick={() => handleAjustarNivel(j.id, j.nivelAjustado)}
+                                                style={{ 
+                                                    background: '#10b981', 
+                                                    color: 'white', 
+                                                    border: 'none', 
+                                                    borderRadius: '6px', 
+                                                    padding: '0 10px', 
+                                                    cursor: 'pointer',
+                                                    fontWeight: 'bold'
+                                                }}
+                                                title="Confirmar nível sugerido"
+                                            >
+                                                ✓
+                                            </button>
+                                        )}
+                                        <select 
+                                            value={j.nivelAjustado} 
+                                            onChange={(e) => handleAjustarNivel(j.id, e.target.value)}
+                                            className={`rank-select val-${j.nivelAjustado}`}
+                                            disabled={!j.presente}
+                                            style={{ minWidth: '110px' }}
+                                        >
+                                            <option value="1">1⭐ - Lazer</option>
+                                            <option value="2">2⭐ - Iniciante</option>
+                                            <option value="3">3⭐ - Intermed.</option>
+                                            <option value="4">4⭐ - Avançado</option>
+                                            <option value="5">5⭐ - Pro</option>
+                                        </select>
+                                    </div>
                                 </div>
                             </div>
                         ))}
@@ -340,8 +534,13 @@ const PaginaSorteio = ({ aoVoltar, participantes = [], partida, modalidadePrinci
                 </section>
 
                 <div className="acoes-sorteio-sticky">
-                    <Botao fullWidth onClick={realizarSorteio} className="btn-sortear">
-                        <Zap size={20} /> Equilibrar e Sortear Times
+                    <Botao 
+                        fullWidth 
+                        onClick={realizarSorteio} 
+                        className="btn-sortear" 
+                        disabled={jogadores.filter(j => j.presente).some(j => j.fonte !== 'Liderança') || jogadores.filter(j => j.presente).length < 2}
+                    >
+                        <Zap size={20} /> Sortear Times
                     </Botao>
                 </div>
 

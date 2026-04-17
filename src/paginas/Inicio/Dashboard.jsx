@@ -23,7 +23,7 @@ import ModalAtalhosDashboard from './componentes/ModalAtalhosDashboard';
 
 import './Dashboard.css';
 
-const Dashboard = ({ aoNavegar, setAbaEquipe }) => {
+const Dashboard = ({ aoNavegar, setAbaEquipe, setDadosNavegacao }) => {
     const { dadosUsuario, alternarVisibilidadePerfil, alternarWhatsAppMatch } = usarAutenticacao();
     const { equipes, getLabelVinculo, selecionarEquipe, equipeAtiva, carregando: carregandoEquipes } = usarEquipe();
     const { isInstalled } = usePwaInstall();
@@ -285,8 +285,12 @@ const Dashboard = ({ aoNavegar, setAbaEquipe }) => {
             />
 
             {partidaSelecionada && (
-                <ModalDetalhesPartida isOpen={!!partidaSelecionada} partida={partidaSelecionada} 
+                <ModalDetalhesPartida 
+                    isOpen={!!partidaSelecionada} 
+                    partida={partidaSelecionada} 
                     onClose={() => { setPartidaSelecionada(null); carregarPartidas(); }} 
+                    aoNavegar={aoNavegar}
+                    setDadosNavegacao={setDadosNavegacao}
                 />
             )}
 

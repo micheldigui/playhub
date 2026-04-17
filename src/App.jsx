@@ -208,6 +208,7 @@ function App() {
         return <Dashboard 
           aoNavegar={setTelaAtiva} 
           setAbaEquipe={setAbaEquipe} 
+          setDadosNavegacao={setDadosNavegacao}
         />
     }
   }
