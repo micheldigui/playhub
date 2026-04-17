@@ -193,7 +193,9 @@ const MembrosTab = ({ membrosIniciais = [], recarregar }) => {
                             <th style={{ padding: '16px', color: '#64748b', fontSize: '0.75rem', fontWeight: 'bold', textTransform: 'uppercase' }}>Entrou em</th>
                             <th style={{ padding: '16px', textAlign: 'left', color: '#64748b', fontSize: '0.8rem', fontWeight: '600', textTransform: 'uppercase' }}>
                                 Vínculo
-                                <InfoTooltip texto="Mensalista: Atleta fixo que paga mensalidade. Avulso: Atleta convidado que paga apenas pelo jogo que participar." />
+                                <InfoTooltip texto={equipeAtiva?.gestao_financeira 
+                                    ? "Mensalista: Atleta fixo que paga mensalidade. Avulso: Atleta convidado que paga apenas pelo jogo que participar." 
+                                    : "Fixo: Atleta que faz parte do elenco recorrente. Convidado: Atleta que participa de jogos esporádicos."} />
                             </th>
                             <th style={{ padding: '16px', textAlign: 'right', color: '#64748b', fontSize: '0.8rem', fontWeight: '600', textTransform: 'uppercase' }}>
                                 Ações

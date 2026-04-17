@@ -8,12 +8,16 @@ import {
 import { supabase } from '../../servicos/supabase';
 import './PaginaAdminLogs.css';
 import Botao from '../../componentes/Botao/Botao';
+import { usarAutenticacao } from '../../contextos/AutenticacaoContexto';
 
 const PaginaAdminLogs = ({ aoVoltar }) => {
     const [logs, setLogs] = useState([]);
     const [carregando, setCarregando] = useState(true);
     const [confirmandoLimpeza, setConfirmandoLimpeza] = useState(false);
     const [limpando, setLimpando] = useState(false);
+    const [erroPermissao, setErroPermissao] = useState(false);
+    
+    const { ehSuperAdmin } = usarAutenticacao();
     
     const [filtros, setFiltros] = useState({
         tipo: '',
@@ -55,6 +59,9 @@ const PaginaAdminLogs = ({ aoVoltar }) => {
             setTemMais(novosLogs.length === LIMITE);
         } catch (err) {
             console.error('Erro ao carregar logs:', err);
+            if (err.message === 'Acesso negado.' || err.code === 'P0001') {
+                setErroPermissao(true);
+            }
         } finally {
             setCarregando(false);
         }
@@ -157,6 +164,19 @@ const PaginaAdminLogs = ({ aoVoltar }) => {
             logsExibicao.push({ ...log, repeticoes: 1 });
         }
     });
+
+    if (!ehSuperAdmin || erroPermissao) {
+        return (
+            <div className="admin-logs-container animate-fade-in" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
+                <div style={{ padding: '40px', background: 'rgba(244, 63, 94, 0.05)', borderRadius: '24px', border: '1px solid rgba(244, 63, 94, 0.1)', maxWidth: '400px' }}>
+                    <ShieldAlert size={64} color="#f43f5e" style={{ margin: '0 auto 20px' }} />
+                    <h2 style={{ color: '#f8fafc', marginBottom: '12px' }}>Acesso Negado</h2>
+                    <p style={{ color: '#94a3b8', marginBottom: '24px' }}>Você não possui permissões de administrador global para acessar esta central de monitoramento.</p>
+                    <Botao onClick={aoVoltar} variant="secundario">Voltar ao Sistema</Botao>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="admin-logs-container animate-fade-in">

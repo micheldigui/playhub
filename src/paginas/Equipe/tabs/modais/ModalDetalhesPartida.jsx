@@ -275,7 +275,7 @@ const ModalDetalhesPartida = ({ isOpen, onClose, partida, aoNavegar, setDadosNav
         }
 
         mensagem += `\n---------------------------\n`;
-        mensagem += `⭐ _Mensalista_  ✩ _Avulso_  👑 _Capitão_  🥈 _Vice_\n`;
+        mensagem += `⭐ _${getLabelVinculo('mensalista')}_  ✩ _${getLabelVinculo('avulso')}_  👑 _Capitão_  🥈 _Vice_\n`;
         mensagem += `👉 _Garanta sua vaga em playhubapp.com.br_ 🚀`;
 
         const encodedMessage = encodeURIComponent(mensagem);
@@ -368,7 +368,7 @@ const ModalDetalhesPartida = ({ isOpen, onClose, partida, aoNavegar, setDadosNav
                         </h3>
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', color: '#94a3b8', fontSize: '0.9rem' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><MapPin size={16} /> {partida.local_nome || 'A definir'}</div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><DollarSign size={16} /> Avulso: {partida.valor_avulso ? `R$ ${partida.valor_avulso.toFixed(2).replace('.', ',')}` : 'Grátis'}</div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><DollarSign size={16} /> {getLabelVinculo('avulso')}: {partida.valor_avulso ? `R$ ${partida.valor_avulso.toFixed(2).replace('.', ',')}` : 'Grátis'}</div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><Users size={16} /> Vagas: {limite === 999 ? 'Ilimitadas' : limite}</div>
                         </div>
 

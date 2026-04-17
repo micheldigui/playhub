@@ -85,6 +85,63 @@ export const rastrear = {
     },
 
     /**
+     * Registra um evento genérico do sistema
+     */
+    evento: async (idEvento, metadata = {}) => {
+        if (!LOG_ATIVO) return;
+
+        try {
+            const { data: { session } } = await supabase.auth.getSession();
+            const usuarioId = session?.user?.id || null;
+
+            supabase.from('logs_sistema').insert([{
+                usuario_id: usuarioId,
+                tipo: 'CLIQUE',
+                mensagem: `Evento: ${idEvento}`,
+                pagina: window.location.pathname,
+                metadata: {
+                    ...obterMetadadosGlobais(),
+                    evento_id: idEvento,
+                    ...metadata
+                }
+            }]).then(({ error }) => {
+                if (error) console.debug('Log falhou (silencioso):', error.message);
+            });
+        } catch (e) {
+            // Falha silenciosa absoluta
+        }
+    },
+
+    /**
+     * Registra uma conversão ou ação concluída com sucesso
+     */
+    sucesso: async (idAcao, descricao, metadata = {}) => {
+        if (!LOG_ATIVO) return;
+
+        try {
+            const { data: { session } } = await supabase.auth.getSession();
+            const usuarioId = session?.user?.id || null;
+
+            supabase.from('logs_sistema').insert([{
+                usuario_id: usuarioId,
+                tipo: 'CLIQUE',
+                mensagem: `Sucesso: ${descricao || idAcao}`,
+                pagina: window.location.pathname,
+                metadata: {
+                    ...obterMetadadosGlobais(),
+                    acao_id: idAcao,
+                    status: 'sucesso',
+                    ...metadata
+                }
+            }]).then(({ error }) => {
+                if (error) console.debug('Log falhou (silencioso):', error.message);
+            });
+        } catch (e) {
+            // Falha silenciosa absoluta
+        }
+    },
+
+    /**
      * Registra um erro do sistema ou de API
      */
     erro: async (mensagem, contexto = '', erroObjeto = null) => {

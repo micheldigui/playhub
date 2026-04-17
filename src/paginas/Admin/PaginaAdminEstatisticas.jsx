@@ -2,10 +2,11 @@ import { useState, useEffect } from 'react';
 import { 
   Users, Trophy, MapPin, PieChart, TrendingUp, 
   Calendar, CheckCircle2, ChevronRight, Info,
-  BarChart2, ChevronDown, Globe, Activity
+  BarChart2, ChevronDown, Globe, Activity, ShieldAlert
 } from 'lucide-react';
 import { supabase } from '../../servicos/supabase';
 import Botao from '../../componentes/Botao/Botao';
+import { usarAutenticacao } from '../../contextos/AutenticacaoContexto';
 import './PaginaAdminEstatisticas.css';
 
 const CardEstatistica = ({ titulo, icone: Icone, children, corIcone = "var(--primaria)", expandidoInicial = false }) => {
@@ -34,6 +35,9 @@ const PaginaAdminEstatisticas = ({ aoNavegar }) => {
     const [dados, setDados] = useState(null);
     const [carregando, setCarregando] = useState(true);
     const [erro, setErro] = useState(null);
+    const [erroPermissao, setErroPermissao] = useState(false);
+
+    const { ehSuperAdmin } = usarAutenticacao();
 
     useEffect(() => {
         carregarEstatisticas();
@@ -48,10 +52,26 @@ const PaginaAdminEstatisticas = ({ aoNavegar }) => {
         } catch (err) {
             console.error('Erro ao buscar estatísticas:', err);
             setErro(err.message);
+            if (err.message === 'Acesso negado.' || err.code === 'P0001') {
+                setErroPermissao(true);
+            }
         } finally {
             setCarregando(false);
         }
     };
+
+    if (!ehSuperAdmin || erroPermissao) {
+        return (
+            <div className="admin-stats-container animate-fade-in" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', textAlign: 'center' }}>
+                <div style={{ padding: '40px', background: 'rgba(244, 63, 94, 0.05)', borderRadius: '24px', border: '1px solid rgba(244, 63, 94, 0.1)', maxWidth: '400px', margin: '0 auto' }}>
+                    <ShieldAlert size={64} color="#f43f5e" style={{ margin: '0 auto 20px' }} />
+                    <h2 style={{ color: '#f8fafc', marginBottom: '12px' }}>Acesso Reservado</h2>
+                    <p style={{ color: '#94a3b8', marginBottom: '24px' }}>Esta área é restrita para administradores globais do PlayHub.</p>
+                    <Botao onClick={() => window.location.href = '/'} variant="secundario">Voltar ao Início</Botao>
+                </div>
+            </div>
+        );
+    }
 
     if (carregando) {
         return (

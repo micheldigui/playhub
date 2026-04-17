@@ -43,7 +43,7 @@ function App() {
     document.title = "PlayHub - Gestão de Equipes";
   }, []);
 
-  const { estaLogado } = usarAutenticacao()
+  const { estaLogado, ehSuperAdmin } = usarAutenticacao()
   
   // Analisa URL na inicialização para capturar links de convite
   const pathInicial = () => {
@@ -158,13 +158,13 @@ function App() {
       case 'equipe_admin':
         return <EquipeAdminDashboard aoVoltar={() => setTelaAtiva('equipe')} />
       case 'sistema':
-        return <PaginaAdminSistema aoSelecionarEquipe={() => setTelaAtiva('equipe')} />
+        return ehSuperAdmin ? <PaginaAdminSistema aoSelecionarEquipe={() => setTelaAtiva('equipe')} /> : <Dashboard aoNavegar={setTelaAtiva} setAbaEquipe={setAbaEquipe} setDadosNavegacao={setDadosNavegacao} />
       case 'usuarios_sistema':
-        return <PaginaAdminUsuarios />
+        return ehSuperAdmin ? <PaginaAdminUsuarios /> : <Dashboard aoNavegar={setTelaAtiva} setAbaEquipe={setAbaEquipe} setDadosNavegacao={setDadosNavegacao} />
       case 'estatisticas':
-        return <PaginaAdminEstatisticas aoNavegar={setTelaAtiva} />
+        return ehSuperAdmin ? <PaginaAdminEstatisticas aoNavegar={setTelaAtiva} /> : <Dashboard aoNavegar={setTelaAtiva} setAbaEquipe={setAbaEquipe} setDadosNavegacao={setDadosNavegacao} />
       case 'logs_sistema':
-        return <PaginaAdminLogs aoVoltar={() => setTelaAtiva('estatisticas')} />
+        return ehSuperAdmin ? <PaginaAdminLogs aoVoltar={() => setTelaAtiva('estatisticas')} /> : <Dashboard aoNavegar={setTelaAtiva} setAbaEquipe={setAbaEquipe} setDadosNavegacao={setDadosNavegacao} />
       case 'explorar':
         return <PaginaExplorar aoVoltar={() => setTelaAtiva('inicio')} />
       case 'notificacoes':

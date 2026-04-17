@@ -179,12 +179,12 @@ const RegrasTab = ({ abrirEdicao, aoExcluir }) => {
                         <div className="item-toggle-regras" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem' }}>
                             <div style={{ flex: 1 }}>
                                 <strong style={{ color: '#f1f5f9', fontSize: '0.9rem', display: 'block', marginBottom: '4px' }}>
-                                    {equipeAtiva.gestao_financeira ? 'Prioridade Mensalista' : 'Prioridade Jogadores Fixos'}
+                                    {equipeAtiva.gestao_financeira ? 'Prioridade Mensalista' : 'Prioridade Atletas Fixos'}
                                 </strong>
                                 <p style={{ color: '#94a3b8', fontSize: '0.75rem', lineHeight: '1.3' }}>
                                     {equipeAtiva.gestao_financeira 
                                         ? 'Dá prioridade na lista de confirmados para quem paga mensalidade.'
-                                        : 'Dá prioridade na lista de confirmados para os jogadores definidos como fixos.'}
+                                        : 'Dá prioridade na lista de confirmados para os atletas definidos como fixos.'}
                                 </p>
                             </div>
                             <label className="switch-regras">
