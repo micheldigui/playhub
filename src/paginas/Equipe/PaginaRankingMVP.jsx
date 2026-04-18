@@ -11,6 +11,16 @@ const MEDALHAS = [
     { emoji: '🥉', label: 'Bronze', cor: '#cd7f32', corBg: 'rgba(205,127,50,0.1)',  corBorda: 'rgba(205,127,50,0.35)' },
 ];
 
+const formatarNomeCurto = (texto) => {
+    if (!texto) return '';
+    const partes = texto.trim().split(/\s+/);
+    const formatar = (p) => p.charAt(0).toUpperCase() + p.slice(1).toLowerCase();
+    if (partes.length === 1) return formatar(partes[0]);
+    const primeiro = formatar(partes[0]);
+    const ultimo = formatar(partes[partes.length - 1]);
+    return `${primeiro} ${ultimo}`;
+};
+
 // ── Subcomponente: Avatar ──────────────────────────────────────────────────
 const Avatar = ({ src, inicial, tamanho = 52, borda = 'rgba(255,255,255,0.15)', glow = false, corGlow = '' }) => (
     <div style={{
@@ -76,8 +86,22 @@ const CardTime = ({ time, idx, encontrarMembro }) => {
                                     glow={isFirst}
                                     corGlow={md.corBorda}
                                 />
-                                <span style={{ fontSize: '0.62rem', color: isFirst ? '#e2e8f0' : '#64748b', fontWeight: '600', textAlign: 'center', maxWidth: '50px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                    {pNome}
+                                <span style={{ 
+                                    fontSize: '0.62rem', 
+                                    color: isFirst ? '#e2e8f0' : '#64748b', 
+                                    fontWeight: '600', 
+                                    textAlign: 'center', 
+                                    maxWidth: '50px', 
+                                    overflow: 'hidden', 
+                                    textOverflow: 'ellipsis', 
+                                    display: '-webkit-box',
+                                    WebkitLineClamp: 2,
+                                    WebkitBoxOrient: 'vertical',
+                                    whiteSpace: 'normal',
+                                    lineHeight: '1.1',
+                                    minHeight: '2.2em'
+                                }}>
+                                    {formatarNomeCurto(j.nome)}
                                 </span>
                             </div>
                         );
@@ -118,7 +142,7 @@ const ListaRankingJogadores = ({ ranking }) => {
                             </div>
                             <div className="posicao-badge">{index + 1}</div>
                         </div>
-                        <span className="podio-nome">{player.apelido || player.nome_completo?.split(' ')[0]}</span>
+                        <span className="podio-nome">{formatarNomeCurto(player.apelido || player.nome_completo)}</span>
                         <div className="podio-pontos">{player.pontos} <span style={{ fontSize: '0.7rem', opacity: 0.6 }}>PTS</span></div>
                         <div className="podio-medalheiro">
                             <span>🥇{player.ouros}</span><span>🥈{player.pratas}</span><span>🥉{player.bronzes}</span>
@@ -140,7 +164,7 @@ const ListaRankingJogadores = ({ ranking }) => {
                                     )}
                                 </div>
                                 <div className="item-ranking-info">
-                                    <span className="item-ranking-nome">{player.apelido || player.nome_completo}</span>
+                                    <span className="item-ranking-nome">{formatarNomeCurto(player.apelido || player.nome_completo)}</span>
                                     <div className="item-ranking-medalheiro-mini">
                                         <span>🥇{player.ouros}</span><span>🥈{player.pratas}</span><span>🥉{player.bronzes}</span>
                                     </div>
@@ -185,7 +209,7 @@ const PodioPartida = ({ atletas }) => {
                             </div>
                             <div className="posicao-badge">{realIdx + 1}</div>
                         </div>
-                        <span className="podio-nome">{player.apelido || player.nome_completo?.split(' ')[0]}</span>
+                        <span className="podio-nome">{formatarNomeCurto(player.apelido || player.nome_completo)}</span>
                         {player.pontos !== undefined && (
                             <div className="podio-pontos">{player.pontos} <span style={{ fontSize: '0.65rem', opacity: 0.6 }}>PTS</span></div>
                         )}
@@ -352,14 +376,16 @@ const PaginaRankingMVP = ({ equipeIdProp, aoVoltar }) => {
             if (rankingMVP.length > 0) {
                 texto += `⭐ *Craques Individuais (Top 3)*\n`;
                 rankingMVP.slice(0, 3).forEach((p, i) => {
-                    texto += `${i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i+1}º`} ${p.apelido || p.nome_completo?.split(' ')[0]} - ${p.pontos} PTS\n`;
+                    const nomeFormatado = formatarNomeCurto(p.apelido || p.nome_completo);
+                    texto += `${i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i+1}º`} ${nomeFormatado} - ${p.pontos} PTS\n`;
                 });
                 texto += `\n`;
             }
             if (rankingColetivo.length > 0) {
                 texto += `🛡️ *Destaques Coletivos (Top 10)*\n`;
                 rankingColetivo.slice(0, 10).forEach((p, i) => {
-                    texto += `${i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i+1}º`} ${p.apelido || p.nome_completo?.split(' ')[0]} - ${p.pontos} PTS\n`;
+                    const nomeFormatado = formatarNomeCurto(p.apelido || p.nome_completo);
+                    texto += `${i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i+1}º`} ${nomeFormatado} - ${p.pontos} PTS\n`;
                 });
                 texto += `\n`;
             }
@@ -371,15 +397,15 @@ const PaginaRankingMVP = ({ equipeIdProp, aoVoltar }) => {
             if (timesPartida.length > 0) {
                 texto += `🛡️ *Melhor Time do Jogo*\n`;
                 const melhorTime = timesPartida[0];
-                const nomesGold = melhorTime.jogadores?.map(j => j.nome?.split(' ')[0]).join(', ');
+                const nomesGold = melhorTime.jogadores?.map(j => formatarNomeCurto(j.nome)).join(', ');
                 texto += `🥇 ${melhorTime.nome}${nomesGold ? ` (${nomesGold})` : ''}\n\n`;
 
                 if (timesPartida[1]) {
-                    const nomesSilver = timesPartida[1].jogadores?.map(j => j.nome?.split(' ')[0]).join(', ');
+                    const nomesSilver = timesPartida[1].jogadores?.map(j => formatarNomeCurto(j.nome)).join(', ');
                     texto += `🥈 ${timesPartida[1].nome}${nomesSilver ? ` (${nomesSilver})` : ''}\n`;
                 }
                 if (timesPartida[2]) {
-                    const nomesBronze = timesPartida[2].jogadores?.map(j => j.nome?.split(' ')[0]).join(', ');
+                    const nomesBronze = timesPartida[2].jogadores?.map(j => formatarNomeCurto(j.nome)).join(', ');
                     texto += `🥉 ${timesPartida[2].nome}${nomesBronze ? ` (${nomesBronze})` : ''}\n\n`;
                 }
             }
@@ -387,7 +413,8 @@ const PaginaRankingMVP = ({ equipeIdProp, aoVoltar }) => {
             if (vencedoresPartida.length > 0) {
                 texto += `⭐ *Craques da Partida*\n`;
                 vencedoresPartida.slice(0, 3).forEach((p, i) => {
-                    texto += `${i === 0 ? '🥇' : i === 1 ? '🥈' : '🥉'} ${p.apelido || p.nome_completo?.split(' ')[0]}\n`;
+                    const nomeFormatado = formatarNomeCurto(p.apelido || p.nome_completo);
+                    texto += `${i === 0 ? '🥇' : i === 1 ? '🥈' : '🥉'} ${nomeFormatado}\n`;
                 });
                 texto += `\n`;
             }
