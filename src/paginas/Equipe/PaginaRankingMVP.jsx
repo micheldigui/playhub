@@ -371,10 +371,17 @@ const PaginaRankingMVP = ({ equipeIdProp, aoVoltar }) => {
             if (timesPartida.length > 0) {
                 texto += `🛡️ *Melhor Time do Jogo*\n`;
                 const melhorTime = timesPartida[0];
-                const nomesJogadores = melhorTime.jogadores.map(j => j.nome?.split(' ')[0]).join(', ');
-                texto += `🥇 ${melhorTime.nome} (${nomesJogadores})\n\n`;
-                if(timesPartida[1]) texto += `🥈 ${timesPartida[1].nome}\n`;
-                if(timesPartida[2]) texto += `🥉 ${timesPartida[2].nome}\n\n`;
+                const nomesGold = melhorTime.jogadores?.map(j => j.nome?.split(' ')[0]).join(', ');
+                texto += `🥇 ${melhorTime.nome}${nomesGold ? ` (${nomesGold})` : ''}\n\n`;
+
+                if (timesPartida[1]) {
+                    const nomesSilver = timesPartida[1].jogadores?.map(j => j.nome?.split(' ')[0]).join(', ');
+                    texto += `🥈 ${timesPartida[1].nome}${nomesSilver ? ` (${nomesSilver})` : ''}\n`;
+                }
+                if (timesPartida[2]) {
+                    const nomesBronze = timesPartida[2].jogadores?.map(j => j.nome?.split(' ')[0]).join(', ');
+                    texto += `🥉 ${timesPartida[2].nome}${nomesBronze ? ` (${nomesBronze})` : ''}\n\n`;
+                }
             }
 
             if (vencedoresPartida.length > 0) {
