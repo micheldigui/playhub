@@ -34,6 +34,7 @@ const PaginaVotacaoMVP = ({ partidaIdProp, aoVoltar, aoNavegar, setDadosNavegaca
     // Votos de atletas individuais: { 1: id, 2: id, 3: id }
     const [selecionados, setSelecionados] = useState({ 1: null, 2: null, 3: null });
 
+    const [foiParticipante, setFoiParticipante] = useState(true);
     const [enviando, setEnviando] = useState(false);
     const [votoSucesso, setVotoSucesso] = useState(false);
     const [corrigindoIDs, setCorrigindoIDs] = useState(false);
@@ -85,6 +86,12 @@ const PaginaVotacaoMVP = ({ partidaIdProp, aoVoltar, aoNavegar, setDadosNavegaca
                 // Processa atletas (Presença)
                 let todosAtletas = [];
                 if (resPr.sucesso) {
+                    // Verifica se o usuário logado participou da partida
+                    const participou = resPr.presencas.some(p => 
+                        String(p.usuario_id) === String(usuario.id) && p.frequencia === 'P'
+                    );
+                    setFoiParticipante(participou);
+
                     todosAtletas = resPr.presencas
                         .filter(p => p.frequencia === 'P')
                         .map(p => p.usuarios)
@@ -390,6 +397,30 @@ const PaginaVotacaoMVP = ({ partidaIdProp, aoVoltar, aoNavegar, setDadosNavegaca
                             else aoVoltar();
                         }}>
                             Ver Hall da Fama
+                        </Botao>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    if (!foiParticipante) {
+        return (
+            <div className="pagina-votacao-mvp">
+                <div className="votacao-header">
+                    <button className="btn-voltar-v4" onClick={aoVoltar}><ArrowLeft size={20} /></button>
+                    <span className="v4-header-title">Votação MVP</span>
+                </div>
+                <div className="votacao-container">
+                    <div className="voto-vazio" style={{ textAlign: 'center', padding: '60px 20px' }}>
+                        <Users size={48} color="#475569" style={{ margin: '0 auto 24px' }} />
+                        <h2 style={{ fontSize: '1.5rem', fontWeight: '700', marginBottom: '12px' }}>Acesso Restrito ✋</h2>
+                        <p style={{ color: '#94a3b8', marginBottom: '32px' }}>
+                            Apenas os atletas que **estiveram presentes** nesta partida podem votar. <br />
+                            Não identificamos sua presença na lista oficial desta partida.
+                        </p>
+                        <Botao onClick={aoVoltar}>
+                            Voltar
                         </Botao>
                     </div>
                 </div>
