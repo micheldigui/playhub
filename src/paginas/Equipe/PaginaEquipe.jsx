@@ -40,20 +40,27 @@ const PaginaEquipe = ({ abaAtiva, setAbaAtiva, aoVoltar, aoNavegar, setDadosNave
     const [votacoesAbertas, setVotacoesAbertas] = useState([]);
     const [bannerFechado, setBannerFechado] = useState(false);
 
+    const [carregandoVotacoes, setCarregandoVotacoes] = useState(false);
+
     useEffect(() => {
         const v = async () => {
-            if (equipeAtiva) {
-                const res = await buscarVotacoesPendentes();
-                if (res.sucesso && res.partidas.length > 0) {
-                    const daEquipe = res.partidas.filter(p => p.equipe_id === equipeAtiva.id);
-                    setVotacoesAbertas(daEquipe);
-                } else {
-                    setVotacoesAbertas([]);
+            if (equipeAtiva?.id && !carregandoVotacoes) {
+                setCarregandoVotacoes(true);
+                try {
+                    const res = await buscarVotacoesPendentes();
+                    if (res.sucesso && res.partidas.length > 0) {
+                        const daEquipe = res.partidas.filter(p => p.equipe_id === equipeAtiva.id);
+                        setVotacoesAbertas(daEquipe);
+                    } else {
+                        setVotacoesAbertas([]);
+                    }
+                } finally {
+                    setCarregandoVotacoes(false);
                 }
             }
         };
         v();
-    }, [equipeAtiva, buscarVotacoesPendentes]);
+    }, [equipeAtiva?.id, buscarVotacoesPendentes]);
 
     const formatarIdentidadeAtleta = useCallback((u) => {
         if (!u || (!u.nome_completo && !u.apelido)) return 'Atleta';

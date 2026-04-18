@@ -60,15 +60,11 @@ function App() {
   };
 
   const [telaAtiva, setTelaAtiva] = useState(() => {
-    // 1. Prioridade para links de convite (URL direta)
+    // 1. Mantém suporte a convites (URL direta)
     const inicial = pathInicial();
     if (inicial === 'convite') return 'convite';
 
-    // 2. Persistência de navegação
-    const salva = localStorage.getItem('playhub_tela_ativa');
-    if (salva) return salva;
-
-    // 3. Default
+    // 2. Default absoluto: Sempre Dashboard (Ignora persistência)
     return 'inicio';
   })
 
@@ -89,9 +85,16 @@ function App() {
   
   const [querFazerLogin, setQuerFazerLogin] = useState(false);
   const [telaAuth, setTelaAuth] = useState('login');
-  const [dadosNavegacao, setDadosNavegacao] = useState(null); // Parâmetros extras para troca de tela
+  const [dadosNavegacao, setDadosNavegacao] = useState(() => {
+    const salva = localStorage.getItem('playhub_dados_navegacao');
+    try {
+      return salva ? JSON.parse(salva) : null;
+    } catch {
+      return null;
+    }
+  }); // Parâmetros extras para troca de tela
 
-  // Sincroniza a URL sem persistir a tela no localStorage
+  // Sincroniza a URL e persiste estados no localStorage
   useEffect(() => {
     if (telaAtiva === 'convite' && equipeConviteId) {
       window.history.replaceState(null, '', `/convite/${equipeConviteId}`);
@@ -99,10 +102,15 @@ function App() {
       window.history.replaceState(null, '', '/');
     }
 
-    // Persistência da tela e aba
+    // Persistência da tela, aba e dados de navegação
     localStorage.setItem('playhub_tela_ativa', telaAtiva);
     localStorage.setItem('playhub_aba_equipe', abaEquipe);
-  }, [telaAtiva, equipeConviteId, abaEquipe]);
+    if (dadosNavegacao) {
+      localStorage.setItem('playhub_dados_navegacao', JSON.stringify(dadosNavegacao));
+    } else {
+      localStorage.removeItem('playhub_dados_navegacao');
+    }
+  }, [telaAtiva, equipeConviteId, abaEquipe, dadosNavegacao]);
 
   if (!estaLogado) {
     // PRIMEIRO: verifica se o usuário clicou em login/cadastro (tem prioridade sobre convite)
@@ -237,6 +245,7 @@ function App() {
         setTelaAtiva={setTelaAtiva}
         abaEquipe={abaEquipe}
         setAbaEquipe={setAbaEquipe}
+        setDadosNavegacao={setDadosNavegacao}
       >
         <Suspense fallback={<CarregandoTela />}>
           {renderizarTela()}

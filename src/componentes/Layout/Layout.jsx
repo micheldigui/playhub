@@ -20,7 +20,7 @@ const TITULOS_CABECALHO = {
   convite:          'Convite de Equipe',
 };
 
-const Layout = ({ children, telaAtiva, setTelaAtiva, abaEquipe, setAbaEquipe }) => {
+const Layout = ({ children, telaAtiva, setTelaAtiva, abaEquipe, setAbaEquipe, setDadosNavegacao }) => {
   const { equipeAtiva, modalCriacaoAberto, setModalCriacaoAberto } = usarEquipe();
   const { modalInstalacaoAberto, fecharModalInstalacao } = usarPwa();
 
@@ -36,6 +36,7 @@ const Layout = ({ children, telaAtiva, setTelaAtiva, abaEquipe, setAbaEquipe }) 
         setAtivo={setTelaAtiva} 
         abaEquipe={abaEquipe}
         setAbaEquipe={setAbaEquipe}
+        setDadosNavegacao={setDadosNavegacao}
       />
       <main className="layout-conteudo">
         <header className="layout-cabecalho">

@@ -69,15 +69,17 @@ const CardsDadosAtleta = ({ equipeIdOpcional, esconderIcones = false }) => {
             // 3. Calcular Assiduidade (Opção 2: todas as partidas da equipe desde que o jogador entrou)
             
             // 3a. Data de entrada do atleta na equipe
+            if (!equipeAlvo?.id || !usuario?.id || equipeAlvo.id === 'undefined' || usuario.id === 'undefined') return;
+            
             const { data: dadosMembro } = await supabase
                 .from('membros_equipe')
-                .select('created_at')
+                .select('entrou_em')
                 .eq('equipe_id', equipeAlvo.id)
                 .eq('usuario_id', usuario.id)
                 .eq('status', 'ativo')
-                .single();
+                .maybeSingle();
             
-            const dataEntrada = dadosMembro?.created_at || null;
+            const dataEntrada = dadosMembro?.entrou_em || null;
 
             // 3b. Total de partidas passadas da equipe desde que o jogador entrou
             const hoje = new Date().toISOString().split('T')[0]; // '2026-04-18'

@@ -362,15 +362,25 @@ const FinanceiroTab = ({ abaExterna, modoLeitura = false, membrosIniciais = [] }
     // Nome sempre branco — apenas o badge de cargo leva cor
     const corNome = () => '#f8fafc';
 
-    const resumo = {
-        totalRecebido: mensalidades.filter(m => m.status === 'pago').reduce((acc, m) => acc + Number(m.valor_configurado), 0),
-        totalPendente: mensalidades.filter(m => m.status === 'pendente').reduce((acc, m) => acc + Number(m.valor_configurado), 0),
-        pagosCount: mensalidades.filter(m => m.status === 'pago').length,
-        totalMembros: mensalidades.length
-    };
+    const resumo = React.useMemo(() => {
+        return {
+            totalRecebido: mensalidades.filter(m => m.status === 'pago').reduce((acc, m) => acc + Number(m.valor_configurado), 0),
+            totalPendente: mensalidades.filter(m => m.status === 'pendente').reduce((acc, m) => acc + Number(m.valor_configurado), 0),
+            pagosCount: mensalidades.filter(m => m.status === 'pago').length,
+            totalMembros: mensalidades.length
+        };
+    }, [mensalidades]);
 
     const mensalistasNoCiclo = new Set(mensalidades.map(p => p.usuario_id));
-    const mensalistasDisponiveis = todosMembros.filter(m => m.vinculo === 'mensalista');
+    const mensalistasDisponiveis = React.useMemo(() => {
+        return todosMembros
+            .filter(m => m.vinculo === 'mensalista')
+            .sort((a, b) => {
+                const nomeA = a.usuarios?.nome_completo || '';
+                const nomeB = b.usuarios?.nome_completo || '';
+                return nomeA.localeCompare(nomeB);
+            });
+    }, [todosMembros]);
 
     const compartilharWhatsApp = () => {
         const custoQuadra = dadosCiclo?.custo_quadra_snapshot || configLocal.custo_quadra || 0;
@@ -510,7 +520,7 @@ const FinanceiroTab = ({ abaExterna, modoLeitura = false, membrosIniciais = [] }
                     <div style={{ padding: '16px 20px', borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minHeight: '30px' }}>
                             <h4 style={{ fontWeight: '600', color: '#f8fafc', whiteSpace: 'nowrap' }}>{mensalidades.length > 0 ? `Atletas no Ciclo (${mensalidades.length})` : 'Status do Ciclo'}</h4>
-                            <div style={{ minWidth: '120px', display: 'flex', alignItems: 'center' }}>
+                            <div style={{ minWidth: '180px', display: 'flex', alignItems: 'center', height: '28px', overflow: 'hidden' }}>
                                 {hoverBotao && <span className="legenda-ativa animacao-entrada">{hoverBotao}</span>}
                             </div>
                         </div>
@@ -682,7 +692,13 @@ const FinanceiroTab = ({ abaExterna, modoLeitura = false, membrosIniciais = [] }
                                                     </div>
                                                 )}
                                             </div>
-                                            <span style={{ fontSize: '0.9rem', color: '#f8fafc', fontWeight: '500' }}>{formatName(m.usuarios?.nome_completo)}</span>
+                                            <span style={{ 
+                                                fontSize: '0.9rem', 
+                                                color: jaNoCiclo ? '#f8fafc' : '#ef4444', 
+                                                fontWeight: '500' 
+                                            }}>
+                                                {formatName(m.usuarios?.nome_completo)}
+                                            </span>
                                         </div>
                                         <button onClick={() => !jaNoCiclo && handleAdicionarAoCiclo(m)} disabled={jaNoCiclo || !!processando} style={{ background: 'rgba(56,189,248,0.1)', border: '1px solid rgba(56,189,248,0.3)', color: '#38bdf8', padding: '4px 10px', borderRadius: '6px', fontSize: '0.75rem', cursor: jaNoCiclo ? 'default' : 'pointer' }}>{jaNoCiclo ? 'No ciclo' : '+ Adicionar'}</button>
                                     </div>
@@ -751,8 +767,8 @@ const FinanceiroTab = ({ abaExterna, modoLeitura = false, membrosIniciais = [] }
                 }
 
                 @keyframes fadeIn {
-                    from { opacity: 0; transform: translateY(-5px); }
-                    to { opacity: 1; transform: translateY(0); }
+                    from { opacity: 0; }
+                    to { opacity: 1; }
                 }
                 .animacao-entrada { animation: fadeIn 0.3s ease-out; }
             `}</style>

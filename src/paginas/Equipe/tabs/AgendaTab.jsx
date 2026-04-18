@@ -49,10 +49,12 @@ const AgendaTab = ({ aoNavegar, setDadosNavegacao, dadosNavegacao }) => {
         }
     }, [dadosNavegacao, partidasCarregadas]);
 
-    // Efeito para abrir o modal de criar partida a partir do atalho do Dashboard
+    // Efeito para abrir o modal de criar partida a partir do atalho do Dashboard ou Barra Lateral
     useEffect(() => {
+        const abrirModal = () => setModalCriacaoAberto(true);
+        
         if (dadosNavegacao?.abrirModalCriacaoPartida) {
-            setModalCriacaoAberto(true);
+            abrirModal();
             if (setDadosNavegacao) {
                 setDadosNavegacao(prev => {
                     const novo = { ...prev };
@@ -61,6 +63,9 @@ const AgendaTab = ({ aoNavegar, setDadosNavegacao, dadosNavegacao }) => {
                 });
             }
         }
+
+        window.addEventListener('abrir-modal-marcar-jogo', abrirModal);
+        return () => window.removeEventListener('abrir-modal-marcar-jogo', abrirModal);
     }, [dadosNavegacao, setDadosNavegacao]);
 
     // Filtra partidas futuras
@@ -229,9 +234,19 @@ const AgendaTab = ({ aoNavegar, setDadosNavegacao, dadosNavegacao }) => {
                             </div>
                         </div>
                     )) : (
-                        <div style={{ padding: '32px', textAlign: 'center', color: '#64748b', background: 'rgba(255,255,255,0.02)', borderRadius: '12px' }}>
-                            <Calendar size={32} style={{ margin: '0 auto 16px auto', opacity: 0.5 }} />
-                            <p>{exibirHistorico ? 'Nenhum histórico de partidas econtrado.' : 'Nenhuma partida agendada para os próximos dias.'}</p>
+                        <div style={{ padding: '64px 32px', textAlign: 'center', color: '#64748b', background: 'rgba(255,255,255,0.02)', borderRadius: '24px', border: '2px dashed rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px' }}>
+                            <div style={{ width: '80px', height: '80px', background: 'rgba(56, 189, 248, 0.1)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <Calendar size={40} color="#38bdf8" style={{ opacity: 0.8 }} />
+                            </div>
+                            <div>
+                                <h3 style={{ color: '#f8fafc', marginBottom: '8px' }}>Nenhum jogo encontrado</h3>
+                                <p style={{ maxWidth: '300px', margin: '0 auto' }}>{exibirHistorico ? 'Ainda não existem partidas finalizadas nesta equipe.' : 'Sua agenda está livre! Que tal marcar o próximo racha agora?'}</p>
+                            </div>
+                            {!exibirHistorico && (equipeAtiva.papel === 'admin' || temPermissaoEquipe('gerenciar_partidas')) && (
+                                <Botao onClick={() => setModalCriacaoAberto(true)} style={{ padding: '12px 24px', fontSize: '1rem' }}>
+                                    <Plus size={20} /> Agendar Primeira Partida
+                                </Botao>
+                            )}
                         </div>
                     )}
                 </div>

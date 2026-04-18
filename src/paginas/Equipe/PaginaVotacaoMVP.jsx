@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Trophy, Check, ArrowLeft, Loader2, Sparkles, Users, ChevronRight } from 'lucide-react';
+import { supabase } from '../../servicos/supabase';
 import { usarPartidas } from '../../contextos/PartidasContexto';
 import { usarEquipe } from '../../contextos/EquipeContexto';
 import { usarAutenticacao } from '../../contextos/AutenticacaoContexto';
@@ -17,7 +18,7 @@ const MEDALHAS = {
 const PaginaVotacaoMVP = ({ partidaIdProp, aoVoltar, aoNavegar, setDadosNavegacao }) => {
     const partidaId = partidaIdProp;
     const { usuario } = usarAutenticacao();
-    const { buscarPartidaPorId, buscarPresencas, votarMVP, buscarVotosMVP, votarMelhorTime, buscarVotosTime } = usarPartidas();
+    const { buscarPartidaPorId, buscarPresencas, votarMVP, buscarVotosMVP, votarMelhorTime, buscarVotosTime, editarPartida } = usarPartidas();
     const { equipeAtiva } = usarEquipe();
 
     const [partida, setPartida] = useState(null);
@@ -35,48 +36,90 @@ const PaginaVotacaoMVP = ({ partidaIdProp, aoVoltar, aoNavegar, setDadosNavegaca
 
     const [enviando, setEnviando] = useState(false);
     const [votoSucesso, setVotoSucesso] = useState(false);
+    const [corrigindoIDs, setCorrigindoIDs] = useState(false);
     const [jaVotou, setJaVotou] = useState(false);
     const [jaVotouTime, setJaVotouTime] = useState(false);
 
     useEffect(() => {
-        rastrear.pagina('Visitou: Votação MVP', { partida_id: partidaId });
+        if (partidaId) {
+            rastrear.pagina('Visitou: Votação MVP', { partida_id: partidaId });
+        }
         
         const carregarDados = async () => {
-            if (!partidaId || !usuario) return;
+            // Se ainda não temos usuário ou ID da partida, apenas aguarda o próximo ciclo
+            if (!partidaId || !usuario) {
+                // Se demorar muito (ex: 5s) e ainda não tivermos os dados, libera o loading para mostrar estado vazio
+                const timer = setTimeout(() => {
+                    if (carregando) setCarregando(false);
+                }, 5000);
+                return () => clearTimeout(timer);
+            }
+
             try {
-                const resP = await buscarPartidaPorId(partidaId);
+                // CARREGAMENTO PARALELO INICIAL: Busca dados essenciais
+                // Só buscamos membros em paralelo se já tivermos o equipeAtiva?.id (vinda do contexto já carregado)
+                const promessas = [
+                    buscarPartidaPorId(partidaId),
+                    buscarPresencas(partidaId),
+                    buscarVotosMVP(partidaId),
+                    buscarVotosTime(partidaId).catch(() => ({ sucesso: false })),
+                ];
+
+                const [resP, resPr, resV, resT] = await Promise.all(promessas);
+
                 if (!resP.sucesso) throw new Error('Partida não encontrada');
-                setPartida(resP.partida);
+                const partidaData = resP.partida;
+                setPartida(partidaData);
 
                 // Se há times sorteados, começa na etapa de times
-                if (resP.partida?.times_sorteados) {
+                if (partidaData?.times_sorteados) {
                     setEtapa('times');
+                    
+                    // Checa se já votou no time
+                    if (resT.sucesso && resT.votos.some(v => v.eleitor_id === usuario.id)) {
+                        setJaVotouTime(true);
+                        setEtapa('atletas');
+                    }
                 }
 
-                const resPr = await buscarPresencas(partidaId);
+                // Processa atletas (Presença)
+                let todosAtletas = [];
                 if (resPr.sucesso) {
-                    const presentes = resPr.presencas
+                    todosAtletas = resPr.presencas
                         .filter(p => p.frequencia === 'P')
                         .map(p => p.usuarios)
-                        .filter(u => u.id !== usuario.id);
-                    setAtletas(presentes);
+                        .filter(u => u);
                 }
 
-                const resV = await buscarVotosMVP(partidaId);
+                // BUSCA DE FOTOS (DNA): Agora busca de forma segura usando o ID da partida ou da equipe ativa
+                const equipeIdParaFotos = partidaData?.equipe_id || equipeAtiva?.id;
+                
+                if (equipeIdParaFotos) {
+                    const { data: membrosExtra } = await supabase
+                        .from('membros_equipe')
+                        .select('usuario_id, usuarios!membros_equipe_usuario_id_fkey(id, nome_completo, apelido, foto_url)')
+                        .eq('equipe_id', equipeIdParaFotos)
+                        .eq('status', 'ativo')
+                        .limit(200);
+
+                    if (membrosExtra) {
+                        const usuariosExtra = membrosExtra.map(m => m.usuarios).filter(u => u);
+                        const idsExistentes = new Set(todosAtletas.map(a => a.id));
+                        usuariosExtra.forEach(u => {
+                            if (!idsExistentes.has(u.id)) todosAtletas.push(u);
+                        });
+                    }
+                }
+
+                setAtletas(todosAtletas);
+
+                // Checa se já votou no MVP
                 if (resV.sucesso && resV.votos.some(v => v.eleitor_id === usuario.id)) {
                     setJaVotou(true);
                 }
 
-                if (resP.partida?.times_sorteados) {
-                    const resT = await buscarVotosTime(partidaId);
-                    if (resT.sucesso && resT.votos.some(v => v.eleitor_id === usuario.id)) {
-                        setJaVotouTime(true);
-                        // Se já votou nos times, pula para etapa de atletas
-                        setEtapa('atletas');
-                    }
-                }
             } catch (err) {
-                console.error(err);
+                console.error('Erro ao carregar dados da votação:', err);
             } finally {
                 setCarregando(false);
             }
@@ -127,13 +170,120 @@ const PaginaVotacaoMVP = ({ partidaIdProp, aoVoltar, aoNavegar, setDadosNavegaca
         return pos ? MEDALHAS[parseInt(pos)] : null;
     };
 
-    // Tenta encontrar atleta pelo primeiro nome (para matchear times_sorteados com presencas)
-    const encontrarAtleta = (nomeJogador) => {
-        const pNome = (nomeJogador || '').split(' ')[0].toLowerCase();
-        return atletas.find(a => {
-            const aNome = (a.nome_completo || a.apelido || '').toLowerCase();
-            return aNome.startsWith(pNome);
+    const normalizarToken = (str) => {
+        if (!str) return '';
+        return str.normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .toLowerCase()
+            .trim();
+    };
+
+    const normalizarCompleto = (str) => {
+        if (!str) return '';
+        return str.normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .replace(/[^a-zA-Z0-9]/g, "")
+            .toLowerCase()
+            .trim();
+    };
+    
+    // Mapeamento prévio para evitar cálculos pesados e race conditions no render
+    const mapaJogadoresIdentificados = React.useMemo(() => {
+        if (!partida?.times_sorteados || !atletas.length) return {};
+        
+        const mapa = {};
+        partida.times_sorteados.forEach(time => {
+            time.jogadores?.forEach(j => {
+                const jogadorIdSorteio = j.id;
+                const nomeSorteio = j.nome || j || '';
+                const nomeNorm = normalizarCompleto(nomeSorteio);
+                const tokensSorteio = normalizarToken(nomeSorteio).split(/\s+/).filter(t => t.length > 2);
+
+                let match = null;
+
+                // 1. PRIORIDADE TOTAL: ID do Usuário (Se disponível no sorteio)
+                if (jogadorIdSorteio) {
+                    match = atletas.find(a => a.id === jogadorIdSorteio);
+                }
+
+                // 2. BUSCA POR PALAVRAS (A prova de nomes incompletos/ID Null)
+                if (!match && tokensSorteio.length > 0) {
+                    match = atletas.find(a => {
+                        const aNome = normalizarToken(a.nome_completo);
+                        const aApelido = normalizarToken(a.apelido);
+                        const aTokens = [...aNome.split(/\s+/), aApelido].filter(t => t && t.length > 1);
+                        
+                        // Verifica se TODAS as palavras do sorteio estão no cadastro
+                        // Ex: "João Sales" bate com "João Carlos Melo de Sales"
+                        return tokensSorteio.every(ts => aTokens.some(at => at.includes(ts) || ts.includes(at)));
+                    });
+                }
+
+                // 3. FALLBACK: Foto Prioritária (Se houver duplicidade de nomes curtos)
+                if (!match) {
+                    match = atletas.find(a => normalizarCompleto(a.nome_completo) === nomeNorm || normalizarCompleto(a.apelido) === nomeNorm);
+                }
+
+                if (match) {
+                    if (jogadorIdSorteio) mapa[`id-${jogadorIdSorteio}`] = match;
+                    mapa[`nome-${nomeSorteio}`] = match;
+                }
+            });
         });
+        return mapa;
+    }, [partida?.times_sorteados, atletas]);
+
+    const encontrarAtleta = (jogadorRef) => {
+        if (jogadorRef.id && mapaJogadoresIdentificados[`id-${jogadorRef.id}`]) {
+            return mapaJogadoresIdentificados[`id-${jogadorRef.id}`];
+        }
+        const nomeSorteio = jogadorRef.nome || jogadorRef || '';
+        return mapaJogadoresIdentificados[`nome-${nomeSorteio}`] || null;
+    };
+
+    const handleAutoCorrigirIDs = async () => {
+        if (!partida?.times_sorteados) return;
+        setCorrigindoIDs(true);
+        try {
+            const novosTimes = partida.times_sorteados.map(time => ({
+                ...time,
+                jogadores: time.jogadores.map(j => {
+                    const match = encontrarAtleta(j);
+                    return {
+                        id: match ? match.id : j.id,
+                        nome: j.nome || j,
+                        nivel: j.nivel || 3
+                    };
+                })
+            }));
+
+            const res = await editarPartida(partida.id, { times_sorteados: novosTimes });
+            if (res.sucesso) {
+                setPartida(prev => ({ ...prev, times_sorteados: novosTimes }));
+                alert('✅ Banco de dados atualizado com os IDs corretos!');
+            } else {
+                alert('Erro ao atualizar banco: ' + res.erro);
+            }
+        } catch (error) {
+            console.error(error);
+            alert('Falha na correção automática.');
+        } finally {
+            setCorrigindoIDs(false);
+        }
+    };
+
+    const formatarNomeLegivel = (nomeOriginal) => {
+        if (!nomeOriginal) return 'Jogador';
+        // Remove arrobas e limpa o texto
+        const limpo = nomeOriginal.replace('@', '').replace(/\./g, ' ').trim();
+        const partes = limpo.split(/\s+/).filter(p => p.length > 1); // remove iniciais sozinhas
+        
+        if (partes.length === 0) return limpo;
+        if (partes.length === 1) return partes[0].charAt(0).toUpperCase() + partes[0].slice(1).toLowerCase();
+        
+        const primeiro = partes[0].charAt(0).toUpperCase() + partes[0].slice(1).toLowerCase();
+        const ultimo = partes[partes.length - 1].charAt(0).toUpperCase() + partes[partes.length - 1].slice(1).toLowerCase();
+        return `${primeiro} ${ultimo}`;
     };
 
     // ── Envio ─────────────────────────────────────────────────────────────
@@ -283,9 +433,36 @@ const PaginaVotacaoMVP = ({ partidaIdProp, aoVoltar, aoNavegar, setDadosNavegaca
                 ETAPA 1: VOTAÇÃO DOS TIMES
             ═══════════════════════════════════ */}
             {etapa === 'times' && temTimes && (
-                <main className="votacao-container">
+                <main className="votacao-container" key={`times-${atletas.length}`}>
                     <div className="votacao-titulo-secao">
-                        <h1>Melhor Time 🛡️</h1>
+                        <h2 style={{ fontSize: '1.8rem', fontWeight: '800', color: '#fbbf24', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                            Melhor Time 🛡️
+                        </h2>
+                        
+                        {(equipeAtiva?.papel === 'admin' || equipeAtiva?.papel === 'sub_admin') && 
+                          partida?.times_sorteados?.some(t => t.jogadores?.some(j => !j.id)) && (
+                            <button 
+                                onClick={handleAutoCorrigirIDs}
+                                disabled={corrigindoIDs}
+                                style={{
+                                    marginTop: '8px',
+                                    padding: '6px 14px',
+                                    borderRadius: '20px',
+                                    background: 'rgba(16, 185, 129, 0.1)',
+                                    border: '1px solid #10b981',
+                                    color: '#10b981',
+                                    fontSize: '0.75rem',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '6px',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s'
+                                }}
+                            >
+                                {corrigindoIDs ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
+                                {corrigindoIDs ? 'Corrigindo...' : '✨ Corrigir IDs no Banco de Dados'}
+                            </button>
+                        )}
                         <p>Atribua <strong>🥇 Ouro</strong>, <strong>🥈 Prata</strong> e <strong>🥉 Bronze</strong> para as equipes.</p>
                     </div>
 
@@ -368,16 +545,17 @@ const PaginaVotacaoMVP = ({ partidaIdProp, aoVoltar, aoNavegar, setDadosNavegaca
                                         flexWrap: 'wrap',
                                     }}>
                                         {time.jogadores?.map((j, idx) => {
-                                            const atletaMatch = encontrarAtleta(j.nome);
-                                            const primeiroNome = (j.nome || '').split(' ')[0];
-                                            const iniciais = primeiroNome[0]?.toUpperCase() || '?';
+                                            const atletaMatch = encontrarAtleta(j);
+                                            // PRIORIDADE: Sempre usar o nome original do sorteio para evitar confusão visual
+                                            const nomeExibicao = formatarNomeLegivel(j.nome || j);
+                                            const iniciais = nomeExibicao[0]?.toUpperCase() || '?';
                                             return (
                                                 <div key={idx} style={{
                                                     display: 'flex',
                                                     flexDirection: 'column',
                                                     alignItems: 'center',
                                                     gap: '5px',
-                                                    width: '58px',
+                                                    width: '65px',
                                                 }}>
                                                     {/* Avatar */}
                                                     <div style={{
@@ -393,7 +571,7 @@ const PaginaVotacaoMVP = ({ partidaIdProp, aoVoltar, aoNavegar, setDadosNavegaca
                                                         {atletaMatch?.foto_url ? (
                                                             <img
                                                                 src={atletaMatch.foto_url}
-                                                                alt={primeiroNome}
+                                                                alt={nomeExibicao}
                                                                 style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                                                             />
                                                         ) : (
@@ -411,17 +589,17 @@ const PaginaVotacaoMVP = ({ partidaIdProp, aoVoltar, aoNavegar, setDadosNavegaca
                                                     </div>
                                                     {/* Nome */}
                                                     <span style={{
-                                                        fontSize: '0.67rem',
+                                                        fontSize: '0.62rem',
                                                         color: medalha ? '#e2e8f0' : '#94a3b8',
                                                         fontWeight: '600',
                                                         textAlign: 'center',
                                                         lineHeight: '1.2',
-                                                        maxWidth: '58px',
+                                                        maxWidth: '65px',
                                                         overflow: 'hidden',
                                                         textOverflow: 'ellipsis',
                                                         whiteSpace: 'nowrap',
                                                     }}>
-                                                        {primeiroNome}
+                                                        {nomeExibicao}
                                                     </span>
                                                 </div>
                                             );
@@ -488,7 +666,7 @@ const PaginaVotacaoMVP = ({ partidaIdProp, aoVoltar, aoNavegar, setDadosNavegaca
 
                         {atletas.length > 0 ? (
                             <div className="grid-votacao">
-                                {atletas.map(atleta => {
+                                {atletas.filter(a => a.id !== usuario.id).map(atleta => {
                                     const medalha = getMedalhaPosicao(atleta.id);
                                     return (
                                         <div

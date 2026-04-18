@@ -177,7 +177,8 @@ const PaginaSorteioV4 = ({ aoVoltar, participantes = [], partida, modalidadePrin
 
         const jogadoresProcessados = (listaParticipantes || []).map(p => {
             const u = p.usuarios || {};
-            const userId = p.usuario_id || u.id;
+            // Tenta pegar o ID de todas as formas possíveis para não salvar 'null'
+            const userId = p.usuario_id || u.id || p.id;
             const extraData = usuariosData.find(ud => ud.id === userId) || {};
             const notaPrivada = rankingLideranca.find(nl => nl.usuario_id === userId);
             

@@ -3,7 +3,8 @@ import {
   LayoutDashboard, Users, Settings, LogOut, Menu, X, 
   ChevronRight, UserCircle, Trophy, Globe, Building2, Shield, Bell,
   Calendar, DollarSign, ChevronDown, ShieldCheck, Wallet, BarChart2,
-  Plus, SquarePlus, CircleHelp, Crown, MessageCircle, Zap, Instagram
+  Plus, SquarePlus, CircleHelp, Crown, MessageCircle, Zap, Instagram,
+  Swords
 } from 'lucide-react';
 import './BarraLateral.css';
 import { supabase } from '../../servicos/supabase';
@@ -13,7 +14,7 @@ import { usarNotificacoes } from '../../contextos/NotificacoesContexto';
 import BannerInstalacaoApp from '../../componentes/Pwa/BannerInstalacaoApp';
 import ModalTutorial from '../Ajuda/ModalTutorial';
 
-const BarraLateral = ({ ativo, setAtivo, abaEquipe, setAbaEquipe }) => {
+const BarraLateral = ({ ativo, setAtivo, abaEquipe, setAbaEquipe, setDadosNavegacao }) => {
   const [aberta, setAberta] = useState(false);
   const [menuEquipeExpandido, setMenuEquipeExpandido] = useState(true);
   const [modalTutorialAberto, setModalTutorialAberto] = useState(false);
@@ -46,8 +47,7 @@ const BarraLateral = ({ ativo, setAtivo, abaEquipe, setAbaEquipe }) => {
 
   const temPermissaoEquipe = (perm) => {
     if (ehSuperAdmin && equipeAtiva?.gestao_global) return true;
-    if (equipeAtiva?.papel === 'admin') return true;
-    if (equipeAtiva?.papel === 'sub_admin' && equipeAtiva?.permissoes?.includes(perm)) return true;
+    if (equipeAtiva?.papel === 'admin' || equipeAtiva?.papel === 'sub_admin') return true;
     return false;
   };
 
@@ -203,6 +203,12 @@ const BarraLateral = ({ ativo, setAtivo, abaEquipe, setAbaEquipe }) => {
                                 setAtivo('sorteio_v4');
                             } else if (sub.id === 'ranking_mvp') {
                                 setAtivo('ranking_mvp');
+                            } else if (sub.id === 'agendar') {
+                                setAbaEquipe('agenda');
+                                setAtivo('equipe');
+                                if (setDadosNavegacao) {
+                                    setDadosNavegacao(prev => ({ ...prev, abrirModalCriacaoPartida: Date.now() }));
+                                }
                             } else {
                                 setAbaEquipe(sub.id);
                                 setAtivo('equipe');

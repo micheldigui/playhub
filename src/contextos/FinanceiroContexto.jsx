@@ -346,6 +346,10 @@ export const FinanceiroProvider = ({ children }) => {
     };
 
     const verificarSituacaoFinanceiraAtleta = async (equipeId, usuarioId) => {
+        if (!equipeId || !usuarioId || equipeId === 'undefined' || usuarioId === 'undefined') {
+            return { status: 'ocultar' };
+        }
+
         try {
             // 1. Buscar a configuração de vencimento
             const { data: config } = await supabase

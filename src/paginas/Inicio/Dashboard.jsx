@@ -216,6 +216,8 @@ const Dashboard = ({ aoNavegar, setAbaEquipe, setDadosNavegacao }) => {
         // Regras para Gestores (Capitão e Vice)
         if (papelNaEquipe === 'admin') return true;
         if (papelNaEquipe === 'sub_admin') {
+            // Se o atalho é explicitamente permitido para Vice-Capitão, mostra.
+            if (a.roles.includes('sub_admin')) return true;
             if (a.roles.length === 0 || a.permissao === null) return true;
             return permsVice.includes(a.permissao);
         }

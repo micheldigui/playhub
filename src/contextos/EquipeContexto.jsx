@@ -69,45 +69,23 @@ export const EquipeProvedor = ({ children }) => {
         carregarContagemSolicitacoes();
     }, [equipes]);
 
+    // buscarVotacoesPendentes foi movido para o PartidasContexto para melhor organização
+    // Removendo duplicação para evitar confusão e reduzir o tamanho do contexto
+
+    // Removendo função auxiliar duplicada
+    
+
     const carregarEquipes = useCallback(async () => {
-        if (!usuario) return;
+        if (!usuario?.id) return;
         setCarregando(true);
         try {
             const { data, error } = await supabase
                 .from('membros_equipe')
                 .select(`
-                    equipe_id,
-                    papel,
-                    permissoes,
-                    vinculo,
-                    status,
-                    equipes (
-                        id,
-                        nome,
-                        admin_id,
-                        modalidade,
-                        icone,
-                        logo_url,
-                        visibilidade,
-                        status,
-                        cidade,
-                        estado,
-                        nivel,
-                        slug_convite,
-                        local_nome,
-                        local_cep,
-                        local_rua,
-                        local_bairro,
-                        local_cidade,
-                        local_estado,
-                        local_numero,
-                        local_complemento,
-                        local_mapa_link,
-                        link_grupo,
-                        regras,
-                        gestao_financeira,
-                        aceitando_membros,
-                        admin_id_pendente,
+                    id, papel, vinculo, permissoes, status, equipe_id,
+                    equipes ( 
+                        id, nome, modalidade, logo_url, admin_id, local_cidade, regras,
+                        gestao_financeira, aceitando_membros, admin_id_pendente,
                         admin:usuarios!equipes_admin_id_fkey (id, nome_completo, apelido, foto_url)
                     )
                 `)
@@ -159,7 +137,7 @@ export const EquipeProvedor = ({ children }) => {
             }, 1000);
         };
 
-        if (usuario) {
+        if (usuario?.id) {
             carregarEquipes();
 
             // 1. Listener para o PRÓPRIO usuário (detalhes do seu vínculo)
@@ -229,8 +207,7 @@ export const EquipeProvedor = ({ children }) => {
         }
     }, [equipes]);
 
-    const selecionarEquipeGlobal = (equipe) => {
-        // Para Super Admin, permitimos selecionar qualquer equipe e damos papel de admin "virtual"
+    const selecionarEquipeGlobal = useCallback((equipe) => {
         const equipeComPapel = {
             ...equipe,
             papel: 'admin',
@@ -238,7 +215,7 @@ export const EquipeProvedor = ({ children }) => {
         };
         setEquipeAtiva(equipeComPapel);
         localStorage.setItem('playhub_equipe_ativa', equipe.id);
-    };
+    }, []);
 
     // Função auxiliar para converter CEP em coordenadas geográficas (Geocoding)
     const getCoordenadasPorCEP = async (cep) => {
@@ -301,7 +278,6 @@ export const EquipeProvedor = ({ children }) => {
                     modalidade: dadosDaEquipe.modalidade,
                     observacoes: dadosDaEquipe.observacoes || null,
                     visibilidade: dadosDaEquipe.visibilidade,
-                    status: 'ativo',
                     admin_id: usuario.id,
                     estado: dadosDaEquipe.estado,
                     nivel: dadosDaEquipe.nivel,
@@ -501,9 +477,12 @@ export const EquipeProvedor = ({ children }) => {
 
     const atualizarConfiguracoesEquipe = async (equipeId, configuracoes) => {
         try {
-            // Se for SuperAdmin acessando uma equipe de terceiro, precisamos burlar RLS (modo manutencao)
-            const ehOutroTime = equipeAtiva && equipeAtiva.id === equipeId && equipeAtiva.admin_id !== usuario.id;
-            const necessitaBypass = ehSuperAdmin && ehOutroTime;
+            // Se for Gestor (Admin ou Vice) acessando a própria equipe ou SuperAdmin em manutenção
+            const ehGestor = equipeAtiva && equipeAtiva.id === equipeId && (equipeAtiva.papel === 'admin' || equipeAtiva.papel === 'sub_admin');
+            const ehOutroTime = equipeAtiva && equipeAtiva.id === equipeId && equipeAtiva.admin_id !== usuario?.id;
+            
+            // Usamos bypass se for SuperAdmin OU se for um Vice-Capitão tentando salvar configurações (que podem ser bloqueadas por RLS no update direto)
+            const necessitaBypass = (ehSuperAdmin && ehOutroTime) || (equipeAtiva?.papel === 'sub_admin');
 
             if (necessitaBypass) {
                 // Configurações vem como um objeto ex: { gestao_financeira: false }
@@ -539,8 +518,8 @@ export const EquipeProvedor = ({ children }) => {
 
     const atualizarRegrasEquipe = async (equipeId, novasRegras) => {
         try {
-            const ehOutroTime = equipeAtiva && equipeAtiva.id === equipeId && equipeAtiva.admin_id !== usuario.id;
-            const necessitaBypass = ehSuperAdmin && ehOutroTime;
+            const ehOutroTime = equipeAtiva && equipeAtiva.id === equipeId && equipeAtiva.admin_id !== usuario?.id;
+            const necessitaBypass = (ehSuperAdmin && ehOutroTime) || (equipeAtiva?.papel === 'sub_admin');
 
             // 1. Atualizar regras no JSONB da equipe
             if (necessitaBypass) {
@@ -639,14 +618,13 @@ export const EquipeProvedor = ({ children }) => {
         }
     };
 
-    const buscarEquipes = async (filtros = {}, apenasPublicas = true) => {
+    const buscarEquipes = useCallback(async (filtros = {}, apenasPublicas = true) => {
         setCarregando(true);
         try {
             let query = supabase
                 .from('equipes')
-                .select('*, membros_equipe(count)')
-                .eq('status', 'ativo');
-
+                .select('*, membros_equipe(count)');
+            
             if (apenasPublicas) {
                 query = query.eq('visibilidade', 'publica');
             }
@@ -667,12 +645,11 @@ export const EquipeProvedor = ({ children }) => {
             if (error) throw error;
             return data;
         } catch (error) {
-            console.error('Erro ao buscar equipes:', error.message);
             return [];
         } finally {
             setCarregando(false);
         }
-    };
+    }, []);
 
     const buscarJogadores = async (filtros = {}) => {
         setCarregando(true);

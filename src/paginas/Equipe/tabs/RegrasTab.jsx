@@ -138,7 +138,7 @@ const RegrasTab = ({ abrirEdicao, aoExcluir }) => {
                             <label className="switch-regras">
                                 <input 
                                     type="checkbox" 
-                                    checked={equipeAtiva.gestao_financeira} 
+                                    checked={!!equipeAtiva.gestao_financeira} 
                                     onChange={(e) => atualizarConfiguracoesEquipe(equipeAtiva.id, { gestao_financeira: e.target.checked })}
                                     disabled={!podeEditar}
                                 />
@@ -154,7 +154,7 @@ const RegrasTab = ({ abrirEdicao, aoExcluir }) => {
                             <label className="switch-regras">
                                 <input 
                                     type="checkbox" 
-                                    checked={equipeAtiva.aceitando_membros} 
+                                    checked={!!equipeAtiva.aceitando_membros} 
                                     onChange={(e) => atualizarConfiguracoesEquipe(equipeAtiva.id, { aceitando_membros: e.target.checked })}
                                     disabled={!podeEditar}
                                 />

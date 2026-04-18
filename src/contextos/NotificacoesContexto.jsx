@@ -16,7 +16,7 @@ export const NotificacoesProvedor = ({ children }) => {
     const ocultasSessaoRef = useRef(new Set());
 
     const carregarNotificacoes = useCallback(async () => {
-        if (!usuario) return;
+        if (!usuario?.id) return;
         
         try {
             // 1. Buscar convites de equipe pendentes
@@ -63,7 +63,7 @@ export const NotificacoesProvedor = ({ children }) => {
             const { data: todasRelacoes } = await supabase
                 .from('interacoes')
                 .select('remetente_id, destinatario_id, tipo')
-                .or(`remetente_id.eq.${usuario.id},destinatario_id.eq.${usuario.id}`);
+                .or(`remetente_id.eq."${usuario.id}",destinatario_id.eq."${usuario.id}"`);
 
             // Lógica de Processamento de Matches (Regra de Ouro)
             const normalizarId = (id) => String(id || '').toLowerCase().trim();
@@ -127,7 +127,7 @@ export const NotificacoesProvedor = ({ children }) => {
         carregarNotificacoes();
 
         // Inscrição em tempo real para novas notificações e convites
-        if (usuario) {
+        if (usuario?.id) {
             const canal = supabase
                 .channel(`realtime_notificacoes_${usuario.id}`)
                 .on('postgres_changes', { 

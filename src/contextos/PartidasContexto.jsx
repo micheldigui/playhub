@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useCallback } from 'react';
 import { supabase } from '../servicos/supabase';
 import { usarAutenticacao } from './AutenticacaoContexto';
 
@@ -10,8 +10,9 @@ export const PartidasProvider = ({ children }) => {
     const { usuario } = usarAutenticacao();
     const [partidasCarregadas, setPartidasCarregadas] = useState([]);
 
-    const carregarPartidas = async (equipeId) => {
+    const carregarPartidas = useCallback(async (equipeId) => {
         try {
+            if (!equipeId) return [];
             const { data, error } = await supabase
                 .from('partidas')
                 .select('*')
@@ -26,9 +27,9 @@ export const PartidasProvider = ({ children }) => {
             console.error('Erro ao carregar partidas:', error);
             return [];
         }
-    };
+    }, []);
 
-    const criarPartida = async (partida) => {
+    const criarPartida = useCallback(async (partida) => {
         try {
             const { data, error } = await supabase
                 .from('partidas')
@@ -38,7 +39,6 @@ export const PartidasProvider = ({ children }) => {
 
             if (error) throw error;
             
-            // Atualiza estado local adicionando e ordenando
             setPartidasCarregadas(prev => {
                 const updated = [...prev, data];
                 return updated.sort((a, b) => {
@@ -53,40 +53,30 @@ export const PartidasProvider = ({ children }) => {
             console.error('Erro ao criar partida:', error);
             return { sucesso: false, erro: error.message };
         }
-    };
+    }, []);
 
-    const excluirPartida = async (id) => {
+    const excluirPartida = useCallback(async (id) => {
         try {
-            // Verifica se há inscritos antes de excluir
             const { count, error: errCount } = await supabase
                 .from('partidas_presencas')
                 .select('id', { count: 'exact', head: true })
                 .eq('partida_id', id);
 
             if (errCount) throw errCount;
-
             if (count > 0) {
-                return { 
-                    sucesso: false, 
-                    erro: `Não é possível excluir: ${count} atleta(s) já estão inscritos nesta partida.` 
-                };
+                return { sucesso: false, erro: `Não é possível excluir: ${count} atleta(s) já estão inscritos.` };
             }
 
-            const { error } = await supabase
-                .from('partidas')
-                .delete()
-                .eq('id', id);
-
+            const { error } = await supabase.from('partidas').delete().eq('id', id);
             if (error) throw error;
             setPartidasCarregadas(prev => prev.filter(p => p.id !== id));
             return { sucesso: true };
         } catch (error) {
-            console.error('Erro ao excluir partida:', error);
             return { sucesso: false, erro: error.message };
         }
-    };
+    }, []);
 
-    const editarPartida = async (id, atualizacoes) => {
+    const editarPartida = useCallback(async (id, atualizacoes) => {
         try {
             const { data, error } = await supabase
                 .from('partidas')
@@ -97,7 +87,6 @@ export const PartidasProvider = ({ children }) => {
 
             if (error) throw error;
             
-            // Atualiza estado local 
             setPartidasCarregadas(prev => {
                 const updated = prev.map(p => p.id === id ? data : p);
                 return updated.sort((a, b) => {
@@ -109,12 +98,11 @@ export const PartidasProvider = ({ children }) => {
 
             return { sucesso: true, partida: data };
         } catch (error) {
-            console.error('Erro ao editar partida:', error);
             return { sucesso: false, erro: error.message };
         }
-    };
+    }, []);
 
-    const buscarPartidaPorId = async (id) => {
+    const buscarPartidaPorId = useCallback(async (id) => {
         try {
             const { data, error } = await supabase
                 .from('partidas')
@@ -125,21 +113,17 @@ export const PartidasProvider = ({ children }) => {
             if (error) throw error;
             return { sucesso: true, partida: data };
         } catch (error) {
-            console.error('Erro ao buscar partida por ID:', error);
             return { sucesso: false, erro: error.message };
         }
-    };
+    }, []);
 
-    const buscarPresencas = async (partidaId) => {
+    const buscarPresencas = useCallback(async (partidaId) => {
         try {
-            // Utiliza a nova RPC segura que contorna o RLS para membros da mesma equipe
             const { data, error } = await supabase.rpc('buscar_presencas_partida_seguro', {
                 p_partida_id: partidaId
             });
 
             if (error) {
-                // Fallback para policy convencional caso a RPC não tenha sido criada ainda
-                console.warn('RPC buscar_presencas_partida_seguro não encontrada, usando select normal:', error.message);
                 const queryFallback = await supabase
                     .from('partidas_presencas')
                     .select('id, status, frequencia, created_at, usuario_id, usuarios ( id, nome_completo, apelido, foto_url )')
@@ -150,8 +134,6 @@ export const PartidasProvider = ({ children }) => {
                 return { sucesso: true, presencas: queryFallback.data };
             }
 
-            // Formata o retorno da RPC para manter a compatibilidade com a interface atual
-            // A interface espera que os dados do usuário venham num sub-objeto 'usuarios'
             const presencasFormatadas = data ? data.map(p => ({
                 id: p.id,
                 status: p.status,
@@ -168,86 +150,47 @@ export const PartidasProvider = ({ children }) => {
 
             return { sucesso: true, presencas: presencasFormatadas };
         } catch (error) {
-            console.error('Erro buscar presencas:', error);
             return { sucesso: false, erro: error.message };
         }
-    };
+    }, []);
 
-    const confirmarPresenca = async (partida, status = 'confirmado', vinculo = 'avulso') => {
-        if (!usuario) return { sucesso: false, erro: 'Usuário não autenticado' };
+    const confirmarPresenca = useCallback(async (partida, status = 'confirmado', vinculo = 'avulso') => {
+        if (!usuario?.id) return { sucesso: false, erro: 'Usuário não autenticado' };
         
-        // 0. Verificação de Suspensão com Auto-Reset (Lógica de 1 Jogo de Gancho)
         try {
-            const { data: suspensoesAtivas, error: errSusp } = await supabase
+            const { data: suspensoesAtivas } = await supabase
                 .from('punicoes_equipe')
                 .select('id, motivo, criado_em, partida_id')
                 .eq('equipe_id', partida.equipe_id)
                 .eq('usuario_id', usuario.id)
                 .eq('tipo_cartao', 'vermelho')
-                .eq('ativa', true); // Coluna 'ativa' booleana é melhor que status string para performance
+                .eq('ativa', true);
             
-            if (!errSusp && suspensoesAtivas && suspensoesAtivas.length > 0) {
+            if (suspensoesAtivas && suspensoesAtivas.length > 0) {
                 for (const sup of suspensoesAtivas) {
-                    // Refinamento do Auto-Reset: 
-                    // Se existiu qualquer partida da equipe cujo (data) seja MAIOR que a data da partida que gerou o cartão,
-                    // e MENOR que a data da partida atual, significa que o jogador já "cumpriu" o seu jogo de fora.
-                    
-                    // Primeiro, buscamos a data da partida que gerou a punição
                     const { data: partidaCard } = await supabase
                         .from('partidas')
-                        .select('data, hora')
+                        .select('data')
                         .eq('id', sup.partida_id)
                         .single();
 
                     if (partidaCard) {
-                        const dataCardStr = partidaCard.data;
-                        
-                        // Buscamos se houve alguma partida realizada entre o cartão e o jogo atual
-                        const { count, error: errCount } = await supabase
-                            .from('partidas')
-                            .select('id', { count: 'exact', head: true })
-                            .eq('equipe_id', partida.equipe_id)
-                            .gt('data', dataCardStr)
-                            .lt('data', partida.data);
-
-                        if (!errCount && count > 0) {
-                            // O jogador já cumpriu o gancho (teve jogo no meio)
-                            await supabase.from('punicoes_equipe').update({ ativa: false }).eq('id', sup.id);
-                        } else {
-                            // Se não houve jogo no meio, mas ele está tentando se inscrever em um jogo 
-                            // que é DIFERENTE do que ele levou o cartão (obviamente), e é o PRÓXIMO jogo,
-                            // ele ainda deve estar bloqueado.
-                            
-                            // Caso especial: Se a partida que ele levou vermelho ainda é a última partida realizada, 
-                            // ele continua suspenso para a próxima (que é esta que ele tenta entrar).
-                            return { 
-                                sucesso: false, 
-                                erro: `❌ Inscrição Negada: Você está cumprindo suspensão. Motivo: ${sup.motivo}` 
-                            };
-                        }
-                    } else {
-                        // Backup caso a partida original tenha sido excluída: usa a data de criação da punição
                         const { count } = await supabase
                             .from('partidas')
                             .select('id', { count: 'exact', head: true })
                             .eq('equipe_id', partida.equipe_id)
-                            .gt('created_at', sup.criado_em)
+                            .gt('data', partidaCard.data)
                             .lt('data', partida.data);
-                            
+
                         if (count > 0) {
                             await supabase.from('punicoes_equipe').update({ ativa: false }).eq('id', sup.id);
                         } else {
-                            return { sucesso: false, erro: `❌ Inscrição Negada: Você está cumprindo suspensão.` };
+                            return { sucesso: false, erro: `❌ Inscrição Negada: Você está suspenso.` };
                         }
                     }
                 }
             }
-        } catch (err) {
-            console.error('Erro ao validar suspensao:', err);
-        }
-
-        // Regra atualizada: Todo mundo ganha 'P' automaticamente ao se inscrever (Self-Service)
-        const frequenciaAutomatica = 'P';
+        } catch (err) {}
 
         try {
             const { data, error } = await supabase
@@ -256,15 +199,14 @@ export const PartidasProvider = ({ children }) => {
                     partida_id: partida.id, 
                     usuario_id: usuario.id, 
                     status,
-                    frequencia: frequenciaAutomatica
+                    frequencia: 'P'
                 }, { onConflict: 'partida_id,usuario_id' })
                 .select()
                 .single();
 
             if (error) throw error;
 
-            // Se for avulso e ganhou 'P' na confirmação, gera a comanda pendente
-            if (frequenciaAutomatica === 'P' && vinculo === 'avulso' && status === 'confirmado') {
+            if (vinculo === 'avulso' && status === 'confirmado') {
                  await supabase.from('pagamentos_avulsos').upsert({
                      equipe_id: partida.equipe_id,
                      partida_id: partida.id,
@@ -278,10 +220,10 @@ export const PartidasProvider = ({ children }) => {
         } catch (error) {
             return { sucesso: false, erro: error.message };
         }
-    };
+    }, [usuario?.id]);
 
-    const cancelarPresenca = async (partidaId) => {
-        if (!usuario) return { sucesso: false, erro: 'Usuário não autenticado' };
+    const cancelarPresenca = useCallback(async (partidaId) => {
+        if (!usuario?.id) return { sucesso: false, erro: 'Usuário não autenticado' };
         try {
             const { error } = await supabase
                 .from('partidas_presencas')
@@ -291,7 +233,6 @@ export const PartidasProvider = ({ children }) => {
 
             if (error) throw error;
             
-            // Também anula a comanda avulsa pendente caso o atleta cancele a inscrição
             await supabase
                 .from('pagamentos_avulsos')
                 .delete()
@@ -303,7 +244,7 @@ export const PartidasProvider = ({ children }) => {
         } catch (error) {
             return { sucesso: false, erro: error.message };
         }
-    };
+    }, [usuario?.id]);
 
     // ====== GESTÃO DE FREQUÊNCIA E PUNIÇÕES (ADMIN) ======
     const lancarFrequencia = async (partida, targetUserId, frequencia, vinculo, tipoCartao = 'vermelho') => {
@@ -591,7 +532,7 @@ export const PartidasProvider = ({ children }) => {
         }
     };
 
-    const buscarVotosMVP = async (partidaId) => {
+    const buscarVotosMVP = useCallback(async (partidaId) => {
         try {
             const { data, error } = await supabase
                 .from('votos_mvp')
@@ -602,7 +543,7 @@ export const PartidasProvider = ({ children }) => {
         } catch (error) {
             return { sucesso: false, votos: [] };
         }
-    };
+    }, []);
 
     // ====== SISTEMA DE TIMES E MELHOR TIME ======
     const salvarTimesSorteados = async (partidaId, equipes) => {
@@ -691,30 +632,46 @@ export const PartidasProvider = ({ children }) => {
         }
     };
 
-    const buscarVotacoesPendentes = async () => {
-        if (!usuario) return { sucesso: false, partidas: [] };
+    const buscarVotacoesPendentes = useCallback(async () => {
+        if (!usuario?.id) return { sucesso: true, partidas: [] };
+        
         try {
-            // Busca partidas dos últimos 2 dias onde o usuário esteve presente
             const doisDiasAtras = new Date();
-            doisDiasAtras.setDate(doisDiasAtras.getDate() - 2);
-            
+            doisDiasAtras.setDate(doisDiasAtras.getDate() - 3);
+            const dataLimite = doisDiasAtras.toISOString().split('T')[0];
+
             const { data: presencas, error: errPres } = await supabase
                 .from('partidas_presencas')
-                .select('partida_id, partidas ( id, data, local_nome, equipe_id, times_sorteados )')
+                .select('partida_id, partidas!inner ( id, data, local_nome, equipe_id, times_sorteados )')
                 .eq('usuario_id', usuario.id)
                 .eq('frequencia', 'P')
-                .gte('partidas.data', doisDiasAtras.toISOString().split('T')[0]);
+                .filter('partidas.data', 'gte', dataLimite);
 
-            if (errPres) throw errPres;
+            if (errPres) {
+                const { data: simples } = await supabase
+                    .from('partidas_presencas')
+                    .select('partida_id, partidas ( id, data, local_nome, equipe_id, times_sorteados )')
+                    .eq('usuario_id', usuario.id)
+                    .eq('frequencia', 'P');
+                
+                const filtradas = (simples || [])
+                    .filter(p => p.partidas && p.partidas.data >= dataLimite)
+                    .map(p => p.partidas);
+                return processarVotosPendentes(filtradas);
+            }
 
-            // Filtra as partidas reais (o join pode vir nulo se a data não bater)
-            const partidasRecentes = presencas
-                .filter(p => p.partidas)
-                .map(p => p.partidas);
+            return processarVotosPendentes(presencas.map(p => p.partidas));
+        } catch (error) {
+            console.error('Erro ao buscar votações pendentes:', error);
+            return { sucesso: false, partidas: [] };
+        }
+    }, [usuario?.id]);
 
-            if (partidasRecentes.length === 0) return { sucesso: true, partidas: [] };
+    // Função auxiliar interna para evitar duplicidade de lógica
+    const processarVotosPendentes = async (partidasRecentes) => {
+        if (!partidasRecentes || partidasRecentes.length === 0) return { sucesso: true, partidas: [] };
 
-            // Verifica em quais dessas o usuário já votou
+        try {
             const idsPartidas = partidasRecentes.map(p => p.id);
             const { data: votos, error: errVotos } = await supabase
                 .from('votos_mvp')
@@ -731,8 +688,7 @@ export const PartidasProvider = ({ children }) => {
             });
 
             return { sucesso: true, partidas: pendentes };
-        } catch (error) {
-            console.error('Erro ao buscar votações pendentes:', error);
+        } catch (err) {
             return { sucesso: false, partidas: [] };
         }
     };
