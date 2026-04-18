@@ -562,6 +562,250 @@ export const PartidasProvider = ({ children }) => {
         }
     };
 
+
+    // ====== SISTEMA DE MVP (CRAQUE DA GALERA) ======
+    const votarMVP = async (partidaId, equipeId, votos) => {
+        // votos deve ser [{candidato_id: '...', posicao: 1}, {candidato_id: '...', posicao: 2}, ...]
+        if (!usuario) return { sucesso: false, erro: 'Acesso negado' };
+        try {
+            const inserts = votos.map(v => ({
+                partida_id: partidaId,
+                equipe_id: equipeId,
+                eleitor_id: usuario.id,
+                candidato_id: v.candidato_id,
+                posicao: v.posicao
+            }));
+
+            const { error } = await supabase
+                .from('votos_mvp')
+                .insert(inserts);
+
+            if (error) {
+                if (error.code === '23505') throw new Error('Você já registrou seu voto nesta partida.');
+                throw error;
+            }
+            return { sucesso: true };
+        } catch (error) {
+            console.error('Erro ao votar no MVP:', error);
+            return { sucesso: false, erro: error.message };
+        }
+    };
+
+    const buscarVotosMVP = async (partidaId) => {
+        try {
+            const { data, error } = await supabase
+                .from('votos_mvp')
+                .select('candidato_id, eleitor_id, posicao')
+                .eq('partida_id', partidaId);
+            if (error) throw error;
+            return { sucesso: true, votos: data || [] };
+        } catch (error) {
+            return { sucesso: false, votos: [] };
+        }
+    };
+
+    // ====== SISTEMA DE TIMES E MELHOR TIME ======
+    const salvarTimesSorteados = async (partidaId, equipes) => {
+        try {
+            const { error } = await supabase
+                .from('partidas')
+                .update({ times_sorteados: equipes })
+                .eq('id', partidaId);
+
+            if (error) throw error;
+            
+            setPartidasCarregadas(prev => prev.map(p => 
+                p.id === partidaId ? { ...p, times_sorteados: equipes } : p
+            ));
+
+            return { sucesso: true };
+        } catch (error) {
+            console.error('Erro ao salvar times sorteados:', error);
+            return { sucesso: false, erro: error.message };
+        }
+    };
+
+    const votarMelhorTime = async (partidaId, equipeId, votosTimeArray) => {
+        // votosTimeArray = [{ time_escolhido: "Time A", posicao: 1 }, ...]
+        if (!usuario) return { sucesso: false, erro: 'Acesso negado' };
+        try {
+            const rows = votosTimeArray.map(v => ({
+                partida_id: partidaId,
+                equipe_id: equipeId,
+                eleitor_id: usuario.id,
+                time_escolhido: v.time_escolhido,
+                posicao: v.posicao
+            }));
+
+            const { error } = await supabase
+                .from('votos_time')
+                .insert(rows);
+
+            if (error) {
+                if (error.code === '23505') throw new Error('Você já votou nos times desta partida.');
+                throw error;
+            }
+            return { sucesso: true };
+        } catch (error) {
+            console.error('Erro ao votar no melhor time:', error);
+            return { sucesso: false, erro: error.message };
+        }
+    };
+
+    const buscarVotosTime = async (partidaId) => {
+        try {
+            const { data, error } = await supabase
+                .from('votos_time')
+                .select('time_escolhido, eleitor_id, posicao')
+                .eq('partida_id', partidaId);
+            if (error) throw error;
+            return { sucesso: true, votos: data || [] };
+        } catch (error) {
+            return { sucesso: false, votos: [] };
+        }
+    };
+
+    const buscarRankingMVP = async (equipeId) => {
+        try {
+            const { data, error } = await supabase.rpc('buscar_ranking_mvp_equipe', {
+                p_equipe_id: equipeId
+            });
+            if (error) throw error;
+            return { sucesso: true, ranking: data || [] };
+        } catch (error) {
+            console.error('Erro ao buscar ranking MVP:', error);
+            return { sucesso: false, ranking: [] };
+        }
+    };
+
+    const buscarVencedoresPartida = async (partidaId) => {
+        try {
+            const { data, error } = await supabase.rpc('buscar_vencedores_partida', {
+                p_partida_id: partidaId
+            });
+            if (error) throw error;
+            return { sucesso: true, vencedores: data || [] };
+        } catch (error) {
+            console.error('Erro ao buscar vencedores da partida:', error);
+            return { sucesso: false, vencedores: [] };
+        }
+    };
+
+    const buscarVotacoesPendentes = async () => {
+        if (!usuario) return { sucesso: false, partidas: [] };
+        try {
+            // Busca partidas dos últimos 2 dias onde o usuário esteve presente
+            const doisDiasAtras = new Date();
+            doisDiasAtras.setDate(doisDiasAtras.getDate() - 2);
+            
+            const { data: presencas, error: errPres } = await supabase
+                .from('partidas_presencas')
+                .select('partida_id, partidas ( id, data, local_nome, equipe_id, times_sorteados )')
+                .eq('usuario_id', usuario.id)
+                .eq('frequencia', 'P')
+                .gte('partidas.data', doisDiasAtras.toISOString().split('T')[0]);
+
+            if (errPres) throw errPres;
+
+            // Filtra as partidas reais (o join pode vir nulo se a data não bater)
+            const partidasRecentes = presencas
+                .filter(p => p.partidas)
+                .map(p => p.partidas);
+
+            if (partidasRecentes.length === 0) return { sucesso: true, partidas: [] };
+
+            // Verifica em quais dessas o usuário já votou
+            const idsPartidas = partidasRecentes.map(p => p.id);
+            const { data: votos, error: errVotos } = await supabase
+                .from('votos_mvp')
+                .select('partida_id')
+                .eq('eleitor_id', usuario.id)
+                .in('partida_id', idsPartidas);
+
+            if (errVotos) throw errVotos;
+
+            const idsVotados = votos.map(v => v.partida_id);
+            const pendentes = partidasRecentes.filter(p => {
+                const temTimesSorteados = p.times_sorteados && p.times_sorteados.length > 0;
+                return !idsVotados.includes(p.id) && temTimesSorteados;
+            });
+
+            return { sucesso: true, partidas: pendentes };
+        } catch (error) {
+            console.error('Erro ao buscar votações pendentes:', error);
+            return { sucesso: false, partidas: [] };
+        }
+    };
+
+    // Ranking de jogadores baseado no desempenho de seus times (pontos: ouro=3, prata=2, bronze=1)
+    const buscarRankingColetivo = async (equipeId) => {
+        try {
+            const { data: votos, error: errVotos } = await supabase
+                .from('votos_time')
+                .select('partida_id, time_escolhido, posicao')
+                .eq('equipe_id', equipeId);
+
+            if (errVotos) throw errVotos;
+
+            // Busca todas as partidas para saber quem estava em qual time
+            const { data: partidas, error: errPartidas } = await supabase
+                .from('partidas')
+                .select('id, times_sorteados')
+                .eq('equipe_id', equipeId)
+                .not('times_sorteados', 'is', null);
+
+            if (errPartidas) throw errPartidas;
+
+            const mapPartidas = {};
+            partidas.forEach(p => {
+                mapPartidas[p.id] = {};
+                (p.times_sorteados || []).forEach(t => {
+                    mapPartidas[p.id][t.nome] = t.jogadores || [];
+                });
+            });
+
+            const ptsJogadores = {};
+
+            (votos || []).forEach(v => {
+                const jogadoresDoTime = mapPartidas[v.partida_id]?.[v.time_escolhido] || [];
+                const pts = v.posicao === 1 ? 3 : v.posicao === 2 ? 2 : 1;
+                
+                jogadoresDoTime.forEach(jogador => {
+                    // Chave pelo ID real ou pelo Nome (fallback pra antigos)
+                    const key = jogador.id ? String(jogador.id) : (jogador.nome || 'Desconhecido');
+                    
+                    if (!ptsJogadores[key]) {
+                        ptsJogadores[key] = {
+                            usuario_id: jogador.id,
+                            nome_completo: jogador.nome,
+                            apelido: jogador.nome, // Preenchemos na página se for ID
+                            pontos: 0,
+                            ouros: 0,
+                            pratas: 0,
+                            bronzes: 0
+                        };
+                    }
+                    
+                    ptsJogadores[key].pontos += pts;
+                    if (v.posicao === 1) ptsJogadores[key].ouros += 1;
+                    if (v.posicao === 2) ptsJogadores[key].pratas += 1;
+                    if (v.posicao === 3) ptsJogadores[key].bronzes += 1;
+                });
+            });
+
+            const ranking = Object.values(ptsJogadores).sort((a, b) => {
+                if (b.pontos !== a.pontos) return b.pontos - a.pontos;
+                if (b.ouros !== a.ouros) return b.ouros - a.ouros;
+                if (b.pratas !== a.pratas) return b.pratas - a.pratas;
+                return b.bronzes - a.bronzes;
+            });
+            return { sucesso: true, ranking };
+        } catch (error) {
+            console.error('Erro ao buscar ranking coletivo:', error);
+            return { sucesso: false, ranking: [] };
+        }
+    };
+
     return (
         <PartidasContexto.Provider value={{
             partidasCarregadas,
@@ -581,7 +825,16 @@ export const PartidasProvider = ({ children }) => {
             alternarPagamentoAvulso,
             buscarPunicoesPartida,
             buscarHabilidadesParticipantes,
-            buscarPartidaPorId
+            buscarPartidaPorId,
+            votarMVP,
+            buscarVotosMVP,
+            buscarRankingMVP,
+            buscarVotacoesPendentes,
+            buscarVencedoresPartida,
+            salvarTimesSorteados,
+            votarMelhorTime,
+            buscarVotosTime,
+            buscarRankingColetivo
         }}>
             {children}
         </PartidasContexto.Provider>

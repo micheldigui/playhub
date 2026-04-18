@@ -24,6 +24,8 @@ const PaginaTermos = lazy(() => import('./paginas/Legal/PaginasLegais').then(m =
 const PaginaPrivacidade = lazy(() => import('./paginas/Legal/PaginasLegais').then(m => ({ default: m.PaginaPrivacidade })));
 // const PaginaSorteio = lazy(() => import('./paginas/Equipe/PaginaSorteio'));
 const PaginaSorteioV4 = lazy(() => import('./paginas/Equipe/PaginaSorteioV4'));
+const PaginaVotacaoMVP = lazy(() => import('./paginas/Equipe/PaginaVotacaoMVP'));
+const PaginaRankingMVP = lazy(() => import('./paginas/Equipe/PaginaRankingMVP'));
 
 const CarregandoTela = () => (
   <div style={{ 
@@ -199,11 +201,24 @@ function App() {
           aoVoltar={() => {
             setDadosNavegacao(prev => ({ ...prev, reabrirPartidaId: prev?.partida?.id }));
             setTelaAtiva('equipe');
-            setAbaAtiva('agenda');
+            setAbaEquipe('agenda');
           }} 
           participantes={dadosNavegacao?.participantes}
           partida={dadosNavegacao?.partida}
           modalidadePrincipal={dadosNavegacao?.modalidadePrincipal}
+        />
+      case 'votacao_mvp':
+        return <PaginaVotacaoMVP 
+          partidaIdProp={dadosNavegacao?.partidaId} 
+          aoVoltar={() => setTelaAtiva('inicio')} 
+          aoNavegar={setTelaAtiva}
+          setDadosNavegacao={setDadosNavegacao}
+        />
+      case 'ranking_mvp':
+        return <PaginaRankingMVP 
+          equipeIdProp={dadosNavegacao?.equipeId} 
+          aoVoltar={() => setTelaAtiva('inicio')} 
+          aoNavegar={setTelaAtiva}
         />
       case 'inicio':
       default:

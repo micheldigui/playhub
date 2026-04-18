@@ -3,7 +3,7 @@ import {
   LayoutDashboard, Users, Settings, LogOut, Menu, X, 
   ChevronRight, UserCircle, Trophy, Globe, Building2, Shield, Bell,
   Calendar, DollarSign, ChevronDown, ShieldCheck, Wallet, BarChart2,
-  Plus, SquarePlus, CircleHelp, Crown, MessageCircle
+  Plus, SquarePlus, CircleHelp, Crown, MessageCircle, Zap, Instagram
 } from 'lucide-react';
 import './BarraLateral.css';
 import { supabase } from '../../servicos/supabase';
@@ -69,8 +69,10 @@ const BarraLateral = ({ ativo, setAtivo, abaEquipe, setAbaEquipe }) => {
         ...(equipeAtiva.gestao_financeira && temPermissaoEquipe('gerenciar_financeiro') ? [{ id: 'financeiro-avulsos', label: 'Avulsos', icone: Wallet }] : []),
         ...((temPermissaoEquipe('ver_relatorios') || temPermissaoEquipe('gerenciar_financeiro')) ? [{ id: 'financeiro-relatorios', label: 'Relatórios', icone: BarChart2 }] : []),
         { id: 'membros',      label: 'Membros & Cargos', icone: Users },
+        { id: 'ranking_mvp',  label: 'Hall da Fama',    icone: Trophy },
         ...(temPermissaoEquipe('gerenciar_membros') ? [{ id: 'solicitacoes', label: 'Solicitações G.', icone: Bell }] : []),
-        { id: 'disciplina', label: 'Fair Play', icone: Shield },
+        { id: 'disciplina',   label: 'Fair Play',       icone: Shield },
+        ...(temPermissaoEquipe('gerenciar_partidas') ? [{ id: 'sorteio_global', label: 'Sorteio Global', icone: Zap }] : []),
         ...(temPermissaoEquipe('gerenciar_equipe') ? [{ id: 'regras-config', label: 'Regras & Config', icone: Settings }] : []),
         ...(temPermissaoEquipe('gerenciar_membros') ? [{ id: 'descobrir', label: 'Buscar Atletas', icone: Globe }] : []),
         ...(equipeAtiva.papel === 'admin' || (ehSuperAdmin && equipeAtiva.gestao_global) ? [{ id: 'permissoes', label: 'Permissões (Gestores)', icone: Crown }] : []),
@@ -197,8 +199,14 @@ const BarraLateral = ({ ativo, setAtivo, abaEquipe, setAbaEquipe }) => {
                           key={sub.id}
                           className={`submenu-item ${isSubAtivo ? 'sub-ativo' : ''}`}
                           onClick={() => {
-                            setAbaEquipe(sub.id);
-                            setAtivo('equipe');
+                            if (sub.id === 'sorteio_global') {
+                                setAtivo('sorteio_v4');
+                            } else if (sub.id === 'ranking_mvp') {
+                                setAtivo('ranking_mvp');
+                            } else {
+                                setAbaEquipe(sub.id);
+                                setAtivo('equipe');
+                            }
                             setAberta(false);
                           }}
                         >
@@ -229,6 +237,22 @@ const BarraLateral = ({ ativo, setAtivo, abaEquipe, setAbaEquipe }) => {
             <span className="item-nav-icone"><CircleHelp size={19} /></span>
             <span className="item-nav-label">Guia do App</span>
           </button>
+          
+          <a 
+            href="https://www.instagram.com/playhubapp"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="item-nav btn-instagram-sidebar" 
+            style={{ 
+              width: '100%', 
+              marginBottom: '10px',
+              textDecoration: 'none',
+              color: '#f8fafc'
+            }}
+          >
+            <span className="item-nav-icone" style={{ color: '#E1306C' }}><Instagram size={19} /></span>
+            <span className="item-nav-label">Seguir Instagram</span>
+          </a>
 
           {dadosUsuario && (
             <div className="usuario-logado">

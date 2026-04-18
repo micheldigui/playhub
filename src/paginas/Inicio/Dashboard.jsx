@@ -2,12 +2,13 @@ import React, { useEffect, useState } from 'react';
 import { supabase } from '../../servicos/supabase';
 import { usarAutenticacao } from '../../contextos/AutenticacaoContexto';
 import { usarEquipe } from '../../contextos/EquipeContexto';
+import { usarPartidas } from '../../contextos/PartidasContexto';
 import { rastrear } from '../../servicos/rastreamento';
 import BannerInstalacaoApp from '../../componentes/Pwa/BannerInstalacaoApp';
 import ModalInstalacaoApp from '../../componentes/Pwa/ModalInstalacaoApp';
 import ModalDetalhesPartida from '../Equipe/tabs/modais/ModalDetalhesPartida';
 import { usePwaInstall } from '../../hooks/usePwaInstall';
-import { Activity as ActivityIcon, GripHorizontal as GripIcon, Users as UsersIcon, Download as DownloadIcon } from 'lucide-react';
+import { Activity as ActivityIcon, GripHorizontal as GripIcon, Users as UsersIcon, Download as DownloadIcon, Trophy } from 'lucide-react';
 
 // Constantes e Componentes Modulares
 import { 
@@ -24,9 +25,10 @@ import ModalAtalhosDashboard from './componentes/ModalAtalhosDashboard';
 import './Dashboard.css';
 
 const Dashboard = ({ aoNavegar, setAbaEquipe, setDadosNavegacao }) => {
-    const { dadosUsuario, alternarVisibilidadePerfil, alternarWhatsAppMatch } = usarAutenticacao();
+    const { dadosUsuario, alternarVisibilidadePerfil, alternarWhatsAppMatch, logout } = usarAutenticacao();
     const { equipes, getLabelVinculo, selecionarEquipe, equipeAtiva, carregando: carregandoEquipes } = usarEquipe();
     const { isInstalled } = usePwaInstall();
+    const { buscarVotacoesPendentes } = usarPartidas();
 
     const [proximasPartidas, setProximasPartidas] = useState([]);
     const [temMaisPartidas, setTemMaisPartidas] = useState(false);
@@ -42,6 +44,7 @@ const Dashboard = ({ aoNavegar, setAbaEquipe, setDadosNavegacao }) => {
     // Atalhos
     const [modalAtalhosAberto, setModalAtalhosAberto] = useState(false);
     const [modalCategoria, setModalCategoria] = useState('pessoal');
+    const [votacoesPendentes, setVotacoesPendentes] = useState([]);
 
     const [atalhosPessoal, setAtalhosPessoal] = useState(() => {
         try {
@@ -57,6 +60,8 @@ const Dashboard = ({ aoNavegar, setAbaEquipe, setDadosNavegacao }) => {
         try {
             const s = localStorage.getItem(STORAGE_EQUIPE);
             const dados = s ? JSON.parse(s) : DEFAULTS_EQUIPE;
+            if (!dados.includes('sorteio_global')) dados.push('sorteio_global');
+            if (!dados.includes('ranking_mvp')) dados.push('ranking_mvp');
             return dados.map(a => a === 'notificacoes' ? 'solicitacoes_eq' : a);
         } catch { return DEFAULTS_EQUIPE; }
     });
@@ -233,9 +238,32 @@ const Dashboard = ({ aoNavegar, setAbaEquipe, setDadosNavegacao }) => {
                 dadosUsuario={dadosUsuario} primeiroNome={primeiroNome} saudacao={saudacao} 
                 isPublico={dadosUsuario.perfil_publico} alterandoPriv={alterandoPriv} 
                 handlePrivacidade={handlePrivacidade} handleToggleWhatsApp={handleToggleWhatsApp} 
+                logout={logout}
             />
 
-            <div style={{ padding: '0 20px' }}><BannerInstalacaoApp local="dashboard" /></div>
+            <div style={{ padding: '0 20px' }}>
+                <BannerInstalacaoApp local="dashboard" />
+                
+                {votacoesPendentes.length > 0 && (
+                    <div 
+                        className="banner-mvp-pendente"
+                        onClick={() => {
+                            const p = votacoesPendentes[0];
+                            setDadosNavegacao({ partidaId: p.id });
+                            aoNavegar('votacao_mvp');
+                        }}
+                    >
+                        <div className="banner-mvp-icon">
+                            <Trophy size={20} />
+                        </div>
+                        <div className="banner-mvp-text">
+                            <strong>Quem foi o craque do jogo?</strong>
+                            <span>Você tem {votacoesPendentes.length} {votacoesPendentes.length === 1 ? 'partida' : 'partidas'} aguardando seu voto.</span>
+                        </div>
+                        <button className="banner-mvp-btn">Votar Agora</button>
+                    </div>
+                )}
+            </div>
 
             {carregando ? (
                 <div className="dash-loading"><ActivityIcon size={30} className="dash-spinner" /><p>Carregando seu painel…</p></div>
@@ -263,6 +291,7 @@ const Dashboard = ({ aoNavegar, setAbaEquipe, setDadosNavegacao }) => {
                             titulo="Acesso Rápido" icone={GripIcon} corIcone="orange" categoria="pessoal"
                             atalhos={atalhosExibidosPessoal} setModalCategoria={setModalCategoria} 
                             setModalAtalhosAberto={setModalAtalhosAberto} aoNavegar={aoNavegar} setAbaEquipe={setAbaEquipe}
+                            setDadosNavegacao={setDadosNavegacao}
                         />
 
                         {equipes.length > 0 && (
@@ -271,6 +300,7 @@ const Dashboard = ({ aoNavegar, setAbaEquipe, setDadosNavegacao }) => {
                                 equipeNome={equipeFinAtual?.nome} ordem={(papelNaEquipe === 'admin' || papelNaEquipe === 'sub_admin') ? 3 : 6}
                                 atalhos={atalhosExibidosEquipe} setModalCategoria={setModalCategoria} 
                                 setModalAtalhosAberto={setModalAtalhosAberto} aoNavegar={aoNavegar} setAbaEquipe={setAbaEquipe}
+                                selecionarEquipe={selecionarEquipe} equipeId={equipeFinSelecionada} setDadosNavegacao={setDadosNavegacao}
                             />
                         )}
                     </div>

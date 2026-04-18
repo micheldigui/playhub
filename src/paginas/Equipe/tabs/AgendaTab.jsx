@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, MapPin, Clock, Users, ChevronRight, Plus, Wallet, Edit, Trash2 } from 'lucide-react';
+import { Calendar, MapPin, Clock, Users, ChevronRight, Plus, Wallet, Edit, Trash2, Trophy } from 'lucide-react';
 import { usarPartidas } from '../../../contextos/PartidasContexto';
 import { usarEquipe } from '../../../contextos/EquipeContexto';
 import { usarAutenticacao } from '../../../contextos/AutenticacaoContexto';
@@ -49,6 +49,20 @@ const AgendaTab = ({ aoNavegar, setDadosNavegacao, dadosNavegacao }) => {
         }
     }, [dadosNavegacao, partidasCarregadas]);
 
+    // Efeito para abrir o modal de criar partida a partir do atalho do Dashboard
+    useEffect(() => {
+        if (dadosNavegacao?.abrirModalCriacaoPartida) {
+            setModalCriacaoAberto(true);
+            if (setDadosNavegacao) {
+                setDadosNavegacao(prev => {
+                    const novo = { ...prev };
+                    delete novo.abrirModalCriacaoPartida;
+                    return novo;
+                });
+            }
+        }
+    }, [dadosNavegacao, setDadosNavegacao]);
+
     // Filtra partidas futuras
     const partidasFuturas = partidasCarregadas.filter(p => {
         const dataPartida = new Date(p.data + 'T' + p.hora);
@@ -87,34 +101,10 @@ const AgendaTab = ({ aoNavegar, setDadosNavegacao, dadosNavegacao }) => {
         <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
             <div style={{ background: 'rgba(15, 23, 42, 0.6)', borderRadius: '16px', border: '1px solid rgba(255, 255, 255, 0.05)', padding: '24px' }}>
                 <div style={{ marginBottom: '24px' }}>
-                    <h3 style={{ fontSize: '1.25rem', fontWeight: '700', marginBottom: '8px', color: '#f8fafc', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <Calendar size={20} color="#38bdf8" /> Próximos Jogos
-                    </h3>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
-                        <div>
-                            <p style={{ color: '#94a3b8', fontSize: '0.9rem', margin: 0 }}>
-                                {exibirHistorico ? 'Veja os resultados e a frequência das partidas anteriores.' : 'Confira as próximas partidas agendadas e confirme sua presença.'}
-                            </p>
-                            <button 
-                                onClick={() => {
-                                    rastrear.clique('agenda_alternar_historico', 'Visualizou historico passado de partidas', { status_futuro: !exibirHistorico });
-                                    setExibirHistorico(!exibirHistorico);
-                                }}
-                                style={{ 
-                                    background: 'none', 
-                                    border: 'none', 
-                                    color: '#38bdf8', 
-                                    fontSize: '0.85rem', 
-                                    cursor: 'pointer', 
-                                    padding: '0', 
-                                    marginTop: '8px',
-                                    textDecoration: 'underline',
-                                    fontWeight: '500'
-                                }}
-                            >
-                                {exibirHistorico ? '« Voltar para Próximos Jogos' : 'Ver Histórico de Jogos »'}
-                            </button>
-                        </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px', marginBottom: '16px' }}>
+                        <h3 style={{ fontSize: '1.25rem', fontWeight: '700', color: '#f8fafc', display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
+                            <Calendar size={20} color="#38bdf8" /> Agenda de Jogos
+                        </h3>
                         {(equipeAtiva.papel === 'admin' || temPermissaoEquipe('gerenciar_partidas')) && (
                             <Botao onClick={() => {
                                 rastrear.clique('agenda_clicou_criar_partida', 'Abriu modal de instanciacao de partida');
@@ -124,6 +114,24 @@ const AgendaTab = ({ aoNavegar, setDadosNavegacao, dadosNavegacao }) => {
                             </Botao>
                         )}
                     </div>
+                    
+                    <div style={{ display: 'flex', gap: '8px', background: 'rgba(0,0,0,0.2)', padding: '6px', borderRadius: '12px', width: 'fit-content', flexWrap: 'wrap' }}>
+                        <button
+                            onClick={() => setExibirHistorico(false)}
+                            style={{ padding: '8px 16px', borderRadius: '8px', border: 'none', background: !exibirHistorico ? '#38bdf8' : 'transparent', color: !exibirHistorico ? '#0f172a' : '#94a3b8', fontWeight: !exibirHistorico ? '700' : '500', cursor: 'pointer', transition: 'all 0.2s', flex: 1 }}
+                        >
+                            Próximos Jogos
+                        </button>
+                        <button
+                            onClick={() => setExibirHistorico(true)}
+                            style={{ padding: '8px 16px', borderRadius: '8px', border: 'none', background: exibirHistorico ? '#38bdf8' : 'transparent', color: exibirHistorico ? '#0f172a' : '#94a3b8', fontWeight: exibirHistorico ? '700' : '500', cursor: 'pointer', transition: 'all 0.2s', flex: 1 }}
+                        >
+                            Histórico (Passados)
+                        </button>
+                    </div>
+                    <p style={{ color: '#94a3b8', fontSize: '0.85rem', marginTop: '12px', marginBottom: 0 }}>
+                        {exibirHistorico ? 'Resultados e votações (MVP) das partidas que já ocorreram na equipe.' : 'Confirme presença ou cancele sua participação nas próximas partidas.'}
+                    </p>
                 </div>
 
                 <div style={{ display: 'grid', gap: '16px' }}>
@@ -200,6 +208,21 @@ const AgendaTab = ({ aoNavegar, setDadosNavegacao, dadosNavegacao }) => {
                                         </button>
                                     </>
                                 )}
+                                
+                                {exibirHistorico && (
+                                    <button 
+                                        style={{ background: 'linear-gradient(135deg, #fbbf24, #f59e0b)', color: '#0f172a', border: 'none', padding: '6px 12px', borderRadius: '8px', fontSize: '0.75rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', marginLeft: '4px' }}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            if (setDadosNavegacao) setDadosNavegacao({ partidaId: partida.id });
+                                            if (aoNavegar) aoNavegar('votacao_mvp');
+                                        }}
+                                        title="Votar no Destaque (MVP)"
+                                    >
+                                        <Trophy size={14} /> Votar MVP
+                                    </button>
+                                )}
+
                                 <div style={{ color: '#38bdf8', padding: '8px' }}>
                                     <ChevronRight size={20} />
                                 </div>

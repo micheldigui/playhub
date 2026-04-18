@@ -69,6 +69,67 @@
     border: 2px solid #0f172a;
 }
 
+/* === BANNER MVP === */
+.banner-mvp-pendente {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    background: linear-gradient(135deg, #fbbf24, #f59e0b);
+    padding: 1rem 1.25rem;
+    border-radius: 16px;
+    margin-bottom: 1rem;
+    cursor: pointer;
+    animation: slideIn 0.3s ease;
+    box-shadow: 0 10px 20px rgba(245, 158, 11, 0.2);
+    transition: transform 0.2s;
+}
+
+.banner-mvp-pendente:hover {
+    transform: scale(1.01);
+}
+
+.banner-mvp-icon {
+    width: 42px;
+    height: 42px;
+    background: rgba(15, 23, 42, 0.15);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #0f172a;
+}
+
+.banner-mvp-text {
+    flex: 1;
+}
+
+.banner-mvp-text strong {
+    display: block;
+    font-size: 0.95rem;
+    color: #0f172a;
+}
+
+.banner-mvp-text span {
+    font-size: 0.8rem;
+    color: rgba(15, 23, 42, 0.7);
+}
+
+.banner-mvp-btn {
+    background: #0f172a;
+    color: #fbbf24;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 10px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+@keyframes slideIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
 .dash-saudacao-sub {
     font-size: 0.8rem;
     color: #64748b;
@@ -532,7 +593,7 @@
 /* === ATALHOS WINDOWS STYLE === */
 .atalhos-win-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    grid-template-columns: repeat(2, 1fr);
     gap: 0.75rem;
 }
 
@@ -549,6 +610,8 @@
     cursor: pointer;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     color: #f1f5f9;
+    min-width: 0;
+    width: 100%;
 }
 
 .atalho-win-btn:hover {
@@ -580,6 +643,12 @@
     font-weight: 600;
     color: #94a3b8;
     text-align: center;
+    white-space: normal;
+    word-break: break-word;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
 }
 
 .atalho-win-btn:hover .atalho-win-label {

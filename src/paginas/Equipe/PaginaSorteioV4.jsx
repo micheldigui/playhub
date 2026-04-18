@@ -11,9 +11,11 @@ import {
     ShieldCheck,
     Settings2,
     CheckCircle2,
-    Circle
+    Circle,
+    Save
 } from 'lucide-react';
 import { usarPartidas } from '../../contextos/PartidasContexto';
+import { usarEquipe } from '../../contextos/EquipeContexto';
 import Botao from '../../componentes/Botao/Botao';
 import './PaginaSorteioV4.css';
 
@@ -33,11 +35,18 @@ const GRUPOS_ESPORTES = {
 };
 
 const PaginaSorteioV4 = ({ aoVoltar, participantes = [], partida, modalidadePrincipal }) => {
-    const { buscarHabilidadesParticipantes, buscarPresencas, buscarPartidaPorId } = usarPartidas();
+    const { buscarHabilidadesParticipantes, buscarPresencas, buscarPartidaPorId, carregarPartidas, salvarTimesSorteados } = usarPartidas();
+    const { equipeAtiva } = usarEquipe();
     const [jogadores, setJogadores] = useState([]);
     const [carregando, setCarregando] = useState(true);
     const [equipes, setEquipes] = useState([]);
     const [jogadoresPorTime, setJogadoresPorTime] = useState(4);
+    
+    // Novas estados para Modo Seleção Global
+    const [partidasDisponiveis, setPartidasDisponiveis] = useState([]);
+    const [partidaSelecionada, setPartidaSelecionada] = useState(partida || null);
+    const [buscandoMaisPartidas, setBuscandoMaisPartidas] = useState(false);
+    const [salvandoTimes, setSalvandoTimes] = useState(false);
     
     // Novas Regras Configuráveis
     const [regras, setRegras] = useState({
@@ -52,19 +61,58 @@ const PaginaSorteioV4 = ({ aoVoltar, participantes = [], partida, modalidadePrin
         const inicializar = async () => {
             let infoPartida = partida;
             
-            // Caso de Refresh: se a prop 'partida' sumiu, tenta recuperar do localStorage
+            // MODO INTELIGENTE: Se não veio partida, buscamos as da equipe
+            if (!infoPartida && equipeAtiva?.id) {
+                setBuscandoMaisPartidas(true);
+                const todas = await carregarPartidas(equipeAtiva.id);
+                
+                // Filtro acordado: 30 dias atrás + Futuras
+                const trintaDiasAtras = new Date();
+                trintaDiasAtras.setDate(trintaDiasAtras.getDate() - 30);
+                
+                const filtradas = todas.filter(p => new Date(p.data + 'T' + (p.hora || '00:00')) >= trintaDiasAtras);
+                setPartidasDisponiveis(filtradas);
+
+                if (filtradas.length > 0) {
+                    const agora = new Date();
+                    
+                    // 1. Tenta a próxima futura
+                    const futuras = filtradas
+                        .filter(p => new Date(p.data + 'T' + (p.hora || '00:00')) >= agora)
+                        .sort((a, b) => new Date(a.data + 'T' + (a.hora || '00:00')) - new Date(b.data + 'T' + (b.hora || '00:00')));
+                    
+                    if (futuras.length > 0) {
+                        infoPartida = futuras[0];
+                    } else {
+                        // 2. Se não houver futura, pega a última realizada (mais recente)
+                        const passadas = filtradas
+                            .filter(p => new Date(p.data + 'T' + (p.hora || '00:00')) < agora)
+                            .sort((a, b) => new Date(b.data + 'T' + (b.hora || '00:00')) - new Date(a.data + 'T' + (a.hora || '00:00')));
+                        
+                        if (passadas.length > 0) {
+                            infoPartida = passadas[0];
+                        }
+                    }
+                }
+                setBuscandoMaisPartidas(false);
+            }
+            
+            // Fallback para Refresh se ainda estiver nulo
             if (!infoPartida) {
                 const salvaId = localStorage.getItem('playhub_v4_partida_id');
                 if (salvaId) {
                     const resp = await buscarPartidaPorId(salvaId);
-                    if (resp.sucesso) {
+                    if (resp.sucesso && resp.partida?.equipe_id === equipeAtiva.id) {
                         infoPartida = resp.partida;
+                    } else if (resp.sucesso) {
+                        // Limpa cache se for de outra equipe
+                        localStorage.removeItem('playhub_v4_partida_id');
                     }
                 }
             }
 
             if (infoPartida?.id) {
-                // Persistência secundária para garantir que o ID esteja lá
+                setPartidaSelecionada(infoPartida);
                 localStorage.setItem('playhub_v4_partida_id', infoPartida.id);
                 
                 if (infoPartida.vagas && !jogadoresPorTime) {
@@ -72,13 +120,21 @@ const PaginaSorteioV4 = ({ aoVoltar, participantes = [], partida, modalidadePrin
                 }
                 carregarHabilidades(infoPartida);
             } else {
-                // Se mesmo após tentar recuperar não temos partida, paramos o loading para não travar
                 setCarregando(false);
             }
         };
 
         inicializar();
-    }, [partida]);
+    }, [partida, equipeAtiva?.id]);
+
+    const handleTrocarPartida = async (novaPartidaId) => {
+        const nova = partidasDisponiveis.find(p => p.id === novaPartidaId);
+        if (nova) {
+            setPartidaSelecionada(nova);
+            setEquipes([]); // Limpa resultados anteriores
+            carregarHabilidades(nova);
+        }
+    };
 
     const carregarHabilidades = async (partidaParaCarregar = partida) => {
         if (!partidaParaCarregar?.id) return;
@@ -455,7 +511,7 @@ const PaginaSorteioV4 = ({ aoVoltar, participantes = [], partida, modalidadePrin
 
     const compartilharWhatsApp = () => {
         if (equipes.length === 0) return;
-        let msg = `*⚖️ EQUIPES SORTEADAS - ${partida?.local_nome || 'PLAYHUB'}*\n\n`;
+        let msg = `*⚖️ EQUIPES SORTEADAS - ${partidaSelecionada?.local_nome || 'PLAYHUB'}*\n\n`;
         equipes.forEach((equipe, index) => {
             if (equipe.length === 0) return;
             msg += `*TIME ${String.fromCharCode(65 + index)}* 🛡️\n`;
@@ -480,6 +536,40 @@ const PaginaSorteioV4 = ({ aoVoltar, participantes = [], partida, modalidadePrin
                     <div className="header-titles">
                         <h1>Balanceamento de Equipes</h1>
                         <p>Configuração avançada de equilíbrio e regras</p>
+                    </div>
+                </div>
+
+                {/* SELETOR DE PARTIDA INTELIGENTE */}
+                <div className="seletor-partida-v4 animate-slide-down">
+                    <select 
+                        value={partidaSelecionada?.id || ''} 
+                        onChange={(e) => handleTrocarPartida(e.target.value)}
+                        disabled={carregando || partidasDisponiveis.length === 0}
+                    >
+                        {partidasDisponiveis.length === 0 && !partidaSelecionada && (
+                            <option value="">Nenhuma partida encontrada</option>
+                        )}
+                        {partidasDisponiveis.length === 0 && partidaSelecionada && (
+                            <option value={partidaSelecionada.id}>
+                                {new Date(partidaSelecionada.data).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })} | {partidaSelecionada.hora ? partidaSelecionada.hora.substring(0, 5) : '--:--'} - {partidaSelecionada.local_nome || 'Partida Atual'}
+                            </option>
+                        )}
+                        {partidasDisponiveis.map(p => {
+                            const dataFormatada = new Date(p.data).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+                            const horaFormatada = p.hora ? p.hora.substring(0, 5) : '--:--';
+                            const localCurto = p.local_nome; // Deixa o CSS cuidar do corte agora
+                            
+                            return (
+                                <option key={p.id} value={p.id}>
+                                    {dataFormatada} | {horaFormatada} - {localCurto || 'Local não definido'}
+                                </option>
+                            );
+                        })}
+                    </select>
+                    <div className="status-partida-v4">
+                        {buscandoMaisPartidas ? 'Buscando partidas...' : 
+                         partidasDisponiveis.length === 0 ? 'Nenhuma partida agendada' :
+                         `${partidaSelecionada ? 'Partida selecionada' : 'Selecione uma partida'}`}
                     </div>
                 </div>
             </header>
@@ -641,11 +731,45 @@ const PaginaSorteioV4 = ({ aoVoltar, participantes = [], partida, modalidadePrin
                 {/* Resultados */}
                 {equipes.length > 0 && (
                     <section className="sorteio-resultados animacao-entrada">
-                        <div className="secao-titulo-resultados">
-                            <h3>Times Equilibrados</h3>
-                            <Botao onClick={compartilharWhatsApp} className="btn-share-v4">
-                                <Share2 size={18} /> Compartilhar no WhatsApp
-                            </Botao>
+                        <div className="secao-titulo-resultados" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                                <h3>Times Equilibrados</h3>
+                                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                                    {(equipeAtiva.papel === 'admin' || equipeAtiva.papel === 'sub_admin') && partidaSelecionada?.id && (
+                                        <Botao 
+                                            onClick={async () => {
+                                                if(partidaSelecionada.times_sorteados) {
+                                                    if(!window.confirm('Atenção: Já existe um sorteio salvo para esta partida no banco de dados. Deseja sobrescrever os times oficiais anteriores?')) return;
+                                                } else {
+                                                    if(!window.confirm('Salvar os times sorteados oficialmente no banco de dados? Após gravar, os jogadores poderão votar no Melhor Time ao final da partida.')) return;
+                                                }
+                                                
+                                                setSalvandoTimes(true);
+                                                const timesOficiais = equipes.map((equipe, index) => ({
+                                                    nome: `Time ${String.fromCharCode(65 + index)}`,
+                                                    jogadores: equipe.map(j => ({ id: j.id, nome: j.nome, nivel: j.nivelAjustado }))
+                                                }));
+                                                
+                                                const resp = await salvarTimesSorteados(partidaSelecionada.id, timesOficiais);
+                                                if(resp.sucesso) {
+                                                    alert('✅ Times da partida salvos com sucesso!');
+                                                    setPartidaSelecionada(prev => ({ ...prev, times_sorteados: timesOficiais }));
+                                                } else {
+                                                    alert('Erro ao salvar no banco de dados: ' + resp.erro);
+                                                }
+                                                setSalvandoTimes(false);
+                                            }}
+                                            disabled={salvandoTimes}
+                                            style={{ background: 'linear-gradient(135deg, #10b981, #059669)', border: 'none', color: '#fff', fontSize: '0.85rem' }}
+                                        >
+                                            {salvandoTimes ? <Circle size={18} className="animate-spin" /> : <Save size={18} />} {salvandoTimes ? 'Salvando...' : 'Salvar Escalação Oficial DB'}
+                                        </Botao>
+                                    )}
+                                    <Botao onClick={compartilharWhatsApp} className="btn-share-v4" style={{ fontSize: '0.85rem' }}>
+                                        <Share2 size={18} /> {window.innerWidth > 600 ? 'Compartilhar no WhatsApp' : 'WhatsApp'}
+                                    </Botao>
+                                </div>
+                            </div>
                         </div>
 
                         <div className="grade-equipes-resultado">

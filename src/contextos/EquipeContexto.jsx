@@ -993,7 +993,7 @@ export const EquipeProvedor = ({ children }) => {
                 p_equipe_id: equipeId,
                 p_jogador_id: jogadorId,
                 p_admin_id: usuario.id,
-                p_mensagem: mensagem || null
+                p_mensagem: mensagem ? String(mensagem).trim() : null
             });
 
             if (error) throw error;

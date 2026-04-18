@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Calendar, MapPin, Clock, Users, Star, DollarSign, MessageCircle, Zap } from 'lucide-react';
+import { X, Calendar, MapPin, Clock, Users, Star, DollarSign, MessageCircle, Zap, Trophy } from 'lucide-react';
 import { usarPartidas } from '../../../../contextos/PartidasContexto';
 import { usarEquipe } from '../../../../contextos/EquipeContexto';
 import { usarAutenticacao } from '../../../../contextos/AutenticacaoContexto';
@@ -10,7 +10,13 @@ import Modal from '../../../../componentes/Modal/Modal';
 
 const ModalDetalhesPartida = ({ isOpen, onClose, partida, aoNavegar, setDadosNavegacao }) => {
     const { usuario } = usarAutenticacao();
-    const { buscarPresencas, confirmarPresenca, cancelarPresenca, lancarFrequencia, removerInscricaoAdmin, adicionarInscricaoAdmin, alternarPagamentoAvulso, buscarPagamentosAvulsosPartida, registrarPagamentoAvulso, removerPagamentoAvulso, buscarPunicoesPartida } = usarPartidas();
+    const { 
+        buscarPresencas, confirmarPresenca, cancelarPresenca, 
+        lancarFrequencia, removerInscricaoAdmin, adicionarInscricaoAdmin, 
+        alternarPagamentoAvulso, buscarPagamentosAvulsosPartida, 
+        registrarPagamentoAvulso, removerPagamentoAvulso, 
+        buscarPunicoesPartida, buscarVencedoresPartida, buscarVotosTime
+    } = usarPartidas();
     const { equipeAtiva, carregarMembrosEquipe, temPermissaoEquipe, getLabelVinculo } = usarEquipe();
     const { verificarSituacaoFinanceiraAtleta } = usarFinanceiro();
 
@@ -18,9 +24,11 @@ const ModalDetalhesPartida = ({ isOpen, onClose, partida, aoNavegar, setDadosNav
     const [membros, setMembros] = useState([]);
     const [pagamentos, setPagamentos] = useState([]);
     const [punicoes, setPunicoes] = useState([]);
+    const [vencedores, setVencedores] = useState([]);
+    const [votosTime, setVotosTime] = useState([]);
     const [carregando, setCarregando] = useState(true);
     const [processandoAcao, setProcessandoAcao] = useState(false);
-    const [pickerAberto, setPickerAberto] = useState(null); // id do usuário com o seletor de cartão aberto
+    const [pickerAberto, setPickerAberto] = useState(null); 
 
     useEffect(() => {
         if (isOpen && partida && equipeAtiva?.id) {
@@ -32,12 +40,13 @@ const ModalDetalhesPartida = ({ isOpen, onClose, partida, aoNavegar, setDadosNav
         if (!equipeAtiva?.id) return;
         setCarregando(true);
         try {
-            // Busca presencas do banco e os membros da equipe para pegar os vínculos
-            const [respPresencas, respMembros, respPagamentos, respPunicoes] = await Promise.all([
+            const [respPresencas, respMembros, respPagamentos, respPunicoes, respVencedores, respVotosTime] = await Promise.all([
                 buscarPresencas(partida.id),
                 carregarMembrosEquipe(equipeAtiva.id),
                 buscarPagamentosAvulsosPartida(partida.id),
-                buscarPunicoesPartida(partida.id)
+                buscarPunicoesPartida(partida.id),
+                partida.frequencia_lancada ? buscarVencedoresPartida(partida.id) : Promise.resolve({ sucesso: false }),
+                partida.frequencia_lancada && partida.times_sorteados ? buscarVotosTime(partida.id) : Promise.resolve({ sucesso: false })
             ]);
 
             if (respPresencas.sucesso) {
@@ -51,6 +60,12 @@ const ModalDetalhesPartida = ({ isOpen, onClose, partida, aoNavegar, setDadosNav
             }
             if (respPunicoes?.sucesso) {
                 setPunicoes(respPunicoes.punicoes || []);
+            }
+            if (respVencedores?.sucesso) {
+                setVencedores(respVencedores.vencedores || []);
+            }
+            if (respVotosTime?.sucesso) {
+                setVotosTime(respVotosTime.votos || []);
             }
         } catch (error) {
             console.error('Erro ao carregar detalhes da partida:', error);
@@ -432,24 +447,130 @@ const ModalDetalhesPartida = ({ isOpen, onClose, partida, aoNavegar, setDadosNav
                                     <h4 style={{ color: '#f43f5e', margin: 0 }}>Vagas esgotadas</h4>
                                 )}
                                 
-                                <Botao 
-                                    onClick={handleAcaoPresenca} 
-                                    disabled={processandoAcao || 
-                                              (statusUser === 'nenhum' && !isRegistrationOpen) || 
-                                              (statusUser === 'nenhum' && isRegistrationClosed && !isAdmin)
-                                             }
-                                    variant={statusUser !== 'nenhum' ? 'perigo' : 'primario'}
-                                    style={{ width: '100%', justifyContent: 'center' }}
-                                >
-                                    {processandoAcao ? 'Processando...' : 
-                                     statusUser !== 'nenhum' ? 'Cancelar Minha Inscrição' : 
-                                     !isRegistrationOpen ? 'Inscrições Fechadas' : 
-                                     (isRegistrationClosed && isAdmin) ? 'Inscrição Manual (Admin)' :
-                                     (isRegistrationClosed && !isAdmin) ? 'Inscrições Encerradas' :
-                                     isLotado ? 'Entrar na Lista de Espera' : 
-                                     'Tô Dentro! (Confirmar)'}
-                                </Botao>
+                                {now < eventDateTime ? (
+                                    <Botao 
+                                        onClick={handleAcaoPresenca} 
+                                        disabled={processandoAcao || 
+                                                (statusUser === 'nenhum' && !isRegistrationOpen) || 
+                                                (statusUser === 'nenhum' && isRegistrationClosed && !isAdmin)
+                                                }
+                                        variant={statusUser !== 'nenhum' ? 'perigo' : 'primario'}
+                                        style={{ width: '100%', justifyContent: 'center' }}
+                                    >
+                                        {processandoAcao ? 'Processando...' : 
+                                        statusUser !== 'nenhum' ? 'Cancelar Minha Inscrição' : 
+                                        !isRegistrationOpen ? 'Inscrições Fechadas' : 
+                                        (isRegistrationClosed && isAdmin) ? 'Inscrição Manual (Admin)' :
+                                        (isRegistrationClosed && !isAdmin) ? 'Inscrições Encerradas' :
+                                        isLotado ? 'Entrar na Lista de Espera' : 
+                                        'Tô Dentro! (Confirmar)'}
+                                    </Botao>
+                                ) : (
+                                    <Botao 
+                                        variant="primario" 
+                                        style={{ width: '100%', justifyContent: 'center', background: 'linear-gradient(135deg, #fbbf24, #f59e0b)', color: '#0f172a' }}
+                                        onClick={() => {
+                                            setDadosNavegacao({ partidaId: partida.id });
+                                            aoNavegar('votacao_mvp');
+                                            onClose();
+                                        }}
+                                    >
+                                        <Trophy size={18} style={{ marginRight: '8px' }} /> Votar no Craque do Jogo
+                                    </Botao>
+                                )}
                             </div>
+ 
+                            {vencedores.length > 0 && (
+                                <div style={{ background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.4), rgba(15, 23, 42, 0.6))', padding: '20px', borderRadius: '16px', border: '1px solid rgba(251, 191, 36, 0.2)', marginBottom: '24px' }}>
+                                    <h3 style={{ fontSize: '0.85rem', fontWeight: '800', textAlign: 'center', marginBottom: '16px', color: '#fbbf24', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                                        <Trophy size={16} /> Destaques da Partida
+                                    </h3>
+                                    <div style={{ display: 'flex', justifyContent: 'space-around', alignItems: 'flex-end', gap: '4px' }}>
+                                        {/* 2º Lugar */}
+                                        <div style={{ textAlign: 'center', flex: 1, opacity: vencedores[1] ? 1 : 0.3 }}>
+                                            <div style={{ width: '42px', height: '42px', margin: '0 auto 8px', borderRadius: '50%', border: '2px solid #94a3b8', overflow: 'hidden', background: '#334155' }}>
+                                                {vencedores[1]?.foto_url ? <img src={vencedores[1].foto_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <div style={{ color: '#94a3b8', lineHeight: '42px', fontWeight: '700' }}>{vencedores[1]?.apelido?.[0] || '2'}</div>}
+                                            </div>
+                                            <div style={{ fontSize: '0.7rem', fontWeight: '700', color: '#cbd5e1', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>🥈 {vencedores[1]?.apelido || vencedores[1]?.nome_completo?.split(' ')[0] || 'Prata'}</div>
+                                        </div>
+
+                                        {/* 1º Lugar */}
+                                        <div style={{ textAlign: 'center', flex: 1.2, transform: 'translateY(-10px)' }}>
+                                            <div style={{ width: '56px', height: '56px', margin: '0 auto 8px', borderRadius: '50%', border: '3px solid #fbbf24', overflow: 'hidden', background: '#334155', boxShadow: '0 0 15px rgba(251, 191, 36, 0.3)' }}>
+                                                {vencedores[0]?.foto_url ? <img src={vencedores[0].foto_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <div style={{ color: '#fbbf24', lineHeight: '56px', fontSize: '1.2rem', fontWeight: '700' }}>{vencedores[0]?.apelido?.[0] || '1'}</div>}
+                                            </div>
+                                            <div style={{ fontSize: '0.8rem', fontWeight: '800', color: '#fbbf24', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>🥇 {vencedores[0]?.apelido || vencedores[0]?.nome_completo?.split(' ')[0] || 'Ouro'}</div>
+                                        </div>
+
+                                        {/* 3º Lugar */}
+                                        <div style={{ textAlign: 'center', flex: 1, opacity: vencedores[2] ? 1 : 0.3 }}>
+                                            <div style={{ width: '38px', height: '38px', margin: '0 auto 8px', borderRadius: '50%', border: '2px solid #cd7f32', overflow: 'hidden', background: '#334155' }}>
+                                                {vencedores[2]?.foto_url ? <img src={vencedores[2].foto_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <div style={{ color: '#cd7f32', lineHeight: '38px', fontWeight: '700' }}>{vencedores[2]?.apelido?.[0] || '3'}</div>}
+                                            </div>
+                                            <div style={{ fontSize: '0.65rem', fontWeight: '700', color: '#94a3b8', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>🥉 {vencedores[2]?.apelido || vencedores[2]?.nome_completo?.split(' ')[0] || 'Bronze'}</div>
+                                        </div>
+                                    </div>
+                                    <button 
+                                        onClick={() => {
+                                            setDadosNavegacao({ equipeId: equipeAtiva.id });
+                                            aoNavegar('ranking_mvp');
+                                            onClose();
+                                        }}
+                                        style={{ width: '100%', background: 'none', border: 'none', color: '#38bdf8', fontSize: '0.75rem', marginTop: '16px', cursor: 'pointer', textDecoration: 'underline' }}
+                                    >
+                                        Ver Hall da Fama Completo
+                                    </button>
+                                </div>
+                            )}
+
+                            {/* TIME VENCEDOR DA VOTAÇÃO */}
+                            {votosTime.length > 0 && partida.times_sorteados && (() => {
+                                // Agrupar votos por posição e contar
+                                const pontos = {};
+                                votosTime.forEach(v => {
+                                    const pts = v.posicao === 1 ? 3 : v.posicao === 2 ? 2 : 1;
+                                    pontos[v.time_escolhido] = (pontos[v.time_escolhido] || 0) + pts;
+                                });
+
+                                // Ordenar times por pontuação
+                                const ranking = Object.keys(pontos)
+                                    .sort((a, b) => pontos[b] - pontos[a]);
+
+                                const medalhasModal = {
+                                    0: { emoji: '🥇', label: 'Melhor Time', cor: '#fbbf24', corBg: 'rgba(251,191,36,0.15)', corBorda: 'rgba(251,191,36,0.4)' },
+                                    1: { emoji: '🥈', label: '2º Lugar',    cor: '#94a3b8', corBg: 'rgba(148,163,184,0.1)', corBorda: 'rgba(148,163,184,0.3)' },
+                                    2: { emoji: '🥉', label: '3º Lugar',    cor: '#cd7f32', corBg: 'rgba(205,127,50,0.1)', corBorda: 'rgba(205,127,50,0.3)' },
+                                };
+
+                                const totalEleitores = [...new Set(votosTime.map(v => v.eleitor_id))].length;
+
+                                return (
+                                    <div style={{ background: 'linear-gradient(135deg, rgba(30,41,59,0.5), rgba(15,23,42,0.6))', padding: '20px', borderRadius: '16px', border: '1px solid rgba(251,191,36,0.15)', marginBottom: '24px' }}>
+                                        <h3 style={{ fontSize: '0.85rem', fontWeight: '800', textAlign: 'center', marginBottom: '16px', color: '#fbbf24', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                                            🛡️ Pódio dos Times
+                                        </h3>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                            {ranking.slice(0, 3).map((nomeTime, idx) => {
+                                                const md = medalhasModal[idx];
+                                                const timeData = partida.times_sorteados.find(t => t.nome === nomeTime);
+                                                return (
+                                                    <div key={nomeTime} style={{ display: 'flex', alignItems: 'center', gap: '12px', background: md.corBg, border: `1px solid ${md.corBorda}`, borderRadius: '10px', padding: '10px 14px' }}>
+                                                        <span style={{ fontSize: '1.3rem' }}>{md.emoji}</span>
+                                                        <div style={{ flex: 1 }}>
+                                                            <div style={{ fontWeight: '800', color: md.cor, fontSize: '0.9rem' }}>{nomeTime}</div>
+                                                            <div style={{ fontSize: '0.7rem', color: '#64748b', marginTop: '2px' }}>
+                                                                {timeData?.jogadores?.map(j => (j.nome || '').split(' ')[0]).join(' · ')}
+                                                            </div>
+                                                        </div>
+                                                        <span style={{ fontSize: '0.75rem', fontWeight: '700', color: md.cor }}>{pontos[nomeTime]} pts</span>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                        <p style={{ textAlign: 'center', fontSize: '0.7rem', color: '#475569', marginTop: '12px' }}>{totalEleitores} atleta(s) votaram</p>
+                                    </div>
+                                );
+                            })()}
 
                             {/* LISTA DE CONFIRMADOS */}
                             <div>

@@ -78,20 +78,18 @@ const PaginaAdminLogs = ({ aoVoltar }) => {
         try {
             setLimpando(true);
             
-            // Agora usa a RPC segura consolidada no banco MASTER
-            const { data, error } = await supabase.rpc('admin_limpar_logs_sistema');
+            // Usa a RPC com SECURITY DEFINER — ela ignora o RLS e consegue deletar tudo
+            const { error } = await supabase.rpc('admin_limpar_logs_sistema');
             
             if (error) throw error;
             
-            if (data === true) {
-                setLogs([]);
-                setConfirmandoLimpeza(false);
-                alert('Base de logs limpa com sucesso!');
-                carregarLogs(); // Recarrega para mostrar o log de aviso de limpeza
-            }
+            setLogs([]);
+            setConfirmandoLimpeza(false);
+            alert('Base de logs limpa com sucesso!');
+            carregarLogs();
         } catch (err) {
             console.error('Erro ao limpar banco:', err);
-            alert('Erro ao limpar base de dados: Verifique se você tem permissões de Super Admin.');
+            alert(`Erro: ${err.message}`);
         } finally {
             setLimpando(false);
         }

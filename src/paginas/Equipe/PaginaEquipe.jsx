@@ -3,11 +3,12 @@ import {
   Trophy, MapPin, Globe, Lock, Crown, MessageCircle, 
   Clipboard, CheckCircle2, Link, Users, PlusSquare, 
   LogOut, Shield, Mail, Share2, Plus, Phone, ArrowLeft,
-  BookOpen
+  BookOpen, Zap
 } from 'lucide-react';
 import ModalRegrasEquipe from './componentes/ModalRegrasEquipe';
 import CardsDadosAtleta from './componentes/CardsDadosAtleta';
 import { usarEquipe } from '../../contextos/EquipeContexto';
+import { usarPartidas } from '../../contextos/PartidasContexto';
 import { usarAutenticacao } from '../../contextos/AutenticacaoContexto';
 import Botao from '../../componentes/Botao/Botao';
 import ModalCriacaoEquipe from '../../componentes/Equipe/ModalCriacaoEquipe';
@@ -33,7 +34,26 @@ const PaginaEquipe = ({ abaAtiva, setAbaAtiva, aoVoltar, aoNavegar, setDadosNave
         podeCriarEquipe, carregarMembrosEquipe, temPermissaoEquipe,
         modalCriacaoAberto, setModalCriacaoAberto, getLabelVinculo
     } = usarEquipe();
+    const { buscarVotacoesPendentes } = usarPartidas();
     const { ehSuperAdmin, usuario } = usarAutenticacao();
+
+    const [votacoesAbertas, setVotacoesAbertas] = useState([]);
+    const [bannerFechado, setBannerFechado] = useState(false);
+
+    useEffect(() => {
+        const v = async () => {
+            if (equipeAtiva) {
+                const res = await buscarVotacoesPendentes();
+                if (res.sucesso && res.partidas.length > 0) {
+                    const daEquipe = res.partidas.filter(p => p.equipe_id === equipeAtiva.id);
+                    setVotacoesAbertas(daEquipe);
+                } else {
+                    setVotacoesAbertas([]);
+                }
+            }
+        };
+        v();
+    }, [equipeAtiva, buscarVotacoesPendentes]);
 
     const formatarIdentidadeAtleta = useCallback((u) => {
         if (!u || (!u.nome_completo && !u.apelido)) return 'Atleta';
@@ -160,6 +180,53 @@ const PaginaEquipe = ({ abaAtiva, setAbaAtiva, aoVoltar, aoNavegar, setDadosNave
             {/* CONTEÚDO DINÂMICO BASEADO NO SUBMENU DA SIDEBAR */}
             
             {/* BANNERS DE STATUS CRÍTICO */}
+            {/* BANNER DE VOTAÇÃO (HALL DA FAMA) */}
+            {!bannerFechado && votacoesAbertas.length > 0 && (
+                <div className="banner-aviso" style={{
+                    background: 'linear-gradient(135deg, rgba(251,191,36,0.15), rgba(205,127,50,0.1))',
+                    border: '1px solid rgba(251,191,36,0.4)',
+                    boxShadow: '0 8px 32px rgba(251,191,36,0.05)',
+                    position: 'relative'
+                }}>
+                    <button 
+                        onClick={() => setBannerFechado(true)}
+                        style={{ position: 'absolute', top: 8, right: 8, background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', outline: 'none' }}
+                        title="Fechar aviso temporariamente"
+                    >✕</button>
+                    
+                    <div style={{
+                        width: '46px', height: '46px', borderRadius: '12px',
+                        background: '#fbbf24', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        color: '#0f172a', flexShrink: 0
+                    }}>
+                        <Trophy size={26} />
+                    </div>
+                    
+                    <div style={{ flex: 1 }}>
+                        <h4 style={{ margin: 0, color: '#fbbf24', fontSize: '1rem', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Votação Pendente!</h4>
+                        <p style={{ margin: '4px 0 0', color: '#cbd5e1', fontSize: '0.88rem' }}>
+                            Escolha os melhores da partida de <strong>{new Date(votacoesAbertas[0].data + 'T00:00:00').toLocaleDateString('pt-BR')}</strong> e alimente o Hall da Fama.
+                        </p>
+                    </div>
+                    
+                    <div style={{ display: 'flex' }}>
+                        <button
+                            onClick={() => {
+                                setDadosNavegacao({ partidaId: votacoesAbertas[0].id });
+                                if (aoNavegar) aoNavegar('votacao_mvp');
+                            }}
+                            style={{
+                                background: '#fbbf24', color: '#0f172a', border: 'none', cursor: 'pointer',
+                                fontWeight: '800', padding: '10px 20px', borderRadius: '10px', fontSize: '0.9rem',
+                                boxShadow: '0 4px 12px rgba(251,191,36,0.3)'
+                            }}
+                        >
+                            Votar Agora
+                        </button>
+                    </div>
+                </div>
+            )}
+
             {equipeAtiva?.admin_id_pendente === usuario?.id && (
                 <div className="banner-aviso banner-sucesso">
                     <Crown size={24} />
@@ -237,6 +304,33 @@ const PaginaEquipe = ({ abaAtiva, setAbaAtiva, aoVoltar, aoNavegar, setDadosNave
                                     >
                                         <BookOpen size={20} />
                                     </button>
+
+                                    {/* BOTÃO DE SORTEIO GLOBAL (ZAP) - APENAS GESTORES */}
+                                    {(equipeAtiva.papel === 'admin' || equipeAtiva.papel === 'sub_admin') && (
+                                        <button 
+                                            className="btn-sorteio-global-zap" 
+                                            onClick={() => {
+                                                setDadosNavegacao({ modalidadePrincipal: equipeAtiva.modalidade });
+                                                aoNavegar('sorteio_v4');
+                                            }}
+                                            title="Sorteio Rápido (Balanceamento Inteligente)"
+                                            style={{
+                                                background: 'rgba(139, 92, 246, 0.15)',
+                                                border: '1px solid rgba(139, 92, 246, 0.3)',
+                                                color: '#a78bfa',
+                                                padding: '10px',
+                                                borderRadius: '12px',
+                                                cursor: 'pointer',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                transition: 'all 0.2s ease'
+                                            }}
+                                        >
+                                            <Zap size={20} fill="#a78bfa" />
+                                        </button>
+                                    )}
+
                                     <button className="btn-whatsapp" onClick={convidarWhatsApp}><Phone size={18} fill="white" /> Convidar WhatsApp</button>
                                     <Botao variant="secundario" onClick={copiarLink} style={{ gap: '0.75rem' }}>
                                         {copiado ? <CheckCircle2 size={18} color="#10b981" /> : <Clipboard size={18} />}

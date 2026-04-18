@@ -1,5 +1,4 @@
-import React from 'react';
-import { Lock, Unlock, Info } from 'lucide-react';
+import { Lock, Unlock, Info, LogOut, Instagram } from 'lucide-react';
 import InfoTooltip from '../../../componentes/Tooltip/InfoTooltip';
 
 /**
@@ -13,7 +12,8 @@ const DashboardHeader = ({
     isPublico, 
     alterandoPriv, 
     handlePrivacidade, 
-    handleToggleWhatsApp 
+    handleToggleWhatsApp,
+    logout
 }) => {
     return (
         <header className="dash-hero">
@@ -65,6 +65,39 @@ const DashboardHeader = ({
                     {dadosUsuario.compartilhar_whatsapp_match ? <Unlock size={15} /> : <Lock size={15} />}
                     <span>WhatsApp</span>
                     <InfoTooltip texto={`Seu WhatsApp está ${dadosUsuario.compartilhar_whatsapp_match ? 'Liberado' : 'Oculto'}. Quando liberado, seu número aparece apenas após interesse mútuo (Match).`} posicao="bottom-left" />
+                </div>
+                
+                <a
+                    href="https://www.instagram.com/playhubapp"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="dash-priv-btn"
+                    style={{ 
+                        borderColor: 'rgba(225, 48, 108, 0.3)',
+                        color: '#f8fafc',
+                        background: 'linear-gradient(45deg, rgba(249, 206, 52, 0.1), rgba(238, 42, 123, 0.15), rgba(98, 40, 215, 0.1))',
+                        textDecoration: 'none',
+                    }}
+                    title="Siga o PlayHub no Instagram"
+                >
+                    <img src="/insta.png" alt="Instagram" style={{ width: '16px', height: '16px', objectFit: 'contain' }} />
+                    <span>Nosso Insta</span>
+                </a>
+
+                <div
+                    className="dash-priv-btn"
+                    onClick={logout}
+                    role="button"
+                    tabIndex="0"
+                    style={{ 
+                        borderColor: 'rgba(244, 63, 94, 0.5)',
+                        color: '#f43f5e',
+                        background: 'rgba(244, 63, 94, 0.1)',
+                        padding: '8px 12px'
+                    }}
+                >
+                    <LogOut size={16} />
+                    <span>Sair</span>
                 </div>
             </div>
         </header>

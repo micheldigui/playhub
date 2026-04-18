@@ -65,6 +65,55 @@
     margin: 2px 0 0 0;
 }
 
+/* Seletor de Partida Inteligente */
+.seletor-partida-v4 {
+    margin-top: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-width: 1200px;
+    margin-inline: auto;
+}
+
+.seletor-partida-v4 select {
+    background: rgba(30, 41, 59, 0.6);
+    border: 1px solid rgba(139, 92, 246, 0.2);
+    color: #f1f5f9;
+    padding: 12px 16px;
+    border-radius: 12px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    outline: none;
+    transition: all 0.2s ease;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    backdrop-filter: blur(4px);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+.seletor-partida-v4 select:hover {
+    border-color: rgba(139, 92, 246, 0.5);
+    background: rgba(30, 41, 59, 0.8);
+}
+
+.seletor-partida-v4 select:focus {
+    border-color: #8b5cf6;
+    box-shadow: 0 0 15px rgba(139, 92, 246, 0.2);
+}
+
+.status-partida-v4 {
+    font-size: 0.75rem;
+    color: #64748b;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding-left: 4px;
+}
+
 .badge-v4 {
     background: #8b5cf6;
     color: white;

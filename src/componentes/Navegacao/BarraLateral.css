@@ -314,6 +314,11 @@
   color: #7dd3fc !important;
 }
 
+.btn-instagram-sidebar:hover {
+  background: rgba(225, 48, 108, 0.08) !important;
+  color: #fb7185 !important;
+}
+
 .usuario-logado {
   padding: 0.5rem 0.875rem 0.75rem;
   margin-bottom: 0.25rem;

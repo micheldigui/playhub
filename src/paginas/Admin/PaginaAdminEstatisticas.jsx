@@ -113,6 +113,27 @@ const PaginaAdminEstatisticas = ({ aoNavegar }) => {
         });
     };
 
+    // Formatação Amigável de Nome (Primeiro e Último Nome, Capitalizados)
+    const formatarNomeAtleta = (nomeOriginal) => {
+        if (!nomeOriginal) return 'Visitante';
+        // Separa possíveis nomes juntos vindo do Google (ex: "MichelSouza" -> "Michel Souza")
+        const nomeEspacado = nomeOriginal.replace(/([a-z])([A-Z])/g, '$1 $2');
+        const partes = nomeEspacado.trim().split(/\s+/);
+        
+        const capitalizar = (str) => {
+            if (!str) return '';
+            return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+        };
+
+        if (partes.length === 0) return 'Visitante';
+        if (partes.length === 1) return capitalizar(partes[0]);
+        
+        const primeiro = capitalizar(partes[0]);
+        const ultimo = capitalizar(partes[partes.length - 1]);
+        
+        return `${primeiro} ${ultimo}`;
+    };
+
     return (
         <div className="admin-stats-container">
             <header className="admin-stats-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -213,7 +234,7 @@ const PaginaAdminEstatisticas = ({ aoNavegar }) => {
                                 dados.logs_acesso.map((log, i) => (
                                     <div key={i} className="log-item">
                                         <div className="log-user-info">
-                                            <span className="log-nome">{log.nome}</span>
+                                            <span className="log-nome">{formatarNomeAtleta(log.nome)}</span>
                                             <span className="log-data">Último acesso: {formatarDataLog(log.ultimo_acesso)}</span>
                                         </div>
                                         <div className="log-stats">

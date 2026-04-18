@@ -14,9 +14,12 @@ const GradeAtalhos = ({
     categoria, 
     aoNavegar, 
     setAbaEquipe,
+    selecionarEquipe = null,
+    equipeId = null,
     equipeNome = null,
     papel = null,
-    ordem = 5
+    ordem = 5,
+    setDadosNavegacao = null
 }) => {
     return (
         <section className={`bento-card card-atalhos-${categoria}`} style={{ order: ordem }}>
@@ -41,8 +44,11 @@ const GradeAtalhos = ({
                 <div className="atalhos-win-grid">
                     {atalhos.map(a => (
                         <button key={a.id} className="atalho-win-btn" onClick={() => {
-                            if (a.action) a.action(aoNavegar, setAbaEquipe);
-                            else aoNavegar(a.tela);
+                            if (a.action) a.action(aoNavegar, setAbaEquipe, selecionarEquipe, equipeId, setDadosNavegacao);
+                            else {
+                                if (selecionarEquipe && equipeId) selecionarEquipe(equipeId);
+                                aoNavegar(a.tela);
+                            }
                         }}>
                             <span className="atalho-win-emoji">{a.emoji}</span>
                             <span className="atalho-win-label">{a.label}</span>

@@ -66,16 +66,50 @@ const CardsDadosAtleta = ({ equipeIdOpcional, esconderIcones = false }) => {
             const countVermelho = todosCartoes?.filter(c => c.tipo_cartao === 'vermelho').length || 0;
             const countJustificado = todosCartoes?.filter(c => c.tipo_cartao === 'justificado' || c.tipo_cartao === 'azul').length || 0;
 
-            // 3. Calcular Assiduidade (tabela correta: partidas_presencas)
-            const { data: presencas } = await supabase
-                .from('partidas_presencas')
-                .select('frequencia')
-                .eq('usuario_id', usuario.id)
-                .order('created_at', { ascending: false })
-                .limit(10);
+            // 3. Calcular Assiduidade (Opção 2: todas as partidas da equipe desde que o jogador entrou)
             
-            const totalJogos = presencas?.length || 0;
-            const presentes = presencas?.filter(p => p.frequencia === 'P').length || 0;
+            // 3a. Data de entrada do atleta na equipe
+            const { data: dadosMembro } = await supabase
+                .from('membros_equipe')
+                .select('created_at')
+                .eq('equipe_id', equipeAlvo.id)
+                .eq('usuario_id', usuario.id)
+                .eq('status', 'ativo')
+                .single();
+            
+            const dataEntrada = dadosMembro?.created_at || null;
+
+            // 3b. Total de partidas passadas da equipe desde que o jogador entrou
+            const hoje = new Date().toISOString().split('T')[0]; // '2026-04-18'
+            
+            let queryPartidas = supabase
+                .from('partidas')
+                .select('id')
+                .eq('equipe_id', equipeAlvo.id)
+                .lte('data', hoje); // partidas até hoje (campo 'data' da tabela)
+
+            if (dataEntrada) {
+                // Filtra somente partidas a partir da data de entrada do atleta
+                const dataEntradaFormatada = dataEntrada.split('T')[0];
+                queryPartidas = queryPartidas.gte('data', dataEntradaFormatada);
+            }
+
+            const { data: partidasDaEquipe } = await queryPartidas;
+            const idsPartidas = partidasDaEquipe?.map(p => p.id) || [];
+            const totalJogos = idsPartidas.length;
+
+            // 3c. Quantas dessas partidas o atleta foi marcado como Presente
+            let presentes = 0;
+            if (totalJogos > 0) {
+                const { data: presencasAtleta } = await supabase
+                    .from('partidas_presencas')
+                    .select('frequencia')
+                    .eq('usuario_id', usuario.id)
+                    .eq('frequencia', 'P')
+                    .in('partida_id', idsPartidas);
+                presentes = presencasAtleta?.length || 0;
+            }
+
             const percAssiduidade = totalJogos > 0 ? Math.round((presentes / totalJogos) * 100) : 0;
 
             setDadosAtleta({
@@ -229,7 +263,7 @@ const CardsDadosAtleta = ({ equipeIdOpcional, esconderIcones = false }) => {
                 <div className="card-atleta-info">
                     <span className="card-atleta-label">
                         Assiduidade
-                        <InfoTooltip texto="Seu índice de presença nos últimos 10 jogos em que você esteve na lista." />
+                        <InfoTooltip texto="Seu índice de presença real na equipe: total de partidas realizadas desde que você entrou ÷ quantas você foi marcado como presente." />
                     </span>
                     <strong className="card-atleta-valor" style={{ fontSize: '1rem' }}>{dadosAtleta.assiduidade}%</strong>
                 </div>
