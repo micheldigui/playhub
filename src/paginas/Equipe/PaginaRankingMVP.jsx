@@ -142,7 +142,7 @@ const ListaRankingJogadores = ({ ranking }) => {
                             </div>
                             <div className="posicao-badge">{index + 1}</div>
                         </div>
-                        <span className="podio-nome">{formatarNomeCurto(player.apelido || player.nome_completo)}</span>
+                        <span className="podio-nome">{formatarNomeCurto(player.nome_completo || player.apelido)}</span>
                         <div className="podio-pontos">{player.pontos} <span style={{ fontSize: '0.7rem', opacity: 0.6 }}>PTS</span></div>
                         <div className="podio-medalheiro">
                             <span>🥇{player.ouros}</span><span>🥈{player.pratas}</span><span>🥉{player.bronzes}</span>
@@ -164,7 +164,7 @@ const ListaRankingJogadores = ({ ranking }) => {
                                     )}
                                 </div>
                                 <div className="item-ranking-info">
-                                    <span className="item-ranking-nome">{formatarNomeCurto(player.apelido || player.nome_completo)}</span>
+                                    <span className="item-ranking-nome">{formatarNomeCurto(player.nome_completo || player.apelido)}</span>
                                     <div className="item-ranking-medalheiro-mini">
                                         <span>🥇{player.ouros}</span><span>🥈{player.pratas}</span><span>🥉{player.bronzes}</span>
                                     </div>
@@ -209,7 +209,7 @@ const PodioPartida = ({ atletas }) => {
                             </div>
                             <div className="posicao-badge">{realIdx + 1}</div>
                         </div>
-                        <span className="podio-nome">{formatarNomeCurto(player.apelido || player.nome_completo)}</span>
+                        <span className="podio-nome">{formatarNomeCurto(player.nome_completo || player.apelido)}</span>
                         {player.pontos !== undefined && (
                             <div className="podio-pontos">{player.pontos} <span style={{ fontSize: '0.65rem', opacity: 0.6 }}>PTS</span></div>
                         )}
@@ -376,7 +376,7 @@ const PaginaRankingMVP = ({ equipeIdProp, aoVoltar }) => {
             if (rankingMVP.length > 0) {
                 texto += `⭐ *Craques Individuais (Top 3)*\n`;
                 rankingMVP.slice(0, 3).forEach((p, i) => {
-                    const nomeFormatado = formatarNomeCurto(p.apelido || p.nome_completo);
+                    const nomeFormatado = formatarNomeCurto(p.nome_completo || p.apelido);
                     texto += `${i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i+1}º`} ${nomeFormatado} - ${p.pontos} PTS\n`;
                 });
                 texto += `\n`;
@@ -384,7 +384,7 @@ const PaginaRankingMVP = ({ equipeIdProp, aoVoltar }) => {
             if (rankingColetivo.length > 0) {
                 texto += `🛡️ *Destaques Coletivos (Top 10)*\n`;
                 rankingColetivo.slice(0, 10).forEach((p, i) => {
-                    const nomeFormatado = formatarNomeCurto(p.apelido || p.nome_completo);
+                    const nomeFormatado = formatarNomeCurto(p.nome_completo || p.apelido);
                     texto += `${i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i+1}º`} ${nomeFormatado} - ${p.pontos} PTS\n`;
                 });
                 texto += `\n`;
@@ -413,7 +413,7 @@ const PaginaRankingMVP = ({ equipeIdProp, aoVoltar }) => {
             if (vencedoresPartida.length > 0) {
                 texto += `⭐ *Craques da Partida*\n`;
                 vencedoresPartida.slice(0, 3).forEach((p, i) => {
-                    const nomeFormatado = formatarNomeCurto(p.apelido || p.nome_completo);
+                    const nomeFormatado = formatarNomeCurto(p.nome_completo || p.apelido);
                     texto += `${i === 0 ? '🥇' : i === 1 ? '🥈' : '🥉'} ${nomeFormatado}\n`;
                 });
                 texto += `\n`;
