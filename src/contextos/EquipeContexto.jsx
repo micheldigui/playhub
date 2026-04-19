@@ -85,7 +85,7 @@ export const EquipeProvedor = ({ children }) => {
                     id, papel, vinculo, permissoes, status, equipe_id,
                     equipes ( 
                         id, nome, modalidade, logo_url, admin_id, local_cidade, regras,
-                        gestao_financeira, aceitando_membros, admin_id_pendente,
+                        gestao_financeira, aceitando_membros, admin_id_pendente, slug_convite,
                         admin:usuarios!equipes_admin_id_fkey (id, nome_completo, apelido, foto_url)
                     )
                 `)
@@ -873,20 +873,18 @@ export const EquipeProvedor = ({ children }) => {
 
     const carregarMembrosEquipe = useCallback(async (equipeId) => {
         try {
-            // Tenta primeiro via RPC para garantir nomes mesmo em perfis privados (Security Definer)
-            const { data: dataRpc, error: errorRpc } = await supabase.rpc('buscar_membros_equipe_seguro', { p_equipe_id: equipeId });
+            // Blindagem: impede erro 400 se o ID for nulo ou inválido
+            if (!equipeId || equipeId.length < 30) return [];
 
-            if (!errorRpc && dataRpc) {
-                // Formata o retorno da RPC para bater com a estrutura esperada (usuarios como sub-objeto)
-                return dataRpc.map(m => {
-                    // Determina o papel de forma automática: Dono da equipe é sempre Capitão (admin)
-                    // Isso garante que mesmo que ele esteja como 'jogador' na tabela de membros, a coroa apareça.
-                    const papelReal = m.usuario_id === equipeAtiva?.admin_id ? 'admin' : m.papel;
-                    
-                    return {
+            // 1. Tenta via RPC (Seguro para nomes privados)
+            try {
+                const { data: dataRpc, error: errorRpc } = await supabase.rpc('buscar_membros_equipe_seguro', { p_equipe_id: equipeId });
+
+                if (!errorRpc && dataRpc && dataRpc.length > 0) {
+                    return dataRpc.map(m => ({
                         id: m.id,
                         usuario_id: m.usuario_id,
-                        papel: papelReal,
+                        papel: m.usuario_id === equipeAtiva?.admin_id ? 'admin' : m.papel,
                         permissoes: m.permissoes,
                         vinculo: m.vinculo,
                         status: m.status,
@@ -898,11 +896,13 @@ export const EquipeProvedor = ({ children }) => {
                             apelido: m.apelido,
                             foto_url: m.foto_url
                         }
-                    };
-                });
+                    }));
+                }
+            } catch (errRpc) {
+                console.warn("RPC indisponível, usando fallback...");
             }
 
-            // Fallback: Busca padrão via join (respeita RLS original)
+            // 2. Fallback: Busca padrão via join
             const { data, error } = await supabase
                 .from('membros_equipe')
                 .select(`

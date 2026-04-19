@@ -123,6 +123,8 @@ export const PartidasProvider = ({ children }) => {
 
     const buscarPresencas = useCallback(async (partidaId) => {
         try {
+            if (!partidaId) return { sucesso: true, presencas: [] };
+            
             const { data, error } = await supabase.rpc('buscar_presencas_partida_seguro', {
                 p_partida_id: partidaId
             });

@@ -135,8 +135,12 @@ const PaginaEquipe = ({ abaAtiva, setAbaAtiva, aoVoltar, aoNavegar, setDadosNave
         return { total, mensalistas, avulsos, viceCapitaes };
     }, [membros, formatarIdentidadeAtleta]);
 
-    // URL de convite
-    const urlConvite = equipeAtiva?.slug_convite ? `${window.location.origin}/convite/${equipeAtiva.slug_convite}` : '';
+    // URL de convite - Prioriza domínio oficial em produção
+    const urlConvite = useMemo(() => {
+        if (!equipeAtiva?.slug_convite) return '';
+        const base = window.location.hostname === 'localhost' ? window.location.origin : 'https://playhubapp.com.br';
+        return `${base}/convite/${equipeAtiva.slug_convite}`;
+    }, [equipeAtiva?.slug_convite]);
 
     const copiarLink = () => {
         navigator.clipboard.writeText(urlConvite);

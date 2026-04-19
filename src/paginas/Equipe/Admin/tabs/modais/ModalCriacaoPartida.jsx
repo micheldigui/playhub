@@ -39,9 +39,10 @@ const ModalCriacaoPartida = ({ isOpen, onClose, aoSucesso }) => {
 
     const handleChange = (e) => {
         const { name, value } = e.target;
+        // Permite o campo vazio no estado para facilitar a edição pelo usuário (não resetar para 0 ao apagar)
         setFormData(prev => ({
             ...prev,
-            [name]: name === 'vagas' || name === 'valor_avulso' ? Number(value) : value
+            [name]: (name === 'vagas' || name === 'valor_avulso') && value !== '' ? Number(value) : value
         }));
     };
 
