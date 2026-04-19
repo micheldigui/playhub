@@ -487,10 +487,10 @@ const PaginaRankingMVP = ({ equipeIdProp, aoVoltar }) => {
             
             if (rankingMVP.length > 0) {
                 texto += `⭐ *Melhores Aproveitamentos*\n`;
-                rankingMVP.slice(0, 10).forEach((p, i) => {
+                rankingMVP.slice(0, 5).forEach((p, i) => {
                     const nomeFormatado = formatarNomeCurto(p.nome_completo || p.apelido);
                     const nota = Math.min(10, p.media).toFixed(1);
-                    texto += `${i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i+1}º`} ${nomeFormatado} - Nota ${nota}\n`;
+                    texto += `${i === 0 ? '🥇' : i === 1 ? '🥈' : '🥉'} ${nomeFormatado} - Nota ${nota}\n`;
                 });
                 texto += `\n`;
             }
@@ -499,7 +499,7 @@ const PaginaRankingMVP = ({ equipeIdProp, aoVoltar }) => {
                 rankingColetivo.slice(0, 10).forEach((p, i) => {
                     const nomeFormatado = formatarNomeCurto(p.nome_completo || p.apelido);
                     const nota = Math.min(10, p.media).toFixed(1);
-                    texto += `${i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i+1}º`} ${nomeFormatado} - Nota ${nota}\n`;
+                    texto += `${i === 0 ? '🥇' : i === 1 ? '🥈' : i < 5 ? '🥉' : `${i + 1}º`} ${nomeFormatado} - Nota ${nota}\n`;
                 });
                 texto += `\n`;
             }
@@ -526,7 +526,7 @@ const PaginaRankingMVP = ({ equipeIdProp, aoVoltar }) => {
 
             if (vencedoresPartida.length > 0) {
                 texto += `⭐ *Craques da Partida*\n`;
-                vencedoresPartida.slice(0, 3).forEach((p, i) => {
+                vencedoresPartida.slice(0, 5).forEach((p, i) => {
                     const nomeFormatado = formatarNomeCurto(p.nome_completo || p.apelido);
                     texto += `${i === 0 ? '🥇' : i === 1 ? '🥈' : '🥉'} ${nomeFormatado}\n`;
                 });
