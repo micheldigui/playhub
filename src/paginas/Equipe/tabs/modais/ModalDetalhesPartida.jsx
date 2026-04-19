@@ -528,7 +528,7 @@ const ModalDetalhesPartida = ({ isOpen, onClose, partida, aoNavegar, setDadosNav
                                 // Agrupar votos por posição e contar
                                 const pontos = {};
                                 votosTime.forEach(v => {
-                                    const pts = v.posicao === 1 ? 3 : v.posicao === 2 ? 2 : 1;
+                                    const pts = v.posicao === 1 ? 4 : v.posicao === 2 ? 2 : 1;
                                     pontos[v.time_escolhido] = (pontos[v.time_escolhido] || 0) + pts;
                                 });
 

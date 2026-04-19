@@ -39,9 +39,11 @@
     width: 100px;
 }
 
-.podio-item.primeiro { order: 2; width: 120px; }
-.podio-item.segundo { order: 1; }
-.podio-item.terceiro { order: 3; }
+.podio-item.primeiro { order: 3; width: 110px; }
+.podio-item.segundo { order: 2; width: 90px; }
+.podio-item.terceiro { order: 4; width: 90px; }
+.podio-item.quarto { order: 1; width: 80px; opacity: 0.9; }
+.podio-item.quinto { order: 5; width: 80px; opacity: 0.9; }
 
 .podio-avatar-wrapper {
     position: relative;
@@ -57,9 +59,11 @@
     background: #1e293b;
 }
 
-.primeiro .podio-avatar { width: 84px; height: 84px; border-color: #fbbf24; }
-.segundo .podio-avatar { border-color: #94a3b8; }
-.terceiro .podio-avatar { border-color: #b45309; }
+.primeiro .podio-avatar { width: 80px; height: 80px; }
+.segundo .podio-avatar { width: 62px; height: 62px; }
+.terceiro .podio-avatar { width: 62px; height: 62px; }
+.quarto .podio-avatar { width: 54px; height: 54px; }
+.quinto .podio-avatar { width: 54px; height: 54px; }
 
 .podio-avatar img {
     width: 100%;
@@ -110,12 +114,26 @@
     width: 100%;
 }
 
-.podio-medalhas {
-    font-size: 0.75rem;
-    color: #94a3b8;
+.podio-pontos {
+    font-size: 1.1rem;
+    font-weight: 900;
+    margin-top: 4px;
+}
+
+.podio-medalheiro {
     display: flex;
-    align-items: center;
-    gap: 4px;
+    gap: 8px;
+    font-size: 0.7rem;
+    color: #64748b;
+    margin-top: 8px;
+}
+
+.item-ranking-medalheiro-mini {
+    display: flex;
+    gap: 6px;
+    font-size: 0.65rem;
+    color: #475569;
+    margin-top: 2px;
 }
 
 /* Lista de Ranking */
@@ -190,8 +208,11 @@
 }
 
 @media (max-width: 480px) {
-    .podio-item { width: 80px; }
-    .podio-item.primeiro { width: 100px; }
-    .podio-avatar { width: 50px; height: 50px; }
-    .primeiro .podio-avatar { width: 70px; height: 70px; }
+    .podio-container { gap: 6px; }
+    .podio-item { width: 65px !important; }
+    .podio-item.primeiro { width: 80px !important; }
+    .podio-avatar { width: 45px !important; height: 45px !important; }
+    .primeiro .podio-avatar { width: 60px !important; height: 60px !important; }
+    .podio-nome { font-size: 0.7rem; }
+    .podio-pontos { font-size: 0.8rem !important; }
 }

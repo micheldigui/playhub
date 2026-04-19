@@ -63,12 +63,26 @@ const CardTime = ({ time, idx, encontrarMembro }) => {
                     fontSize: '1rem', flexShrink: 0,
                 }}>{md.emoji}</div>
                 <span style={{ flex: 1, fontWeight: '800', color: isFirst ? md.cor : '#f1f5f9', fontSize: '0.95rem' }}>{time.nome}</span>
-                {time.pontos !== undefined && (
-                    <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                        <span style={{ fontWeight: '800', fontSize: '1rem', color: isFirst ? md.cor : '#cbd5e1' }}>{time.pontos}</span>
-                        <span style={{ fontSize: '0.6rem', color: '#475569', marginLeft: '3px' }}>PTS</span>
-                    </div>
-                )}
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', flexShrink: 0, gap: '2px' }}>
+                    {time.isNota ? (
+                        <div style={{ textAlign: 'right' }}>
+                            <span style={{ fontWeight: '800', fontSize: '1rem', color: isFirst ? md.cor : '#cbd5e1' }}>{time.nota.toFixed(1)}</span>
+                            <span style={{ fontSize: '0.6rem', color: '#475569', marginLeft: '3px' }}>NOTA</span>
+                        </div>
+                    ) : time.pontos !== undefined && (
+                        <div style={{ textAlign: 'right' }}>
+                            <span style={{ fontWeight: '800', fontSize: '1rem', color: isFirst ? md.cor : '#cbd5e1' }}>{time.pontos}</span>
+                            <span style={{ fontSize: '0.6rem', color: '#475569', marginLeft: '3px' }}>PTS</span>
+                        </div>
+                    )}
+                    {(time.ouros !== undefined) && (
+                        <div style={{ fontSize: '0.65rem', color: '#94a3b8', display: 'flex', gap: '4px' }}>
+                            <span>🥇{time.ouros}</span>
+                            <span>🥈{time.pratas}</span>
+                            <span>🥉{time.bronzes}</span>
+                        </div>
+                    )}
+                </div>
             </div>
             {/* Avatares */}
             {time.jogadores?.length > 0 && (
@@ -123,58 +137,67 @@ const ListaRankingJogadores = ({ ranking }) => {
         );
     }
 
-    const podio = ranking.slice(0, 3);
-    const resto = ranking.slice(3);
+    const podio = ranking.slice(0, 5);
+    const resto = ranking.slice(5);
 
     return (
         <>
-            <div className="podio-container">
-                {podio.map((player, index) => (
-                    <div key={player.usuario_id || index} className={`podio-item ${['primeiro','segundo','terceiro'][index]}`}>
-                        <div className="podio-avatar-wrapper">
-                            {index === 0 && <div className="coroa-icon"><Crown size={32} /></div>}
-                            <div className="podio-avatar">
-                                {player.foto_url ? <img src={player.foto_url} alt={player.apelido} /> : (
-                                    <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#334155', color: '#94a3b8', fontWeight: '800' }}>
-                                        {(player.apelido || player.nome_completo || '?')[0].toUpperCase()}
-                                    </div>
-                                )}
-                            </div>
-                            <div className="posicao-badge">{index + 1}</div>
-                        </div>
-                        <span className="podio-nome">{formatarNomeCurto(player.nome_completo || player.apelido)}</span>
-                        <div className="podio-pontos">{player.pontos} <span style={{ fontSize: '0.7rem', opacity: 0.6 }}>PTS</span></div>
-                        <div className="podio-medalheiro">
-                            <span>🥇{player.ouros}</span><span>🥈{player.pratas}</span><span>🥉{player.bronzes}</span>
-                        </div>
-                    </div>
-                ))}
-            </div>
-            {resto.length > 0 && (
-                <div className="lista-ranking">
-                    {resto.map((player, index) => (
-                        <div key={player.usuario_id || index} className="item-ranking">
-                            <div className="item-ranking-pos">{index + 4}</div>
-                            <div className="item-ranking-atleta">
-                                <div className="item-ranking-avatar">
-                                    {player.foto_url ? <img src={player.foto_url} alt="" /> : (
-                                        <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#334155', color: '#64748b' }}>
+            <div className="podio-container container-top-5">
+                {podio.map((player, index) => {
+                    const corCoroa = index === 0 ? '#fbbf24' : index === 1 ? '#94a3b8' : '#cd7f32';
+                    const classePos = ['primeiro', 'segundo', 'terceiro', 'quarto', 'quinto'][index];
+                    return (
+                        <div key={player.usuario_id || index} className={`podio-item ${classePos}`}>
+                            <div className="podio-avatar-wrapper">
+                                <div className="coroa-icon" style={{ color: corCoroa }}><Crown size={index === 0 ? 30 : index === 1 ? 22 : 18} /></div>
+                                <div className="podio-avatar" style={{ border: `2.5px solid ${corCoroa}44` }}>
+                                    {player.foto_url ? <img src={player.foto_url} alt={player.apelido} /> : (
+                                        <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#334155', color: '#94a3b8', fontWeight: '800' }}>
                                             {(player.apelido || player.nome_completo || '?')[0].toUpperCase()}
                                         </div>
                                     )}
                                 </div>
-                                <div className="item-ranking-info">
-                                    <span className="item-ranking-nome">{formatarNomeCurto(player.nome_completo || player.apelido)}</span>
-                                    <div className="item-ranking-medalheiro-mini">
-                                        <span>🥇{player.ouros}</span><span>🥈{player.pratas}</span><span>🥉{player.bronzes}</span>
-                                    </div>
-                                </div>
+                                <div className="posicao-badge" style={{ background: corCoroa }}>{index + 1}</div>
                             </div>
-                            <div className="item-ranking-pontos">
-                                <strong>{player.pontos}</strong> <span style={{ fontSize: '0.65rem', color: '#64748b' }}>PTS</span>
+                            <span className="podio-nome">{formatarNomeCurto(player.nome_completo || player.apelido)}</span>
+                            <div className="podio-pontos" style={{ color: corCoroa, fontSize: index > 2 ? '0.9rem' : '1.1rem' }}>
+                                {Math.min(10, player.media).toFixed(1)} <span style={{ fontSize: '0.6rem', opacity: 0.6 }}>NOTA</span>
+                            </div>
+                            <div className="podio-medalheiro" style={{ fontSize: index > 2 ? '0.62rem' : '0.7rem' }}>
+                                <span>🥇{player.ouros}</span><span>🥈{player.pratas}</span><span>🥉{player.bronzes}</span>
                             </div>
                         </div>
-                    ))}
+                    );
+                })}
+            </div>
+            {resto.length > 0 && (
+                <div className="lista-ranking">
+                    {resto.map((player, index) => {
+                        return (
+                            <div key={player.usuario_id || index} className="item-ranking">
+                                <div className="item-ranking-pos">{index + 6}</div>
+                                <div className="item-ranking-atleta">
+                                    <div className="item-ranking-avatar">
+                                        {player.foto_url ? <img src={player.foto_url} alt="" /> : (
+                                            <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#334155', color: '#64748b' }}>
+                                                {(player.apelido || player.nome_completo || '?')[0].toUpperCase()}
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className="item-ranking-info">
+                                        <span className="item-ranking-nome">{formatarNomeCurto(player.nome_completo || player.apelido)}</span>
+                                        <div className="item-ranking-medalheiro-mini">
+                                            <span>🥇{player.ouros}</span><span>🥈{player.pratas}</span><span>🥉{player.bronzes}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="item-ranking-pontos">
+                                    <strong>{Math.min(10, player.media).toFixed(1)}</strong> 
+                                    <span style={{ fontSize: '0.65rem', color: '#64748b', marginLeft: '2px' }}>NOTA</span>
+                                </div>
+                            </div>
+                        );
+                    })}
                 </div>
             )}
         </>
@@ -183,22 +206,22 @@ const ListaRankingJogadores = ({ ranking }) => {
 
 // ── Subcomponente: Pódio da Partida (atletas apenas na aba partida) ───────
 const PodioPartida = ({ atletas }) => {
-    const ordem = [atletas[1], atletas[0], atletas[2]].filter(Boolean);
-    const classeAltura = ['segundo', 'primeiro', 'terceiro'];
-    if (!atletas.length) return (
+    const podio = atletas.slice(0, 5);
+    if (!podio.length) return (
         <div style={{ textAlign: 'center', padding: '24px', color: '#475569', fontSize: '0.85rem' }}>
             Nenhum voto de atleta registrado nesta partida.
         </div>
     );
     return (
-        <div className="podio-container">
-            {ordem.map((player, vi) => {
-                const realIdx = vi === 0 ? 1 : vi === 1 ? 0 : 2;
+        <div className="podio-container container-top-5">
+            {podio.map((player, index) => {
+                const corCoroa = index === 0 ? '#fbbf24' : index === 1 ? '#94a3b8' : '#cd7f32';
+                const classePos = ['primeiro', 'segundo', 'terceiro', 'quarto', 'quinto'][index];
                 return (
-                    <div key={player.usuario_id || vi} className={`podio-item ${classeAltura[vi]}`}>
+                    <div key={player.usuario_id || index} className={`podio-item ${classePos}`}>
                         <div className="podio-avatar-wrapper">
-                            {realIdx === 0 && <div className="coroa-icon"><Crown size={28} /></div>}
-                            <div className="podio-avatar">
+                            <div className="coroa-icon" style={{ color: corCoroa }}><Crown size={index === 0 ? 30 : index === 1 ? 22 : 18} /></div>
+                            <div className="podio-avatar" style={{ border: `2.5px solid ${corCoroa}44` }}>
                                 {player.foto_url ? (
                                     <img src={player.foto_url} alt={player.apelido} />
                                 ) : (
@@ -207,11 +230,22 @@ const PodioPartida = ({ atletas }) => {
                                     </div>
                                 )}
                             </div>
-                            <div className="posicao-badge">{realIdx + 1}</div>
+                            <div className="posicao-badge" style={{ background: corCoroa }}>{index + 1}</div>
                         </div>
                         <span className="podio-nome">{formatarNomeCurto(player.nome_completo || player.apelido)}</span>
-                        {player.pontos !== undefined && (
-                            <div className="podio-pontos">{player.pontos} <span style={{ fontSize: '0.65rem', opacity: 0.6 }}>PTS</span></div>
+                        {player.isNota ? (
+                            <div className="podio-pontos" style={{ color: corCoroa, fontSize: index > 2 ? '0.9rem' : '1.1rem' }}>
+                                {player.nota.toFixed(1)} <span style={{ fontSize: '0.65rem', opacity: 0.6 }}>NOTA</span>
+                            </div>
+                        ) : player.pontos !== undefined && (
+                            <div className="podio-pontos" style={{ color: corCoroa, fontSize: index > 2 ? '0.9rem' : '1.1rem' }}>
+                                {player.pontos} <span style={{ fontSize: '0.65rem', opacity: 0.6 }}>PTS</span>
+                            </div>
+                        )}
+                        {(player.ouros !== undefined || player.pratas !== undefined) && (
+                            <div className="podio-medalheiro" style={{ fontSize: index > 2 ? '0.6rem' : '0.68rem' }}>
+                                <span>🥇{player.ouros || 0}</span><span>🥈{player.pratas || 0}</span><span>🥉{player.bronzes || 0}</span>
+                            </div>
                         )}
                     </div>
                 );
@@ -224,14 +258,18 @@ const PodioPartida = ({ atletas }) => {
 const PaginaRankingMVP = ({ equipeIdProp, aoVoltar }) => {
     const { equipeAtiva, carregarMembrosEquipe } = usarEquipe();
     const equipeId = equipeIdProp || equipeAtiva?.id;
-    const { buscarRankingMVP, buscarRankingColetivo, carregarPartidas, buscarVencedoresPartida, buscarVotosTime } = usarPartidas();
+    const { buscarRankingMVP, buscarRankingColetivo, carregarPartidas, buscarVencedoresPartida, buscarVotosTime, buscarVotosMVP } = usarPartidas();
 
     const [modo, setModo] = useState('geral');
+    const [periodo, setPeriodo] = useState('sempre'); // 'sempre' | 'mes'
+    const [showInfoGeral, setShowInfoGeral] = useState(false);
+    const [showInfoPartida, setShowInfoPartida] = useState(false);
 
     // Estado geral
     const [rankingMVP, setRankingMVP] = useState([]);
     const [rankingColetivo, setRankingColetivo] = useState([]);
     const [membros, setMembros] = useState([]);
+    const [travaPresenca, setTravaPresenca] = useState(0);
     const [carregando, setCarregando] = useState(true);
 
     // Estado por partida
@@ -260,34 +298,38 @@ const PaginaRankingMVP = ({ equipeIdProp, aoVoltar }) => {
     useEffect(() => {
         const carregar = async () => {
             if (!equipeId) return;
+            setCarregando(true);
             const [resAtletas, resColetivo, resMembros, todasPartidas] = await Promise.all([
-                buscarRankingMVP(equipeId),
-                buscarRankingColetivo ? buscarRankingColetivo(equipeId) : Promise.resolve({ sucesso: false, ranking: [] }),
+                buscarRankingMVP(equipeId, periodo === 'mes'),
+                buscarRankingColetivo ? buscarRankingColetivo(equipeId, periodo === 'mes') : Promise.resolve({ sucesso: false, ranking: [] }),
                 carregarMembrosEquipe(equipeId),
                 carregarPartidas(equipeId)
             ]);
             
-            if (resAtletas.sucesso) setRankingMVP(resAtletas.ranking);
+            if (resAtletas.sucesso && resMembros) {
+                // Enriquecer ranking MVP com dados dos membros (Foto e Nome)
+                const rankingMapeado = resAtletas.ranking.map(jogador => {
+                    const m = resMembros.find(mb => String(mb.usuario_id) === String(jogador.usuario_id));
+                    return { 
+                        ...jogador, 
+                        foto_url: m?.usuarios?.foto_url,
+                        nome_completo: m?.usuarios?.nome_completo || m?.usuarios?.apelido || 'Atleta'
+                    };
+                });
+                setRankingMVP(rankingMapeado);
+                setTravaPresenca(resAtletas.travaPresenca);
+            }
             if (resMembros) setMembros(resMembros);
 
             if (resColetivo.sucesso && resMembros) {
                 // Enriquecer ranking coletivo com as fotos dos jogadores
                 const rankingMapeado = resColetivo.ranking.map(jogador => {
-                    // Tenta achar foto
-                    let fotoUrl = null;
-                    if (jogador.usuario_id) {
-                        const m = resMembros.find(mb => String(mb.usuario_id) === String(jogador.usuario_id));
-                        if (m) fotoUrl = m.usuarios?.foto_url;
-                    }
-                    if (!fotoUrl) {
-                        const pNome = (jogador.nome_completo || '').split(' ')[0].toLowerCase();
-                        const porNome = resMembros.find(mb => {
-                            const mNome = (mb.usuarios?.nome_completo || mb.usuarios?.apelido || '').toLowerCase();
-                            return pNome.length > 1 && mNome.startsWith(pNome);
-                        });
-                        if (porNome) fotoUrl = porNome.usuarios?.foto_url;
-                    }
-                    return { ...jogador, foto_url: fotoUrl };
+                    const m = resMembros.find(mb => String(mb.usuario_id) === String(jogador.usuario_id));
+                    return { 
+                        ...jogador, 
+                        foto_url: m?.usuarios?.foto_url,
+                        nome_completo: m?.usuarios?.nome_completo || m?.usuarios?.apelido || jogador.nome_completo
+                    };
                 });
                 setRankingColetivo(rankingMapeado);
             }
@@ -310,33 +352,103 @@ const PaginaRankingMVP = ({ equipeIdProp, aoVoltar }) => {
         };
         carregar();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [equipeId]);
+    }, [equipeId, periodo]);
 
     // Carga dos dados da partida selecionada
     useEffect(() => {
         if (!partidaSelecionada) return;
         const carregarDadosPartida = async () => {
             setCarregandoPartida(true);
-            const [resVenc, resVotosTime] = await Promise.all([
+            const [resVenc, resVotosTime, resVotosMVP] = await Promise.all([
                 buscarVencedoresPartida(partidaSelecionada.id),
                 buscarVotosTime(partidaSelecionada.id),
+                buscarVotosMVP(partidaSelecionada.id),
             ]);
 
-            setVencedoresPartida(resVenc.sucesso ? resVenc.vencedores || [] : []);
+            const todosVotosMVP = resVenc.sucesso ? resVenc.vencedores || [] : [];
+            // Usar votantes reais (IDs únicos que votaram) para o teto máximo
+            const votantesReaisMVP = new Set(
+                (resVotosMVP.sucesso ? resVotosMVP.votos || [] : []).map(v => v.eleitor_id).filter(Boolean)
+            );
+            const qtdVotantesMVP = Math.max(1, votantesReaisMVP.size);
+            // Teto máximo = todos votando Ouro (4 pts) em um só candidato
+            const maxPontosMVP = qtdVotantesMVP * 4;
+
+            // Calcular medalhas E pontos (4-2-1) inteiramente dos votos brutos
+            // Ignoramos v.pontos da RPC pois ela ainda usa pesos 3-2-1 no banco
+            const medalhasMVP = {};
+            const pontosMVP = {};
+            (resVotosMVP.sucesso ? resVotosMVP.votos || [] : []).forEach(v => {
+                const pts = v.posicao === 1 ? 4 : v.posicao === 2 ? 2 : 1;
+                pontosMVP[v.candidato_id] = (pontosMVP[v.candidato_id] || 0) + pts;
+                if (!medalhasMVP[v.candidato_id]) medalhasMVP[v.candidato_id] = { ouros: 0, pratas: 0, bronzes: 0 };
+                if (v.posicao === 1) medalhasMVP[v.candidato_id].ouros++;
+                else if (v.posicao === 2) medalhasMVP[v.candidato_id].pratas++;
+                else if (v.posicao === 3) medalhasMVP[v.candidato_id].bronzes++;
+            });
+
+            // Montar lista final usando os candidatos que aparecem na RPC (para ter nome/foto)
+            // mas com pontos e medalhas calculados pelo frontend (4-2-1)
+            const vencedoresFormatados = todosVotosMVP
+                .filter(v => pontosMVP[v.usuario_id] !== undefined)
+                .map(v => {
+                    const med = medalhasMVP[v.usuario_id] || { ouros: 0, pratas: 0, bronzes: 0 };
+                    const pts = pontosMVP[v.usuario_id] || 0;
+                    const perc = pts / maxPontosMVP;
+                    return {
+                        ...v,
+                        nota: Math.min(10.0, perc * 10.0),
+                        isNota: true,
+                        ouros: med.ouros,
+                        pratas: med.pratas,
+                        bronzes: med.bronzes,
+                    };
+                });
+            // Ordenação Olímpica: Ouro primeiro, Prata como desempate, Bronze como 2º desempate
+            const vencedoresOrdenados = vencedoresFormatados.sort((a, b) => {
+                if (b.ouros !== a.ouros) return b.ouros - a.ouros;
+                if (b.pratas !== a.pratas) return b.pratas - a.pratas;
+                if (b.bronzes !== a.bronzes) return b.bronzes - a.bronzes;
+                return b.nota - a.nota;
+            });
+            setVencedoresPartida(vencedoresOrdenados);
 
             if (resVotosTime.sucesso && resVotosTime.votos.length > 0) {
+                const qtdVotantesTimes = Math.max(1, new Set((resVotosTime.votos || []).filter(v => v.eleitor_id).map(v => v.eleitor_id)).size || 0);
+                const maxPontosTimes = qtdVotantesTimes * 4;
+
                 const pontos = {};
+                const medalhasTimes = {};
                 resVotosTime.votos.forEach(v => {
-                    const pts = v.posicao === 1 ? 3 : v.posicao === 2 ? 2 : 1;
+                    const pts = v.posicao === 1 ? 4 : v.posicao === 2 ? 2 : 1;
                     pontos[v.time_escolhido] = (pontos[v.time_escolhido] || 0) + pts;
+                    if (!medalhasTimes[v.time_escolhido]) medalhasTimes[v.time_escolhido] = { ouros: 0, pratas: 0, bronzes: 0 };
+                    if (v.posicao === 1) medalhasTimes[v.time_escolhido].ouros++;
+                    else if (v.posicao === 2) medalhasTimes[v.time_escolhido].pratas++;
+                    else if (v.posicao === 3) medalhasTimes[v.time_escolhido].bronzes++;
                 });
                 const ordenado = Object.keys(pontos)
-                    .map(nome => ({
-                        nome,
-                        pontos: pontos[nome],
-                        jogadores: (partidaSelecionada.times_sorteados || []).find(t => t.nome === nome)?.jogadores || []
-                    }))
-                    .sort((a, b) => b.pontos - a.pontos);
+                    .map(nome => {
+                        const pts = pontos[nome];
+                        const perc = pts / maxPontosTimes;
+                        const nota = Math.min(10.0, perc * 10.0);
+                        return {
+                            nome,
+                            pontos: pts,
+                            nota,
+                            isNota: true,
+                            ouros: medalhasTimes[nome]?.ouros || 0,
+                            pratas: medalhasTimes[nome]?.pratas || 0,
+                            bronzes: medalhasTimes[nome]?.bronzes || 0,
+                            jogadores: (partidaSelecionada.times_sorteados || []).find(t => t.nome === nome)?.jogadores || []
+                        };
+                    })
+                    .sort((a, b) => {
+                        if (b.ouros !== a.ouros) return b.ouros - a.ouros;
+                        if (b.pratas !== a.pratas) return b.pratas - a.pratas;
+                        if (b.bronzes !== a.bronzes) return b.bronzes - a.bronzes;
+                        return b.nota - a.nota;
+                    });
                 setTimesPartida(ordenado);
             } else {
                 setTimesPartida([]);
@@ -371,21 +483,23 @@ const PaginaRankingMVP = ({ equipeIdProp, aoVoltar }) => {
         let texto = '';
         if (modo === 'geral') {
             texto += `🏆 *Hall da Fama (TOP 10) - ${equipeAtiva?.nome || 'Equipe'}* 🏆\n`;
-            texto += `_Atletas eleitos por votação popular_\n\n`;
+            texto += `_Consenso e Aproveitamento de Carreira_\n\n`;
             
             if (rankingMVP.length > 0) {
-                texto += `⭐ *Craques Individuais (Top 3)*\n`;
-                rankingMVP.slice(0, 3).forEach((p, i) => {
+                texto += `⭐ *Melhores Aproveitamentos*\n`;
+                rankingMVP.slice(0, 10).forEach((p, i) => {
                     const nomeFormatado = formatarNomeCurto(p.nome_completo || p.apelido);
-                    texto += `${i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i+1}º`} ${nomeFormatado} - ${p.pontos} PTS\n`;
+                    const nota = Math.min(10, p.media).toFixed(1);
+                    texto += `${i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i+1}º`} ${nomeFormatado} - Nota ${nota}\n`;
                 });
                 texto += `\n`;
             }
             if (rankingColetivo.length > 0) {
-                texto += `🛡️ *Destaques Coletivos (Top 10)*\n`;
+                texto += `🛡️ *Destaques Coletivos*\n`;
                 rankingColetivo.slice(0, 10).forEach((p, i) => {
                     const nomeFormatado = formatarNomeCurto(p.nome_completo || p.apelido);
-                    texto += `${i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i+1}º`} ${nomeFormatado} - ${p.pontos} PTS\n`;
+                    const nota = Math.min(10, p.media).toFixed(1);
+                    texto += `${i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i+1}º`} ${nomeFormatado} - Nota ${nota}\n`;
                 });
                 texto += `\n`;
             }
@@ -481,10 +595,34 @@ const PaginaRankingMVP = ({ equipeIdProp, aoVoltar }) => {
                     </p>
                 </div>
                 
-                <div style={{ textAlign: 'center', marginBottom: '24px', background: 'rgba(251, 191, 36, 0.08)', borderRadius: '12px', padding: '8px 12px', border: '1px solid rgba(251, 191, 36, 0.2)' }}>
-                    <p style={{ color: '#fbbf24', fontSize: '0.75rem', fontWeight: '600', margin: 0, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                        🗳️ Rankings gerados através de Eleição Popular pelos jogadores da equipe
+                <div style={{ textAlign: 'center', marginBottom: '24px', background: 'rgba(251, 191, 36, 0.08)', borderRadius: '12px', padding: '12px', border: '1px solid rgba(251, 191, 36, 0.2)' }}>
+                    <p style={{ color: '#fbbf24', fontSize: '0.8rem', fontWeight: '700', margin: '0 0 12px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                        🗳️ Eleição Popular dos Atletas
                     </p>
+                    <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+                        <button 
+                            onClick={() => setPeriodo('mes')}
+                            style={{
+                                padding: '6px 12px', borderRadius: '8px', fontSize: '0.75rem', fontWeight: '800', cursor: 'pointer',
+                                background: periodo === 'mes' ? '#fbbf24' : 'rgba(255,255,255,0.05)',
+                                color: periodo === 'mes' ? '#0f172a' : '#94a3b8',
+                                border: 'none', transition: 'all 0.2s'
+                            }}
+                        >
+                            Mês Atual
+                        </button>
+                        <button 
+                            onClick={() => setPeriodo('sempre')}
+                            style={{
+                                padding: '6px 12px', borderRadius: '8px', fontSize: '0.75rem', fontWeight: '800', cursor: 'pointer',
+                                background: periodo === 'sempre' ? '#fbbf24' : 'rgba(255,255,255,0.05)',
+                                color: periodo === 'sempre' ? '#0f172a' : '#94a3b8',
+                                border: 'none', transition: 'all 0.2s'
+                            }}
+                        >
+                            Histórico Geral
+                        </button>
+                    </div>
                 </div>
 
                 {/* ── SELETOR DE MODO ── */}
@@ -502,12 +640,46 @@ const PaginaRankingMVP = ({ equipeIdProp, aoVoltar }) => {
                 ═══════════════════════════════ */}
                 {modo === 'geral' && (
                     <>
-                        {/* Atletas (Craques Individuais) */}
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '18px' }}>
-                            <Trophy size={15} color="#fbbf24" />
-                            <span style={{ fontSize: '0.75rem', fontWeight: '800', color: '#fbbf24', textTransform: 'uppercase', letterSpacing: '1px' }}>Craques Individuais (Top 3)</span>
+                        <div style={{ 
+                            background: 'rgba(30,41,59,0.3)', 
+                            border: '1px solid rgba(255,255,255,0.05)', 
+                            borderRadius: '12px', 
+                            padding: '10px 16px', 
+                            marginBottom: '28px',
+                            fontSize: '0.8rem',
+                            color: '#94a3b8',
+                        }}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                <span>📊 <strong style={{ color: '#f1f5f9' }}>Nota do Atleta (0 a 10)</strong> &nbsp;
+                                    <span style={{ fontSize: '0.7rem', color: '#64748b' }}>Quanto mais a galera te votar, maior sua nota.</span>
+                                </span>
+                                <button
+                                    onClick={() => setShowInfoGeral(p => !p)}
+                                    style={{ background: 'none', border: 'none', color: '#10b981', fontSize: '0.7rem', cursor: 'pointer', padding: '2px 6px', borderRadius: '6px', flexShrink: 0 }}
+                                >
+                                    {showInfoGeral ? 'Fechar ✕' : 'Como funciona?'}
+                                </button>
+                            </div>
+                            {showInfoGeral && (
+                                <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid rgba(255,255,255,0.05)', fontSize: '0.7rem', color: '#64748b', lineHeight: '1.6' }}>
+                                    <p style={{ margin: '0 0 6px 0', color: '#10b981', fontWeight: '600' }}>
+                                        🧮 Eficiência Global: (Total de Pontos / Teto Acumulado) × 10
+                                    </p>
+                                    <p style={{ margin: 0 }}>
+                                        Somamos todos os pontos que você ganhou nas partidas que jogou e dividimos pelo máximo que seria possível ganhar nesses mesmos jogos. Quem domina uma partida com "Casa Cheia" tem nota naturalmente mais alta.
+                                    </p>
+                                    <p style={{ margin: '6px 0 0 0', color: '#475569' }}>
+                                        🥇 Ouro (4 pts) · 🥈 Prata (2 pts) · 🥉 Bronze (1 pt)
+                                    </p>
+                                </div>
+                            )}
                         </div>
-                        <ListaRankingJogadores ranking={rankingMVP.slice(0, 3)} />
+
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '18px', marginTop: '12px' }}>
+                            <Trophy size={15} color="#fbbf24" />
+                            <span style={{ fontSize: '0.75rem', fontWeight: '800', color: '#fbbf24', textTransform: 'uppercase', letterSpacing: '1px' }}>Craques Individuais (Top 5)</span>
+                        </div>
+                        <ListaRankingJogadores ranking={rankingMVP.slice(0, 5)} />
 
                         {/* Atletas (Destaques Coletivos) */}
                         <div style={{ marginTop: '40px' }}>
@@ -518,7 +690,7 @@ const PaginaRankingMVP = ({ equipeIdProp, aoVoltar }) => {
                             <ListaRankingJogadores ranking={rankingColetivo.slice(0, 10)} />
                             {rankingColetivo.length > 0 && (
                                 <p style={{ textAlign: 'center', fontSize: '0.68rem', color: '#334155', marginTop: '16px' }}>
-                                    Pontos ganhos quando o time em que jogou ficou no pódio (🥇=3 pts · 🥈=2 pts · 🥉=1 pt).
+                                    Sua nota sobe quando o time em que você jogou é bem votado pela equipe.
                                 </p>
                             )}
                         </div>
@@ -614,6 +786,40 @@ const PaginaRankingMVP = ({ equipeIdProp, aoVoltar }) => {
                                         </div>
                                     )}
                                 </div>
+                                    <div style={{ 
+                                        background: 'rgba(30,41,59,0.3)', 
+                                        border: '1px solid rgba(255,255,255,0.05)', 
+                                        borderRadius: '12px', 
+                                        padding: '10px 16px', 
+                                        marginBottom: '28px',
+                                        fontSize: '0.8rem',
+                                        color: '#94a3b8',
+                                    }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                            <span>🏅 <strong style={{ color: '#f1f5f9' }}>Destaques da Partida</strong> &nbsp;
+                                                <span style={{ fontSize: '0.7rem', color: '#64748b' }}>Craques ordenados por 🥇 primeiro.</span>
+                                            </span>
+                                            <button
+                                                onClick={() => setShowInfoPartida(p => !p)}
+                                                style={{ background: 'none', border: 'none', color: '#10b981', fontSize: '0.7rem', cursor: 'pointer', padding: '2px 6px', borderRadius: '6px', flexShrink: 0 }}
+                                            >
+                                                {showInfoPartida ? 'Fechar ✕' : 'Como funciona?'}
+                                            </button>
+                                        </div>
+                                        {showInfoPartida && (
+                                            <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid rgba(255,255,255,0.05)', fontSize: '0.7rem', color: '#64748b', lineHeight: '1.6' }}>
+                                                <p style={{ margin: '0 0 6px 0', color: '#10b981', fontWeight: '600' }}>
+                                                    🧮 Nota: (Pontos Obtidos / Teto Máximo) × 10
+                                                </p>
+                                                <p style={{ margin: 0 }}>
+                                                    O Teto Máximo é a pontuação que o atleta teria recebido se <strong>todas</strong> as pessoas que votaram o tivessem escolhido como Ouro (4 pts). Quem tem mais Ouros aparece primeiro.
+                                                </p>
+                                                <p style={{ margin: '6px 0 0 0', color: '#475569' }}>
+                                                    🥇 Ouro (4 pts) · 🥈 Prata (2 pts) · 🥉 Bronze (1 pt)
+                                                </p>
+                                            </div>
+                                        )}
+                                    </div>
 
                                 {/* ── Resultados da Partida ── */}
                                 {carregandoPartida ? (

@@ -4,6 +4,10 @@ import { usarAutenticacao } from './AutenticacaoContexto';
 
 const PartidasContexto = createContext();
 
+// Pesos constantes para Rankeamento MVP (Modelo Exponencial)
+const PESO_MEDALHA = { 1: 4, 2: 2, 3: 1 };
+const TETO_UNICO_MVP = 4; // Um votante escolhendo alguém como Ouro dá 4 pontos
+
 export const usarPartidas = () => useContext(PartidasContexto);
 
 export const PartidasProvider = ({ children }) => {
@@ -606,13 +610,121 @@ export const PartidasProvider = ({ children }) => {
         }
     };
 
-    const buscarRankingMVP = async (equipeId) => {
+    const buscarRankingMVP = async (equipeId, filtroMes = false) => {
         try {
-            const { data, error } = await supabase.rpc('buscar_ranking_mvp_equipe', {
-                p_equipe_id: equipeId
+            // 1. Busca votos
+            let query = supabase
+                .from('votos_mvp')
+                .select('candidato_id, posicao, partida_id, eleitor_id, partidas!inner(data)')
+                .eq('equipe_id', equipeId);
+            
+            if (filtroMes) {
+                const agora = new Date();
+                const primeiroDia = new Date(agora.getFullYear(), agora.getMonth(), 1).toISOString();
+                query = query.gte('partidas.data', primeiroDia);
+            }
+
+            const { data: votos, error: errVotos } = await query;
+            if (errVotos) throw errVotos;
+
+            // 2. Busca contagem de partidas jogadas por cada um (Preparo p/ média)
+            const { data: presencas, error: errPres } = await supabase
+                .from('partidas_presencas')
+                .select('usuario_id, partida_id, partidas!inner(data)')
+                .eq('frequencia', 'P')
+                .eq('partidas.equipe_id', equipeId);
+            
+            if (errPres) throw errPres;
+
+            // Filtra presenças pelo mês se necessário
+            let presencasFiltradas = presencas;
+            if (filtroMes) {
+                const agora = new Date();
+                const primeiroDia = new Date(agora.getFullYear(), agora.getMonth(), 1).getTime();
+                presencasFiltradas = presencas.filter(p => new Date(p.partidas.data + 'T00:00:00').getTime() >= primeiroDia);
+            }
+
+            const { data: todosUsuarios } = await supabase.from('usuarios').select('id, nome_completo');
+            const perfisMap = (todosUsuarios || []).reduce((acc, u) => ({ ...acc, [u.id]: u.nome_completo }), {});
+
+            const totalPartidasAtleta = {};
+            presencasFiltradas.forEach(p => {
+                totalPartidasAtleta[p.usuario_id] = (totalPartidasAtleta[p.usuario_id] || 0) + 1;
             });
-            if (error) throw error;
-            return { sucesso: true, ranking: data || [] };
+
+            // 3. Busca total de partidas da equipe no período (p/ trava dinâmica)
+            const idsPartidasPeriodo = new Set(presencasFiltradas.map(p => p.partida_id));
+            const totalPartidasEquipe = idsPartidasPeriodo.size;
+            const travaPresenca = Math.min(3, Math.ceil(totalPartidasEquipe / 2));
+
+            // 4. Agrupa Votantes Únicos por partida
+            const votantesPorPartida = {};
+            votos.forEach(v => {
+                if (!votantesPorPartida[v.partida_id]) votantesPorPartida[v.partida_id] = new Set();
+                if (v.eleitor_id) votantesPorPartida[v.partida_id].add(v.eleitor_id);
+            });
+
+            const stats = {};
+            votos.forEach(v => {
+                const pts = PESO_MEDALHA[v.posicao] || (Number(v.posicao) === 1 ? 4 : Number(v.posicao) === 2 ? 2 : 1);
+                
+                if (!stats[v.candidato_id]) {
+                    stats[v.candidato_id] = { 
+                        usuario_id: v.candidato_id, pontos: 0, ouros: 0, pratas: 0, bronzes: 0, 
+                        jogos: totalPartidasAtleta[v.candidato_id] || 0 
+                    };
+                }
+                stats[v.candidato_id].pontos += pts;
+                if (Number(v.posicao) === 1) stats[v.candidato_id].ouros++;
+                if (Number(v.posicao) === 2) stats[v.candidato_id].pratas++;
+                if (Number(v.posicao) === 3) stats[v.candidato_id].bronzes++;
+            });
+
+            // 5. True Consensus Calculation
+            const ranking = Object.values(stats)
+                .map(s => {
+                    // 1. Identifica todas as partidas onde o jogador esteve presente OU recebeu votos
+                    const idsPartidas = new Set([
+                        ...presencasFiltradas.filter(p => p.usuario_id === s.usuario_id).map(p => p.partida_id),
+                        ...votos.filter(v => v.candidato_id === s.usuario_id).map(v => v.partida_id)
+                    ]);
+                    
+                    let somaPontosGanhos = 0;
+                    let somaMaxPossivelGlobal = 0;
+
+                    // 1. Soma pontos REAIS (de todas as partidas identificadas)
+                    votos.forEach(v => {
+                        if (v.candidato_id === s.usuario_id && idsPartidas.has(v.partida_id)) {
+                            somaPontosGanhos += (PESO_MEDALHA[v.posicao] || (Number(v.posicao) === 1 ? 4 : Number(v.posicao) === 2 ? 2 : 1));
+                        }
+                    });
+
+                    // 2. Calcula Teto (apenas de partidas onde ele participou/recebeu voto e que tiveram votos)
+                    idsPartidas.forEach(pId => {
+                        const qtdVotantes = votantesPorPartida[pId] ? votantesPorPartida[pId].size : 0;
+                        if (qtdVotantes === 0) return;
+                        somaMaxPossivelGlobal += (qtdVotantes * TETO_UNICO_MVP);
+                    });
+
+                    const percentualBruto = somaMaxPossivelGlobal > 0 ? (somaPontosGanhos / somaMaxPossivelGlobal) : 0;
+                    const notaFinal = percentualBruto * 10.0;
+
+                    return {
+                        ...s,
+                        media: Math.min(10.0, notaFinal)
+                    };
+                })
+                .filter(s => s.jogos >= travaPresenca)
+                .sort((a, b) => {
+                    // Ordenação: 1. Nota (Média) | 2. Ouros | 3. Pratas | 4. Bronzes
+                    if (Math.abs(b.media - a.media) > 0.001) return b.media - a.media;
+                    if (b.ouros !== a.ouros) return b.ouros - a.ouros;
+                    if (b.pratas !== a.pratas) return b.pratas - a.pratas;
+                    if (b.bronzes !== a.bronzes) return b.bronzes - a.bronzes;
+                    return b.media - a.media;
+                });
+
+            return { sucesso: true, ranking, travaPresenca, totalPartidasEquipe };
         } catch (error) {
             console.error('Erro ao buscar ranking MVP:', error);
             return { sucesso: false, ranking: [] };
@@ -693,69 +805,137 @@ export const PartidasProvider = ({ children }) => {
         }
     };
 
-    // Ranking de jogadores baseado no desempenho de seus times (pontos: ouro=3, prata=2, bronze=1)
-    const buscarRankingColetivo = async (equipeId) => {
+    const buscarRankingColetivo = async (equipeId, filtroMes = false) => {
         try {
-            const { data: votos, error: errVotos } = await supabase
+            let queryVotos = supabase
                 .from('votos_time')
-                .select('partida_id, time_escolhido, posicao')
+                .select('partida_id, time_escolhido, posicao, eleitor_id, partidas!inner(data)')
                 .eq('equipe_id', equipeId);
+            
+            if (filtroMes) {
+                const agora = new Date();
+                const primeiroDia = new Date(agora.getFullYear(), agora.getMonth(), 1).toISOString();
+                queryVotos = queryVotos.gte('partidas.data', primeiroDia);
+            }
 
+            const { data: votos, error: errVotos } = await queryVotos;
             if (errVotos) throw errVotos;
 
-            // Busca todas as partidas para saber quem estava em qual time
+            // Busca partidas e presenças
             const { data: partidas, error: errPartidas } = await supabase
                 .from('partidas')
-                .select('id, times_sorteados')
+                .select('id, times_sorteados, data')
                 .eq('equipe_id', equipeId)
                 .not('times_sorteados', 'is', null);
-
+            
             if (errPartidas) throw errPartidas;
 
+            const { data: presencas, error: errPres } = await supabase
+                .from('partidas_presencas')
+                .select('usuario_id, partida_id')
+                .eq('frequencia', 'P');
+            
+            if (errPres) throw errPres;
+
+            // Filtragem por mês local (JS) para garantir consistência
+            let partidasFiltradas = partidas;
+            if (filtroMes) {
+                const agora = new Date();
+                const primeiroDia = new Date(agora.getFullYear(), agora.getMonth(), 1).getTime();
+                partidasFiltradas = partidas.filter(p => new Date(p.data + 'T00:00:00').getTime() >= primeiroDia);
+            }
+
+            const idsPartidasPeriodo = new Set(partidasFiltradas.map(p => p.id));
+            const travaPresenca = Math.min(3, Math.ceil(idsPartidasPeriodo.size / 2));
+
+            const totalPartidasAtleta = {};
+            presencas.forEach(p => {
+                if (idsPartidasPeriodo.has(p.partida_id)) {
+                    totalPartidasAtleta[p.usuario_id] = (totalPartidasAtleta[p.usuario_id] || 0) + 1;
+                }
+            });
+
             const mapPartidas = {};
-            partidas.forEach(p => {
+            partidasFiltradas.forEach(p => {
                 mapPartidas[p.id] = {};
                 (p.times_sorteados || []).forEach(t => {
                     mapPartidas[p.id][t.nome] = t.jogadores || [];
                 });
             });
 
-            const ptsJogadores = {};
+            // 4. Agrupa Votantes Únicos por Partida
+            const votantesPorPartidaT = {};
+            votos.forEach(v => {
+                if (!votantesPorPartidaT[v.partida_id]) votantesPorPartidaT[v.partida_id] = new Set();
+                if (v.eleitor_id) votantesPorPartidaT[v.partida_id].add(v.eleitor_id);
+            });
 
-            (votos || []).forEach(v => {
+            const ptsJogadores = {};
+            const ptsPartidaCol = {}; // { usuario_id: { partida_id: pts_da_equipe } }
+
+            votos.forEach(v => {
                 const jogadoresDoTime = mapPartidas[v.partida_id]?.[v.time_escolhido] || [];
-                const pts = v.posicao === 1 ? 3 : v.posicao === 2 ? 2 : 1;
+                const pts = v.posicao === 1 ? 4 : v.posicao === 2 ? 2 : 1;
                 
                 jogadoresDoTime.forEach(jogador => {
-                    // Chave pelo ID real ou pelo Nome (fallback pra antigos)
-                    const key = jogador.id ? String(jogador.id) : (jogador.nome || 'Desconhecido');
+                    const key = jogador.id ? String(jogador.id) : null;
+                    if (!key) return;
                     
                     if (!ptsJogadores[key]) {
                         ptsJogadores[key] = {
                             usuario_id: jogador.id,
                             nome_completo: jogador.nome,
-                            apelido: jogador.nome, // Preenchemos na página se for ID
-                            pontos: 0,
-                            ouros: 0,
-                            pratas: 0,
-                            bronzes: 0
+                            pontos: 0, ouros: 0, pratas: 0, bronzes: 0,
+                            jogos: totalPartidasAtleta[key] || 0
                         };
                     }
                     
                     ptsJogadores[key].pontos += pts;
-                    if (v.posicao === 1) ptsJogadores[key].ouros += 1;
-                    if (v.posicao === 2) ptsJogadores[key].pratas += 1;
-                    if (v.posicao === 3) ptsJogadores[key].bronzes += 1;
+                    if (v.posicao === 1) ptsJogadores[key].ouros++;
+                    if (v.posicao === 2) ptsJogadores[key].pratas++;
+                    if (v.posicao === 3) ptsJogadores[key].bronzes++;
+
+                    if (!ptsPartidaCol[key]) ptsPartidaCol[key] = {};
+                    // Como a equipe toda ganha, soma para a partida
+                    ptsPartidaCol[key][v.partida_id] = (ptsPartidaCol[key][v.partida_id] || 0) + pts;
                 });
             });
 
-            const ranking = Object.values(ptsJogadores).sort((a, b) => {
-                if (b.pontos !== a.pontos) return b.pontos - a.pontos;
-                if (b.ouros !== a.ouros) return b.ouros - a.ouros;
-                if (b.pratas !== a.pratas) return b.pratas - a.pratas;
-                return b.bronzes - a.bronzes;
-            });
-            return { sucesso: true, ranking };
+            const ranking = Object.values(ptsJogadores)
+                .map(s => {
+                    const partidasDoJogador = presencas.filter(p => p.usuario_id === s.usuario_id && idsPartidasPeriodo.has(p.partida_id));
+                    let somaPontosGanhos = 0;
+                    let somaMaxPossivelGlobal = 0;
+
+                    partidasDoJogador.forEach(p => {
+                        const pId = p.partida_id;
+                        const qtdVotantes = votantesPorPartidaT[pId] ? votantesPorPartidaT[pId].size : 0;
+                        if (qtdVotantes === 0) return;
+
+                        const maxPossivelDaPartida = qtdVotantes * TETO_UNICO_MVP;
+                        const ganhosDaPartida = (ptsPartidaCol[s.usuario_id] && ptsPartidaCol[s.usuario_id][pId]) ? ptsPartidaCol[s.usuario_id][pId] : 0;
+                        
+                        somaPontosGanhos += ganhosDaPartida;
+                        somaMaxPossivelGlobal += maxPossivelDaPartida;
+                    });
+
+                    const percentualBruto = somaMaxPossivelGlobal > 0 ? (somaPontosGanhos / somaMaxPossivelGlobal) : 0;
+                    
+                    // Escala Pura Coletiva
+                    const notaFinal = percentualBruto * 10.0;
+
+                    return {
+                        ...s,
+                        media: Math.min(10.0, notaFinal)
+                    };
+                })
+                .filter(s => s.jogos >= travaPresenca)
+                .sort((a, b) => {
+                    if (b.media !== a.media) return b.media - a.media;
+                    return b.jogos - a.jogos;
+                });
+
+            return { sucesso: true, ranking, travaPresenca, totalPartidasEquipe: idsPartidasPeriodo.size };
         } catch (error) {
             console.error('Erro ao buscar ranking coletivo:', error);
             return { sucesso: false, ranking: [] };
