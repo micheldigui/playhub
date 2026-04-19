@@ -30,6 +30,7 @@ const ModalPerfilEquipe = ({ isOpen, onClose, idEquipe, aoVerAtleta = null }) =>
                 .from('equipes')
                 .select(`
                     *,
+                    admin:usuarios!equipes_admin_id_fkey (id, nome_completo, apelido, foto_url),
                     membros:membros_equipe(id, status)
                 `)
                 .eq('id', idEquipe)
@@ -38,33 +39,77 @@ const ModalPerfilEquipe = ({ isOpen, onClose, idEquipe, aoVerAtleta = null }) =>
             if (errEq) throw errEq;
             setEquipe(eq);
 
-            // 2. Buscar Liderança (Capitão e Sub-Admins)
-            const { data: leads } = await supabase
-                .from('membros_equipe')
-                .select(`
-                    id,
-                    usuario_id,
-                    papel,
-                    vinculo,
-                    usuarios (
-                        id,
-                        nome_completo,
-                        apelido,
-                        foto_url,
-                        cidade,
-                        estado,
-                        data_nascimento
-                    )
-                `)
-                .eq('equipe_id', idEquipe)
-                .eq('status', 'ativo')
-                .or(`papel.in.(admin,sub_admin),usuario_id.eq.${eq.admin_id}`);
+            // 2. Buscar Liderança via Nova RPC Estável (Exclusiva para nomes públicos)
+            const { data: dataRpc, error: errorRpc } = await supabase.rpc('buscar_lideranca_equipe_publica', { p_equipe_id: idEquipe });
 
-            // Mapeia e Ordena: Capitão primeiro, depois Vices
-            const leadsOrdenados = (leads || []).map(l => ({
-                ...l,
-                papel: l.usuario_id === eq.admin_id ? 'admin' : l.papel
-            })).sort((a, b) => {
+            let leadsOrdenados = [];
+            const idsPublicos = new Set(); // Guardaremos IDs que o join direto conseguiu ler
+
+            if (!errorRpc && dataRpc) {
+                // Tenta um join rápido para descobrir quem é público de verdade
+                const { data: checkPublic } = await supabase
+                    .from('usuarios')
+                    .select('id')
+                    .in('id', dataRpc.map(m => m.usuario_id))
+                    .eq('perfil_publico', true);
+                
+                (checkPublic || []).forEach(u => idsPublicos.add(u.id));
+
+                // Formata o retorno da nova RPC
+                leadsOrdenados = dataRpc
+                    .map(m => ({
+                        id: `id-${m.usuario_id}`,
+                        usuario_id: m.usuario_id,
+                        papel: m.papel,
+                        usuarios: {
+                            id: m.usuario_id,
+                            nome_completo: m.nome_completo,
+                            apelido: m.apelido,
+                            foto_url: m.foto_url,
+                            ehPublico: idsPublicos.has(m.usuario_id)
+                        }
+                    }));
+            } else {
+                // Fallback caso a RPC falhe ou não exista
+                const { data: leads } = await supabase
+                    .from('membros_equipe')
+                    .select('id, usuario_id, papel, usuarios(id, nome_completo, apelido, foto_url, perfil_publico)')
+                    .eq('equipe_id', idEquipe)
+                    .eq('status', 'ativo')
+                    .filter('papel', 'in', '("admin","sub_admin")');
+
+                leadsOrdenados = (leads || [])
+                    .filter(l => l.usuarios)
+                    .map(l => ({
+                        ...l,
+                        papel: l.usuario_id === eq.admin_id ? 'admin' : l.papel,
+                        usuarios: {
+                            ...l.usuarios,
+                            ehPublico: l.usuarios.perfil_publico
+                        }
+                    }));
+            }
+
+            // SEGURANÇA MÁXIMA: Se o capitão (dono) ainda não estiver na lista (problema de RLS no membros_equipe),
+            // tentamos injetá-lo usando o join que veio no objeto 'equipe' (eq)
+            const temCapitao = leadsOrdenados.some(l => l.papel === 'admin');
+            if (!temCapitao && eq.admin_id) {
+                const dadosAdmin = Array.isArray(eq.admin) ? eq.admin[0] : eq.admin;
+                leadsOrdenados.unshift({
+                    id: `fake-admin-${eq.admin_id}`,
+                    usuario_id: eq.admin_id,
+                    papel: 'admin',
+                    usuarios: { 
+                        id: eq.admin_id, 
+                        nome_completo: dadosAdmin?.nome_completo || (dadosAdmin?.apelido || 'Novo Jogador'),
+                        foto_url: dadosAdmin?.foto_url || null,
+                        ehPublico: !!dadosAdmin?.nome_completo
+                    }
+                });
+            }
+
+            // Ordenação final
+            leadsOrdenados.sort((a, b) => {
                 const ordem = { 'admin': 1, 'sub_admin': 2 };
                 return (ordem[a.papel] || 3) - (ordem[b.papel] || 3);
             });
@@ -208,21 +253,28 @@ const ModalPerfilEquipe = ({ isOpen, onClose, idEquipe, aoVerAtleta = null }) =>
                                                 lideranca.map(lead => (
                                                     <div 
                                                         key={lead.id} 
-                                                        className={`lider-card ${lead.papel}`}
-                                                        onClick={() => aoVerAtleta?.(lead.usuarios)}
+                                                        className={`lider-card ${lead.papel} ${!lead.usuarios?.ehPublico && lead.usuarios?.id !== usuario?.id ? 'lider-privado' : ''}`}
+                                                        onClick={() => {
+                                                            // Só permite ver o perfil se for o próprio usuário ou se o perfil for público
+                                                            if (lead.usuarios?.ehPublico || lead.usuarios?.id === usuario?.id) {
+                                                                aoVerAtleta?.(lead.usuarios);
+                                                            } else {
+                                                                alert(`O perfil de ${lead.usuarios?.nome_completo || 'este gestor'} é privado. Por questões de privacidade, os dados esportivos e de contato estão restritos.`);
+                                                            }
+                                                        }}
                                                     >
                                                         <div className="lider-avatar">
-                                                            {lead.usuarios.foto_url ? (
+                                                            {lead.usuarios?.foto_url ? (
                                                                 <img src={lead.usuarios.foto_url} alt={lead.usuarios.nome_completo} />
                                                             ) : (
-                                                                <div className="lider-placeholder">{lead.usuarios.nome_completo.charAt(0)}</div>
+                                                                <div className="lider-placeholder">{lead.usuarios?.nome_completo?.charAt(0) || '?'}</div>
                                                             )}
                                                             <div className={`badge-p-lead ${lead.papel}`}>
                                                                 {lead.papel === 'admin' ? <Crown size={12} /> : <ShieldCheck size={12} />}
                                                             </div>
                                                         </div>
                                                         <div className="lider-info">
-                                                            <strong>{lead.usuarios.nome_completo}</strong>
+                                                            <strong>{lead.usuarios?.nome_completo}</strong>
                                                             <span>{lead.papel === 'admin' ? 'Capitão' : 'Vice-Capitão'}</span>
                                                         </div>
                                                         <ChevronRight size={18} color="#475569" className="lider-seta" />

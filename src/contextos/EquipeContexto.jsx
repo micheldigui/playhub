@@ -94,17 +94,20 @@ export const EquipeProvedor = ({ children }) => {
 
             if (error) throw error;
             
-            const listaCompleta = data.map(m => ({
-                ...m.equipes,
-                id: m.equipe_id, // Garante o ID mesmo se o join 'equipes' falhar por RLS
-                // Se o usuário logado é o admin_id da equipe, garantir papel 'admin'
-                // independente do que está salvo em membros_equipe.papel.
-                // Isso evita inconsistências após transferências de titularidade.
-                papel: m.equipes?.admin_id === usuario.id ? 'admin' : m.papel,
-                vinculo: m.vinculo,
-                permissoes: m.permissoes || [],
-                membroStatus: m.status
-            })).filter(e => e.id);
+            const listaCompleta = data.map(m => {
+                const eq = m.equipes || {};
+                const dadosAdmin = Array.isArray(eq.admin) ? eq.admin[0] : eq.admin;
+                
+                return {
+                    ...eq,
+                    admin: dadosAdmin,
+                    id: m.equipe_id,
+                    papel: eq.admin_id === usuario.id ? 'admin' : m.papel,
+                    vinculo: m.vinculo,
+                    permissoes: m.permissoes || [],
+                    membroStatus: m.status
+                };
+            }).filter(e => e.id);
 
             const listaAtivas = listaCompleta.filter(e => e.membroStatus === 'ativo');
             const listaPendentes = listaCompleta.filter(e => e.membroStatus === 'pendente');
@@ -271,6 +274,8 @@ export const EquipeProvedor = ({ children }) => {
             const coords = await getCoordenadasPorCEP(dadosDaEquipe.local_cep);
 
             // 1. Inserir equipe
+            const slugGerado = Math.random().toString(36).substring(2, 10).toLowerCase();
+
             const { data: equipeNova, error: equipeErro } = await supabase
                 .from('equipes')
                 .insert({
@@ -284,7 +289,7 @@ export const EquipeProvedor = ({ children }) => {
                     local_nome: dadosDaEquipe.local_nome || null,
                     local_cep: dadosDaEquipe.local_cep || null,
                     local_rua: dadosDaEquipe.local_rua || null,
-                    local_bairro: dadosDaEquipe.local_bairro || null,
+                    local_bairro: dadosDaPeipe?.local_bairro || dadosDaEquipe.local_bairro || null,
                     local_cidade: dadosDaEquipe.local_cidade || null,
                     local_estado: dadosDaEquipe.local_estado || null,
                     local_numero: dadosDaEquipe.local_numero || null,
@@ -295,9 +300,13 @@ export const EquipeProvedor = ({ children }) => {
                     longitude: coords.lon,
                     gestao_financeira: dadosDaEquipe.gestao_financeira ?? true,
                     aceitando_membros: dadosDaEquipe.aceitando_membros ?? true,
-                    regras: dadosDaEquipe.regras || {}
+                    regras: dadosDaEquipe.regras || {},
+                    slug_convite: slugGerado
                 })
-                .select()
+                .select(`
+                    *,
+                    admin:usuarios!equipes_admin_id_fkey (id, nome_completo, apelido, foto_url)
+                `)
                 .single();
 
             if (equipeErro) throw equipeErro;

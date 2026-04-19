@@ -184,6 +184,38 @@ const PaginaExplorar = ({ aoVoltar }) => {
       } else {
         setResultados(prev => [...prev, ...lista]);
       }
+
+      // CARREGAMENTO SEGURO DE CAPITÃES (Contorno de RLS para perfis privados)
+      if (abaAtiva === 'equipes') {
+        const equipesSemAdmin = lista.filter(e => !e.admin && e.admin_id);
+        if (equipesSemAdmin.length > 0) {
+           equipesSemAdmin.forEach(async (equipe) => {
+             try {
+               const { data: mbs, error: errRpc } = await supabase.rpc('buscar_lideranca_equipe_publica', { p_equipe_id: equipe.id });
+               
+               if (errRpc) throw errRpc;
+
+               const adminMembro = (mbs || []).find(m => m.papel === 'admin' || m.usuario_id === equipe.admin_id);
+               if (adminMembro) {
+                 setResultados(prev => prev.map(p => 
+                   p.id === equipe.id ? { ...p, admin: { nome_completo: adminMembro.nome_completo, apelido: adminMembro.apelido, foto_url: adminMembro.foto_url } } : p
+                 ));
+               } else {
+                 // Se mesmo assim não encontrar (equipe estranha), remove o estado de carregamento
+                 setResultados(prev => prev.map(p => 
+                   p.id === equipe.id ? { ...p, admin: { nome_completo: 'Capitão' } } : p
+                 ));
+               }
+             } catch (e) {
+               console.error('Erro ao buscar admin seguro:', e);
+               // Fallback silencioso para não travar em loading
+               setResultados(prev => prev.map(p => 
+                 p.id === equipe.id && !p.admin ? { ...p, admin: { nome_completo: 'Capitão' } } : p
+               ));
+             }
+           });
+        }
+      }
       
       setPagina(novaPagina);
       setTemMais(count > (de + (data?.length || 0)));
@@ -391,7 +423,8 @@ const PaginaExplorar = ({ aoVoltar }) => {
             {abaAtiva === 'equipes' ? (
               resultados.map((equipe) => {
                 const meuStatus = statusEquipe(equipe);
-                const nomeAdmin = formatarNome(equipe.admin?.nome_completo || equipe.admin?.apelido || 'Desconhecido');
+                const dadosAdmin = Array.isArray(equipe.admin) ? equipe.admin[0] : equipe.admin;
+                const nomeAdmin = formatarNome(dadosAdmin?.nome_completo || dadosAdmin?.apelido || (equipe.admin_id ? 'Carregando...' : 'Desconhecido'));
                 const qtdMembros = (equipe.membros || []).filter(m => m.status === 'ativo').length;
                 return (
                   <div key={equipe.id} className={`card-explorar ${meuStatus ? 'card-explorar--meu' : ''} animacao-entrada`}>

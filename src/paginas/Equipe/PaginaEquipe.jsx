@@ -146,6 +146,10 @@ const PaginaEquipe = ({ abaAtiva, setAbaAtiva, aoVoltar, aoNavegar, setDadosNave
     };
 
     const convidarWhatsApp = () => {
+        if (!urlConvite) {
+            alert('Ops! O link de convite ainda não foi gerado para esta equipe. Tente recarregar a página ou contatar o suporte. 🛡️');
+            return;
+        }
         const cidade = equipeAtiva.local_cidade ? `📍 ${equipeAtiva.local_cidade}${equipeAtiva.local_estado ? `/${equipeAtiva.local_estado}` : ''}` : '';
         const nivel = equipeAtiva.nivel ? `⭐ Nível: ${equipeAtiva.nivel}` : '';
         const infos = [cidade, nivel].filter(Boolean).join('\n');
@@ -282,7 +286,8 @@ const PaginaEquipe = ({ abaAtiva, setAbaAtiva, aoVoltar, aoNavegar, setDadosNave
                                         <Crown size={14} /> Capitão: {(() => {
                                             const adminId = equipeAtiva.admin_id;
                                             const adminMembro = membros.find(m => m.usuario_id === adminId || m.usuarios?.id === adminId);
-                                            const u = adminMembro?.usuarios || equipeAtiva.admin || {};
+                                            const dadosAdmin = Array.isArray(equipeAtiva.admin) ? equipeAtiva.admin[0] : equipeAtiva.admin;
+                                            const u = adminMembro?.usuarios || dadosAdmin || {};
                                             return formatarIdentidadeAtleta(u);
                                         })()}
                                     </span>
