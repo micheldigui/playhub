@@ -20,6 +20,7 @@ const ModalPerfilEquipe = ({ isOpen, onClose, idEquipe, aoVerAtleta = null }) =>
     const [carregando, setCarregando] = useState(true);
     const [processandoSolicitacao, setProcessandoSolicitacao] = useState(false);
     const [abaAtiva, setAbaAtiva] = useState('geral');
+    const [erroPrivacidade, setErroPrivacidade] = useState(null);
 
     const carregarDados = useCallback(async () => {
         if (!idEquipe) return;
@@ -39,38 +40,35 @@ const ModalPerfilEquipe = ({ isOpen, onClose, idEquipe, aoVerAtleta = null }) =>
             if (errEq) throw errEq;
             setEquipe(eq);
 
-            // 2. Buscar Liderança via Nova RPC Estável (Exclusiva para nomes públicos)
+            // 2. Buscar Liderança via RPC (Versão estável atual no seu banco)
             const { data: dataRpc, error: errorRpc } = await supabase.rpc('buscar_lideranca_equipe_publica', { p_equipe_id: idEquipe });
 
             let leadsOrdenados = [];
-            const idsPublicos = new Set(); // Guardaremos IDs que o join direto conseguiu ler
 
             if (!errorRpc && dataRpc) {
-                // Tenta um join rápido para descobrir quem é público de verdade
+                // Tenta descobrir quem é público fazendo uma busca rápida
                 const { data: checkPublic } = await supabase
                     .from('usuarios')
                     .select('id')
                     .in('id', dataRpc.map(m => m.usuario_id))
                     .eq('perfil_publico', true);
                 
-                (checkPublic || []).forEach(u => idsPublicos.add(u.id));
+                const idsPublicos = new Set((checkPublic || []).map(u => u.id));
 
-                // Formata o retorno da nova RPC
-                leadsOrdenados = dataRpc
-                    .map(m => ({
-                        id: `id-${m.usuario_id}`,
-                        usuario_id: m.usuario_id,
-                        papel: m.papel,
-                        usuarios: {
-                            id: m.usuario_id,
-                            nome_completo: m.nome_completo,
-                            apelido: m.apelido,
-                            foto_url: m.foto_url,
-                            ehPublico: idsPublicos.has(m.usuario_id)
-                        }
-                    }));
+                leadsOrdenados = dataRpc.map(m => ({
+                    id: `id-${m.usuario_id}`,
+                    usuario_id: m.usuario_id,
+                    papel: m.papel,
+                    usuarios: {
+                        id: m.usuario_id,
+                        nome_completo: m.nome_completo,
+                        apelido: m.apelido,
+                        foto_url: m.foto_url,
+                        ehPublico: idsPublicos.has(m.usuario_id) // Se não encontrou na lista de públicos, é PRIVADO
+                    }
+                }));
             } else {
-                // Fallback caso a RPC falhe ou não exista
+                // Fallback padrão se a RPC falhar
                 const { data: leads } = await supabase
                     .from('membros_equipe')
                     .select('id, usuario_id, papel, usuarios(id, nome_completo, apelido, foto_url, perfil_publico)')
@@ -150,6 +148,24 @@ const ModalPerfilEquipe = ({ isOpen, onClose, idEquipe, aoVerAtleta = null }) =>
             title="Perfil da Equipe"
             maxWidth="480px"
         >
+            {erroPrivacidade && (
+                <div className="alerta-privacidade-modal universal-perfil" style={{
+                    background: 'rgba(239, 68, 68, 0.1)',
+                    border: '1px solid rgba(239, 68, 68, 0.2)',
+                    color: '#f87171',
+                    padding: '12px',
+                    borderRadius: '8px',
+                    fontSize: '0.88rem',
+                    margin: '10px 15px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    animation: 'shake 0.4s ease-in-out'
+                }}>
+                    <Lock size={18} />
+                    <span>{erroPrivacidade}</span>
+                </div>
+            )}
             <div className="perfil-equipe-container universal-perfil anima-entrada">
                 {carregando ? (
                     <div className="loading-perfil-centrado">
@@ -255,11 +271,14 @@ const ModalPerfilEquipe = ({ isOpen, onClose, idEquipe, aoVerAtleta = null }) =>
                                                         key={lead.id} 
                                                         className={`lider-card ${lead.papel} ${!lead.usuarios?.ehPublico && lead.usuarios?.id !== usuario?.id ? 'lider-privado' : ''}`}
                                                         onClick={() => {
+                                                            setErroPrivacidade(null);
+
                                                             // Só permite ver o perfil se for o próprio usuário ou se o perfil for público
                                                             if (lead.usuarios?.ehPublico || lead.usuarios?.id === usuario?.id) {
                                                                 aoVerAtleta?.(lead.usuarios);
                                                             } else {
-                                                                alert(`O perfil de ${lead.usuarios?.nome_completo || 'este gestor'} é privado. Por questões de privacidade, os dados esportivos e de contato estão restritos.`);
+                                                                setErroPrivacidade(`O perfil de ${lead.usuarios?.nome_completo || 'este gestor'} é privado. Por questões de privacidade, os dados esportivos e de contato estão restritos. 🔒`);
+                                                                setTimeout(() => setErroPrivacidade(null), 6000);
                                                             }
                                                         }}
                                                     >
