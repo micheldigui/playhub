@@ -84,8 +84,7 @@ export const EquipeProvedor = ({ children }) => {
                 .select(`
                     id, papel, vinculo, permissoes, status, equipe_id,
                     equipes ( 
-                        id, nome, modalidade, logo_url, admin_id, local_cidade, regras,
-                        gestao_financeira, aceitando_membros, admin_id_pendente, slug_convite,
+                        *,
                         admin:usuarios!equipes_admin_id_fkey (id, nome_completo, apelido, foto_url)
                     )
                 `)
@@ -289,7 +288,7 @@ export const EquipeProvedor = ({ children }) => {
                     local_nome: dadosDaEquipe.local_nome || null,
                     local_cep: dadosDaEquipe.local_cep || null,
                     local_rua: dadosDaEquipe.local_rua || null,
-                    local_bairro: dadosDaPeipe?.local_bairro || dadosDaEquipe.local_bairro || null,
+                    local_bairro: dadosDaEquipe.local_bairro || null,
                     local_cidade: dadosDaEquipe.local_cidade || null,
                     local_estado: dadosDaEquipe.local_estado || null,
                     local_numero: dadosDaEquipe.local_numero || null,
