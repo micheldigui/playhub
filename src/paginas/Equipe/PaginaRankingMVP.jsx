@@ -164,7 +164,7 @@ const ListaRankingJogadores = ({ ranking }) => {
                                 {Math.min(10, player.media).toFixed(1)} <span style={{ fontSize: '0.6rem', opacity: 0.6 }}>NOTA</span>
                             </div>
                             <div className="podio-medalheiro" style={{ fontSize: index > 2 ? '0.62rem' : '0.7rem' }}>
-                                <span>🥇{player.ouros}</span><span>🥈{player.pratas}</span><span>🥉{player.bronzes}</span>
+                                <span>{player.jogos || 0} jogos validos</span>
                             </div>
                         </div>
                     );
@@ -187,7 +187,7 @@ const ListaRankingJogadores = ({ ranking }) => {
                                     <div className="item-ranking-info">
                                         <span className="item-ranking-nome">{formatarNomeCurto(player.nome_completo || player.apelido)}</span>
                                         <div className="item-ranking-medalheiro-mini">
-                                            <span>🥇{player.ouros}</span><span>🥈{player.pratas}</span><span>🥉{player.bronzes}</span>
+                                            <span>{player.jogos || 0} jogos validos</span>
                                         </div>
                                     </div>
                                 </div>
@@ -255,12 +255,12 @@ const PodioPartida = ({ atletas }) => {
 };
 
 // ── Componente Principal ──────────────────────────────────────────────────
-const PaginaRankingMVP = ({ equipeIdProp, aoVoltar }) => {
+const PaginaRankingMVP = ({ equipeIdProp, aoVoltar, modoInicial = 'geral', apenasPartidas = false }) => {
     const { equipeAtiva, carregarMembrosEquipe } = usarEquipe();
     const equipeId = equipeIdProp || equipeAtiva?.id;
     const { buscarRankingMVP, buscarRankingColetivo, carregarPartidas, buscarVencedoresPartida, buscarVotosTime, buscarVotosMVP } = usarPartidas();
 
-    const [modo, setModo] = useState('geral');
+    const [modo, setModo] = useState(modoInicial);
     const [periodo, setPeriodo] = useState('sempre'); // 'sempre' | 'mes'
     const [showInfoGeral, setShowInfoGeral] = useState(false);
     const [showInfoPartida, setShowInfoPartida] = useState(false);
@@ -284,6 +284,10 @@ const PaginaRankingMVP = ({ equipeIdProp, aoVoltar }) => {
     useEffect(() => {
         rastrear.pagina('Visitou: Hall da Fama');
     }, []);
+
+    useEffect(() => {
+        setModo(modoInicial);
+    }, [modoInicial]);
 
     // Fechar dropdown ao clicar fora
     useEffect(() => {
@@ -483,23 +487,23 @@ const PaginaRankingMVP = ({ equipeIdProp, aoVoltar }) => {
         let texto = '';
         if (modo === 'geral') {
             texto += `🏆 *Hall da Fama (TOP 10) - ${equipeAtiva?.nome || 'Equipe'}* 🏆\n`;
-            texto += `_Consenso e Aproveitamento de Carreira_\n\n`;
+            texto += `_Ranking por nota ajustada, nao por soma de medalhas_\n\n`;
             
             if (rankingMVP.length > 0) {
-                texto += `⭐ *Melhores Aproveitamentos*\n`;
+                texto += `⭐ *Craques Individuais - Nota Ajustada*\n`;
                 rankingMVP.slice(0, 5).forEach((p, i) => {
                     const nomeFormatado = formatarNomeCurto(p.nome_completo || p.apelido);
                     const nota = Math.min(10, p.media).toFixed(1);
-                    texto += `${i === 0 ? '🥇' : i === 1 ? '🥈' : '🥉'} ${nomeFormatado} - Nota ${nota}\n`;
+                    texto += `${i + 1}º ${nomeFormatado} - Nota ${nota} (${p.jogos || 0} jogos validos)\n`;
                 });
                 texto += `\n`;
             }
             if (rankingColetivo.length > 0) {
-                texto += `🛡️ *Destaques Coletivos*\n`;
+                texto += `🛡️ *Destaques Coletivos - Nota Ajustada*\n`;
                 rankingColetivo.slice(0, 10).forEach((p, i) => {
                     const nomeFormatado = formatarNomeCurto(p.nome_completo || p.apelido);
                     const nota = Math.min(10, p.media).toFixed(1);
-                    texto += `${i === 0 ? '🥇' : i === 1 ? '🥈' : i < 5 ? '🥉' : `${i + 1}º`} ${nomeFormatado} - Nota ${nota}\n`;
+                    texto += `${i + 1}º ${nomeFormatado} - Nota ${nota} (${p.jogos || 0} jogos validos)\n`;
                 });
                 texto += `\n`;
             }
@@ -595,7 +599,7 @@ const PaginaRankingMVP = ({ equipeIdProp, aoVoltar }) => {
                     </p>
                 </div>
                 
-                <div style={{ textAlign: 'center', marginBottom: '24px', background: 'rgba(251, 191, 36, 0.08)', borderRadius: '12px', padding: '12px', border: '1px solid rgba(251, 191, 36, 0.2)' }}>
+                <div style={{ display: apenasPartidas ? 'none' : 'block', textAlign: 'center', marginBottom: '24px', background: 'rgba(251, 191, 36, 0.08)', borderRadius: '12px', padding: '12px', border: '1px solid rgba(251, 191, 36, 0.2)' }}>
                     <p style={{ color: '#fbbf24', fontSize: '0.8rem', fontWeight: '700', margin: '0 0 12px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                         🗳️ Eleição Popular dos Atletas
                     </p>
@@ -626,14 +630,14 @@ const PaginaRankingMVP = ({ equipeIdProp, aoVoltar }) => {
                 </div>
 
                 {/* ── SELETOR DE MODO ── */}
-                <div style={{ display: 'flex', gap: '8px', marginBottom: '28px' }}>
+                {!apenasPartidas && <div style={{ display: 'flex', gap: '8px', marginBottom: '28px' }}>
                     <button style={ESTILO_TAB(modo === 'geral')} onClick={() => setModo('geral')}>
                         <Trophy size={15} /> Geral
                     </button>
                     <button style={ESTILO_TAB(modo === 'partida')} onClick={() => setModo('partida')}>
                         <Calendar size={15} /> Por Partida
                     </button>
-                </div>
+                </div>}
 
                 {/* ═══════════════════════════════
                     MODO GERAL
@@ -650,8 +654,8 @@ const PaginaRankingMVP = ({ equipeIdProp, aoVoltar }) => {
                             color: '#94a3b8',
                         }}>
                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                <span>📊 <strong style={{ color: '#f1f5f9' }}>Nota do Atleta (0 a 10)</strong> &nbsp;
-                                    <span style={{ fontSize: '0.7rem', color: '#64748b' }}>Quanto mais a galera te votar, maior sua nota.</span>
+                                <span>📊 <strong style={{ color: '#f1f5f9' }}>Nota ajustada (0 a 10)</strong> &nbsp;
+                                    <span style={{ fontSize: '0.7rem', color: '#64748b' }}>Ranking justo por desempenho medio.</span>
                                 </span>
                                 <button
                                     onClick={() => setShowInfoGeral(p => !p)}
@@ -662,14 +666,26 @@ const PaginaRankingMVP = ({ equipeIdProp, aoVoltar }) => {
                             </div>
                             {showInfoGeral && (
                                 <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid rgba(255,255,255,0.05)', fontSize: '0.7rem', color: '#64748b', lineHeight: '1.6' }}>
-                                    <p style={{ margin: '0 0 6px 0', color: '#10b981', fontWeight: '600' }}>
-                                        🧮 Eficiência Global: (Total de Pontos / Teto Acumulado) × 10
+                                    <p style={{ margin: '0 0 8px 0', color: '#10b981', fontWeight: '800' }}>
+                                        Resumo rapido
                                     </p>
-                                    <p style={{ margin: 0 }}>
-                                        Somamos todos os pontos que você ganhou nas partidas que jogou e dividimos pelo máximo que seria possível ganhar nesses mesmos jogos. Quem domina uma partida com "Casa Cheia" tem nota naturalmente mais alta.
+                                    <p style={{ margin: '0 0 6px 0' }}>
+                                        <strong style={{ color: '#f1f5f9' }}>🗳️ 1. Votos da partida:</strong> cada voto vale um peso. Ouro vale 4, prata vale 2 e bronze vale 1.
                                     </p>
-                                    <p style={{ margin: '6px 0 0 0', color: '#475569' }}>
-                                        🥇 Ouro (4 pts) · 🥈 Prata (2 pts) · 🥉 Bronze (1 pt)
+                                    <p style={{ margin: '0 0 6px 0' }}>
+                                        <strong style={{ color: '#f1f5f9' }}>📊 2. Nota da partida:</strong> esses votos viram uma nota de 0 a 10 para aquele jogo.
+                                    </p>
+                                    <p style={{ margin: '0 0 6px 0' }}>
+                                        <strong style={{ color: '#f1f5f9' }}>🏆 3. Ranking geral:</strong> o sistema usa a media das notas. Assim, quem joga ha mais tempo nao fica na frente so por ter mais medalhas.
+                                    </p>
+                                    <p style={{ margin: '0 0 6px 0' }}>
+                                        <strong style={{ color: '#f1f5f9' }}>🛡️ 4. Protecao contra distorcao:</strong> uma partida com poucos votos nao conta no historico. Ela aparece em "Por Partida", mas fica fora do ranking geral.
+                                    </p>
+                                    <p style={{ margin: '0 0 6px 0' }}>
+                                        <strong style={{ color: '#f1f5f9' }}>⚖️ 5. Poucos jogos:</strong> no comeco, todo mundo entra no ranking. Quando a equipe tiver mais partidas validas, o sistema passa a exigir mais jogos para evitar distorcoes.
+                                    </p>
+                                    <p style={{ margin: '8px 0 0 0', color: '#cbd5e1' }}>
+                                        🤝 No coletivo, o time tambem recebe nota de 0 a 10 conforme os votos da partida. Essa nota vai para todos os atletas daquele time.
                                     </p>
                                 </div>
                             )}
@@ -677,7 +693,7 @@ const PaginaRankingMVP = ({ equipeIdProp, aoVoltar }) => {
 
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '18px', marginTop: '12px' }}>
                             <Trophy size={15} color="#fbbf24" />
-                            <span style={{ fontSize: '0.75rem', fontWeight: '800', color: '#fbbf24', textTransform: 'uppercase', letterSpacing: '1px' }}>Craques Individuais (Top 5)</span>
+                            <span style={{ fontSize: '0.75rem', fontWeight: '800', color: '#fbbf24', textTransform: 'uppercase', letterSpacing: '1px' }}>Craques Individuais - Nota Ajustada</span>
                         </div>
                         <ListaRankingJogadores ranking={rankingMVP.slice(0, 5)} />
 
@@ -685,12 +701,12 @@ const PaginaRankingMVP = ({ equipeIdProp, aoVoltar }) => {
                         <div style={{ marginTop: '40px' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '18px' }}>
                                 <Users size={15} color="#10b981" />
-                                <span style={{ fontSize: '0.75rem', fontWeight: '800', color: '#10b981', textTransform: 'uppercase', letterSpacing: '1px' }}>Destaques Coletivos (Top 10)</span>
+                                <span style={{ fontSize: '0.75rem', fontWeight: '800', color: '#10b981', textTransform: 'uppercase', letterSpacing: '1px' }}>Destaques Coletivos - Nota Ajustada</span>
                             </div>
                             <ListaRankingJogadores ranking={rankingColetivo.slice(0, 10)} />
                             {rankingColetivo.length > 0 && (
                                 <p style={{ textAlign: 'center', fontSize: '0.68rem', color: '#334155', marginTop: '16px' }}>
-                                    Sua nota sobe quando o time em que você jogou é bem votado pela equipe.
+                                    Sua nota coletiva sobe quando o time em que voce jogou foi bem votado pela equipe.
                                 </p>
                             )}
                         </div>
@@ -797,7 +813,7 @@ const PaginaRankingMVP = ({ equipeIdProp, aoVoltar }) => {
                                     }}>
                                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                                             <span>🏅 <strong style={{ color: '#f1f5f9' }}>Destaques da Partida</strong> &nbsp;
-                                                <span style={{ fontSize: '0.7rem', color: '#64748b' }}>Craques ordenados por 🥇 primeiro.</span>
+                                                <span style={{ fontSize: '0.7rem', color: '#64748b' }}>Resultado apenas do jogo selecionado.</span>
                                             </span>
                                             <button
                                                 onClick={() => setShowInfoPartida(p => !p)}
@@ -808,14 +824,20 @@ const PaginaRankingMVP = ({ equipeIdProp, aoVoltar }) => {
                                         </div>
                                         {showInfoPartida && (
                                             <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid rgba(255,255,255,0.05)', fontSize: '0.7rem', color: '#64748b', lineHeight: '1.6' }}>
-                                                <p style={{ margin: '0 0 6px 0', color: '#10b981', fontWeight: '600' }}>
-                                                    🧮 Nota: (Pontos Obtidos / Teto Máximo) × 10
+                                                <p style={{ margin: '0 0 8px 0', color: '#10b981', fontWeight: '800' }}>
+                                                    Resumo rapido
                                                 </p>
-                                                <p style={{ margin: 0 }}>
-                                                    O Teto Máximo é a pontuação que o atleta teria recebido se <strong>todas</strong> as pessoas que votaram o tivessem escolhido como Ouro (4 pts). Quem tem mais Ouros aparece primeiro.
+                                                <p style={{ margin: '0 0 6px 0' }}>
+                                                    <strong style={{ color: '#f1f5f9' }}>📅 1. Esta aba e so da partida:</strong> mostra os destaques do jogo escolhido acima.
                                                 </p>
-                                                <p style={{ margin: '6px 0 0 0', color: '#475569' }}>
-                                                    🥇 Ouro (4 pts) · 🥈 Prata (2 pts) · 🥉 Bronze (1 pt)
+                                                <p style={{ margin: '0 0 6px 0' }}>
+                                                    <strong style={{ color: '#f1f5f9' }}>🥇 2. Cada voto tem peso:</strong> ouro vale 4, prata vale 2 e bronze vale 1.
+                                                </p>
+                                                <p style={{ margin: '0 0 6px 0' }}>
+                                                    <strong style={{ color: '#f1f5f9' }}>📈 3. A nota vai de 0 a 10:</strong> quanto mais votos bons o atleta ou time recebeu nesse jogo, maior fica a nota.
+                                                </p>
+                                                <p style={{ margin: '8px 0 0 0', color: '#cbd5e1' }}>
+                                                    👑 Desempate: se duas notas ficarem muito parecidas, quem recebeu mais votos de ouro aparece primeiro.
                                                 </p>
                                             </div>
                                         )}

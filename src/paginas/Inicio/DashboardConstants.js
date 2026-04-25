@@ -42,7 +42,7 @@ export const CATALOGO_ATALHOS = [
     { id: 'descobrir_atletas',categoria: 'equipe',  label: 'Buscar Atletas',  emoji: '🔍', icone: Globe,      action: (nav, set, select, eqId) => { if (select && eqId) select(eqId); set('descobrir'); nav('equipe'); },        roles: ['admin','sub_admin'], permissao: 'gerenciar_membros' },
     { id: 'permissoes_eq',    categoria: 'equipe',  label: 'Permissões (Gestores)', emoji: '🛡️', icone: Crown,      action: (nav, set, select, eqId) => { if (select && eqId) select(eqId); set('permissoes'); nav('equipe'); },        roles: ['admin','sub_admin'], permissao: 'gerenciar_gestores' },
     { id: 'sorteio_global',   categoria: 'equipe',  label: 'Sorteio Global',   emoji: '⚡', icone: Zap,        action: (nav, set, select, eqId) => { if (select && eqId) select(eqId); nav('sorteio_v4'); },                      roles: ['admin','sub_admin'], permissao: 'gerenciar_partidas' },
-    { id: 'ranking_mvp',      categoria: 'equipe',  label: 'Hall da Fama',     emoji: '🎖️', icone: Trophy,    action: (nav, _, select, eqId) => { if (select && eqId) select(eqId); nav('ranking_mvp'); },                      roles: [],                   permissao: null },
+    { id: 'ranking_mvp',      categoria: 'equipe',  label: 'Hall da Fama',     emoji: '🎖️', icone: Trophy,    action: (nav, _, select, eqId) => { if (select && eqId) select(eqId); nav('ranking_partidas'); },                 roles: [],                   permissao: null },
 ];
 
 export const STORAGE_PESSOAL  = 'playhub_atalhos_pessoal';

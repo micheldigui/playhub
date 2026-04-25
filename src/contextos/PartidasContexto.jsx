@@ -7,6 +7,18 @@ const PartidasContexto = createContext();
 // Pesos constantes para Rankeamento MVP (Modelo Exponencial)
 const PESO_MEDALHA = { 1: 4, 2: 2, 3: 1 };
 const TETO_UNICO_MVP = 4; // Um votante escolhendo alguém como Ouro dá 4 pontos
+const TETO_MINIMO_JOGOS_RANKING = 5;
+
+const calcularMinimoDinamicoJogos = (totalPartidasValidas) => {
+    if (!totalPartidasValidas) return 1;
+    if (totalPartidasValidas <= 2) return 1;
+    return Math.min(TETO_MINIMO_JOGOS_RANKING, Math.max(2, Math.ceil(totalPartidasValidas * 0.5)));
+};
+
+const calcularMinimoVotosPartida = (totalPresentes) => {
+    if (!totalPresentes) return 2;
+    return Math.min(3, Math.max(2, Math.ceil(totalPresentes * 0.3)));
+};
 
 export const usarPartidas = () => useContext(PartidasContexto);
 
@@ -649,15 +661,13 @@ export const PartidasProvider = ({ children }) => {
             const { data: todosUsuarios } = await supabase.from('usuarios').select('id, nome_completo');
             const perfisMap = (todosUsuarios || []).reduce((acc, u) => ({ ...acc, [u.id]: u.nome_completo }), {});
 
-            const totalPartidasAtleta = {};
+            const presentesPorPartida = {};
             presencasFiltradas.forEach(p => {
-                totalPartidasAtleta[p.usuario_id] = (totalPartidasAtleta[p.usuario_id] || 0) + 1;
+                presentesPorPartida[p.partida_id] = (presentesPorPartida[p.partida_id] || 0) + 1;
             });
 
             // 3. Busca total de partidas da equipe no período (p/ trava dinâmica)
             const idsPartidasPeriodo = new Set(presencasFiltradas.map(p => p.partida_id));
-            const totalPartidasEquipe = idsPartidasPeriodo.size;
-            const travaPresenca = Math.min(3, Math.ceil(totalPartidasEquipe / 2));
 
             // 4. Agrupa Votantes Únicos por partida
             const votantesPorPartida = {};
@@ -666,17 +676,32 @@ export const PartidasProvider = ({ children }) => {
                 if (v.eleitor_id) votantesPorPartida[v.partida_id].add(v.eleitor_id);
             });
 
+            const partidaTemAmostraSuficiente = (partidaId) => {
+                const qtdVotantes = votantesPorPartida[partidaId]?.size || 0;
+                const minimoVotos = calcularMinimoVotosPartida(presentesPorPartida[partidaId] || 0);
+                return qtdVotantes >= minimoVotos;
+            };
+            const idsPartidasComVotos = new Set(votos.map(v => v.partida_id).filter(partidaTemAmostraSuficiente));
+            const totalPartidasEquipe = idsPartidasComVotos.size || idsPartidasPeriodo.size;
+            const travaPresenca = calcularMinimoDinamicoJogos(totalPartidasEquipe);
+            const totalPartidasValidasAtleta = {};
+            presencasFiltradas.forEach(p => {
+                if (idsPartidasComVotos.has(p.partida_id)) {
+                    totalPartidasValidasAtleta[p.usuario_id] = (totalPartidasValidasAtleta[p.usuario_id] || 0) + 1;
+                }
+            });
+
             const stats = {};
             votos.forEach(v => {
+                if (!partidaTemAmostraSuficiente(v.partida_id)) return;
                 const pts = PESO_MEDALHA[v.posicao] || (Number(v.posicao) === 1 ? 4 : Number(v.posicao) === 2 ? 2 : 1);
                 
                 if (!stats[v.candidato_id]) {
                     stats[v.candidato_id] = { 
-                        usuario_id: v.candidato_id, pontos: 0, ouros: 0, pratas: 0, bronzes: 0, 
-                        jogos: totalPartidasAtleta[v.candidato_id] || 0 
+                        usuario_id: v.candidato_id, ouros: 0, pratas: 0, bronzes: 0,
+                        jogos: totalPartidasValidasAtleta[v.candidato_id] || 0
                     };
                 }
-                stats[v.candidato_id].pontos += pts;
                 if (Number(v.posicao) === 1) stats[v.candidato_id].ouros++;
                 if (Number(v.posicao) === 2) stats[v.candidato_id].pratas++;
                 if (Number(v.posicao) === 3) stats[v.candidato_id].bronzes++;
@@ -691,39 +716,34 @@ export const PartidasProvider = ({ children }) => {
                         ...votos.filter(v => v.candidato_id === s.usuario_id).map(v => v.partida_id)
                     ]);
                     
-                    let somaPontosGanhos = 0;
-                    let somaMaxPossivelGlobal = 0;
-
-                    // 1. Soma pontos REAIS (de todas as partidas identificadas)
-                    votos.forEach(v => {
-                        if (v.candidato_id === s.usuario_id && idsPartidas.has(v.partida_id)) {
-                            somaPontosGanhos += (PESO_MEDALHA[v.posicao] || (Number(v.posicao) === 1 ? 4 : Number(v.posicao) === 2 ? 2 : 1));
-                        }
-                    });
+                    let somaNotasNormalizadas = 0;
 
                     // 2. Calcula Teto (apenas de partidas onde ele participou/recebeu voto e que tiveram votos)
                     idsPartidas.forEach(pId => {
+                        if (!partidaTemAmostraSuficiente(pId)) return;
                         const qtdVotantes = votantesPorPartida[pId] ? votantesPorPartida[pId].size : 0;
                         if (qtdVotantes === 0) return;
-                        somaMaxPossivelGlobal += (qtdVotantes * TETO_UNICO_MVP);
+                        const pontosDaPartida = votos.reduce((acc, v) => {
+                            if (v.candidato_id !== s.usuario_id || v.partida_id !== pId) return acc;
+                            return acc + (PESO_MEDALHA[v.posicao] || (Number(v.posicao) === 1 ? 4 : Number(v.posicao) === 2 ? 2 : 1));
+                        }, 0);
+                        const maxPossivelDaPartida = qtdVotantes * TETO_UNICO_MVP;
+                        somaNotasNormalizadas += maxPossivelDaPartida > 0 ? (pontosDaPartida / maxPossivelDaPartida) * 10 : 0;
                     });
 
-                    const percentualBruto = somaMaxPossivelGlobal > 0 ? (somaPontosGanhos / somaMaxPossivelGlobal) : 0;
-                    const notaFinal = percentualBruto * 10.0;
+                    const divisorAjustado = Math.max(s.jogos, travaPresenca);
+                    const notaFinal = divisorAjustado > 0 ? somaNotasNormalizadas / divisorAjustado : 0;
 
                     return {
                         ...s,
+                        minimoJogos: travaPresenca,
                         media: Math.min(10.0, notaFinal)
                     };
                 })
-                .filter(s => s.jogos >= travaPresenca)
                 .sort((a, b) => {
-                    // Ordenação: 1. Nota (Média) | 2. Ouros | 3. Pratas | 4. Bronzes
+                    // Ordenação: nota ajustada; jogos entram apenas como desempate de estabilidade.
                     if (Math.abs(b.media - a.media) > 0.001) return b.media - a.media;
-                    if (b.ouros !== a.ouros) return b.ouros - a.ouros;
-                    if (b.pratas !== a.pratas) return b.pratas - a.pratas;
-                    if (b.bronzes !== a.bronzes) return b.bronzes - a.bronzes;
-                    return b.media - a.media;
+                    return b.jogos - a.jogos;
                 });
 
             return { sucesso: true, ranking, travaPresenca, totalPartidasEquipe };
@@ -848,12 +868,11 @@ export const PartidasProvider = ({ children }) => {
             }
 
             const idsPartidasPeriodo = new Set(partidasFiltradas.map(p => p.id));
-            const travaPresenca = Math.min(3, Math.ceil(idsPartidasPeriodo.size / 2));
 
-            const totalPartidasAtleta = {};
+            const presentesPorPartida = {};
             presencas.forEach(p => {
                 if (idsPartidasPeriodo.has(p.partida_id)) {
-                    totalPartidasAtleta[p.usuario_id] = (totalPartidasAtleta[p.usuario_id] || 0) + 1;
+                    presentesPorPartida[p.partida_id] = (presentesPorPartida[p.partida_id] || 0) + 1;
                 }
             });
 
@@ -872,10 +891,26 @@ export const PartidasProvider = ({ children }) => {
                 if (v.eleitor_id) votantesPorPartidaT[v.partida_id].add(v.eleitor_id);
             });
 
+            const partidaTemAmostraSuficienteColetiva = (partidaId) => {
+                const qtdVotantes = votantesPorPartidaT[partidaId]?.size || 0;
+                const minimoVotos = calcularMinimoVotosPartida(presentesPorPartida[partidaId] || 0);
+                return qtdVotantes >= minimoVotos;
+            };
+            const idsPartidasComVotos = new Set(votos.map(v => v.partida_id).filter(partidaTemAmostraSuficienteColetiva));
+            const totalPartidasEquipe = idsPartidasComVotos.size || idsPartidasPeriodo.size;
+            const travaPresenca = calcularMinimoDinamicoJogos(totalPartidasEquipe);
+            const totalPartidasValidasAtleta = {};
+            presencas.forEach(p => {
+                if (idsPartidasComVotos.has(p.partida_id)) {
+                    totalPartidasValidasAtleta[p.usuario_id] = (totalPartidasValidasAtleta[p.usuario_id] || 0) + 1;
+                }
+            });
+
             const ptsJogadores = {};
             const ptsPartidaCol = {}; // { usuario_id: { partida_id: pts_da_equipe } }
 
             votos.forEach(v => {
+                if (!partidaTemAmostraSuficienteColetiva(v.partida_id)) return;
                 const jogadoresDoTime = mapPartidas[v.partida_id]?.[v.time_escolhido] || [];
                 const pts = v.posicao === 1 ? 4 : v.posicao === 2 ? 2 : 1;
                 
@@ -887,18 +922,16 @@ export const PartidasProvider = ({ children }) => {
                         ptsJogadores[key] = {
                             usuario_id: jogador.id,
                             nome_completo: jogador.nome,
-                            pontos: 0, ouros: 0, pratas: 0, bronzes: 0,
-                            jogos: totalPartidasAtleta[key] || 0
+                            ouros: 0, pratas: 0, bronzes: 0,
+                            jogos: totalPartidasValidasAtleta[key] || 0
                         };
                     }
                     
-                    ptsJogadores[key].pontos += pts;
                     if (v.posicao === 1) ptsJogadores[key].ouros++;
                     if (v.posicao === 2) ptsJogadores[key].pratas++;
                     if (v.posicao === 3) ptsJogadores[key].bronzes++;
 
                     if (!ptsPartidaCol[key]) ptsPartidaCol[key] = {};
-                    // Como a equipe toda ganha, soma para a partida
                     ptsPartidaCol[key][v.partida_id] = (ptsPartidaCol[key][v.partida_id] || 0) + pts;
                 });
             });
@@ -906,38 +939,34 @@ export const PartidasProvider = ({ children }) => {
             const ranking = Object.values(ptsJogadores)
                 .map(s => {
                     const partidasDoJogador = presencas.filter(p => p.usuario_id === s.usuario_id && idsPartidasPeriodo.has(p.partida_id));
-                    let somaPontosGanhos = 0;
-                    let somaMaxPossivelGlobal = 0;
+                    let somaNotasNormalizadas = 0;
 
                     partidasDoJogador.forEach(p => {
                         const pId = p.partida_id;
+                        if (!partidaTemAmostraSuficienteColetiva(pId)) return;
                         const qtdVotantes = votantesPorPartidaT[pId] ? votantesPorPartidaT[pId].size : 0;
                         if (qtdVotantes === 0) return;
 
                         const maxPossivelDaPartida = qtdVotantes * TETO_UNICO_MVP;
                         const ganhosDaPartida = (ptsPartidaCol[s.usuario_id] && ptsPartidaCol[s.usuario_id][pId]) ? ptsPartidaCol[s.usuario_id][pId] : 0;
-                        
-                        somaPontosGanhos += ganhosDaPartida;
-                        somaMaxPossivelGlobal += maxPossivelDaPartida;
+                        somaNotasNormalizadas += maxPossivelDaPartida > 0 ? (ganhosDaPartida / maxPossivelDaPartida) * 10 : 0;
                     });
 
-                    const percentualBruto = somaMaxPossivelGlobal > 0 ? (somaPontosGanhos / somaMaxPossivelGlobal) : 0;
-                    
-                    // Escala Pura Coletiva
-                    const notaFinal = percentualBruto * 10.0;
+                    const divisorAjustado = Math.max(s.jogos, travaPresenca);
+                    const notaFinal = divisorAjustado > 0 ? somaNotasNormalizadas / divisorAjustado : 0;
 
                     return {
                         ...s,
+                        minimoJogos: travaPresenca,
                         media: Math.min(10.0, notaFinal)
                     };
                 })
-                .filter(s => s.jogos >= travaPresenca)
                 .sort((a, b) => {
-                    if (b.media !== a.media) return b.media - a.media;
+                    if (Math.abs(b.media - a.media) > 0.001) return b.media - a.media;
                     return b.jogos - a.jogos;
                 });
 
-            return { sucesso: true, ranking, travaPresenca, totalPartidasEquipe: idsPartidasPeriodo.size };
+            return { sucesso: true, ranking, travaPresenca, totalPartidasEquipe };
         } catch (error) {
             console.error('Erro ao buscar ranking coletivo:', error);
             return { sucesso: false, ranking: [] };

@@ -69,7 +69,7 @@ const BarraLateral = ({ ativo, setAtivo, abaEquipe, setAbaEquipe, setDadosNavega
         ...(equipeAtiva.gestao_financeira && temPermissaoEquipe('gerenciar_financeiro') ? [{ id: 'financeiro-avulsos', label: 'Avulsos', icone: Wallet }] : []),
         ...((temPermissaoEquipe('ver_relatorios') || temPermissaoEquipe('gerenciar_financeiro')) ? [{ id: 'financeiro-relatorios', label: 'Relatórios', icone: BarChart2 }] : []),
         { id: 'membros',      label: 'Membros & Cargos', icone: Users },
-        { id: 'ranking_mvp',  label: 'Hall da Fama',    icone: Trophy },
+        { id: 'ranking_partidas',  label: 'Hall da Fama',    icone: Trophy },
         ...(temPermissaoEquipe('gerenciar_membros') ? [{ id: 'solicitacoes', label: 'Solicitações G.', icone: Bell }] : []),
         { id: 'disciplina',   label: 'Fair Play',       icone: Shield },
         ...(temPermissaoEquipe('gerenciar_partidas') ? [{ id: 'sorteio_global', label: 'Sorteio Global', icone: Zap }] : []),
@@ -201,8 +201,8 @@ const BarraLateral = ({ ativo, setAtivo, abaEquipe, setAbaEquipe, setDadosNavega
                           onClick={() => {
                             if (sub.id === 'sorteio_global') {
                                 setAtivo('sorteio_v4');
-                            } else if (sub.id === 'ranking_mvp') {
-                                setAtivo('ranking_mvp');
+                            } else if (sub.id === 'ranking_partidas') {
+                                setAtivo('ranking_partidas');
                             } else if (sub.id === 'agendar') {
                                 setAbaEquipe('agenda');
                                 setAtivo('equipe');

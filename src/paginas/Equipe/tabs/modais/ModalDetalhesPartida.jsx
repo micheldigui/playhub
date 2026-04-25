@@ -513,7 +513,7 @@ const ModalDetalhesPartida = ({ isOpen, onClose, partida, aoNavegar, setDadosNav
                                     <button 
                                         onClick={() => {
                                             setDadosNavegacao({ equipeId: equipeAtiva.id });
-                                            aoNavegar('ranking_mvp');
+                                            aoNavegar('ranking_partidas');
                                             onClose();
                                         }}
                                         style={{ width: '100%', background: 'none', border: 'none', color: '#38bdf8', fontSize: '0.75rem', marginTop: '16px', cursor: 'pointer', textDecoration: 'underline' }}

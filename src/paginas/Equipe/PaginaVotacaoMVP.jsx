@@ -332,7 +332,7 @@ const PaginaVotacaoMVP = ({ partidaIdProp, aoVoltar, aoNavegar, setDadosNavegaca
             rastrear.clique('mvp_voto_registrado_v2', 'Usuario votou no podio MVP');
             if (setDadosNavegacao) setDadosNavegacao({ equipeId: partida.equipe_id });
             setTimeout(() => {
-                if (aoNavegar) aoNavegar('ranking_mvp');
+                if (aoNavegar) aoNavegar('ranking_partidas');
                 else aoVoltar();
             }, 3000);
         } else {
@@ -366,7 +366,7 @@ const PaginaVotacaoMVP = ({ partidaIdProp, aoVoltar, aoNavegar, setDadosNavegaca
                         </p>
                         <Botao onClick={() => {
                             if (setDadosNavegacao) setDadosNavegacao({ equipeId: partida.equipe_id });
-                            if (aoNavegar) aoNavegar('ranking_mvp');
+                            if (aoNavegar) aoNavegar('ranking_partidas');
                             else aoVoltar();
                         }}>
                             Ver Hall da Fama
@@ -393,7 +393,7 @@ const PaginaVotacaoMVP = ({ partidaIdProp, aoVoltar, aoNavegar, setDadosNavegaca
                         </p>
                         <Botao onClick={() => {
                             if (setDadosNavegacao) setDadosNavegacao({ equipeId: partida.equipe_id });
-                            if (aoNavegar) aoNavegar('ranking_mvp');
+                            if (aoNavegar) aoNavegar('ranking_partidas');
                             else aoVoltar();
                         }}>
                             Ver Hall da Fama
