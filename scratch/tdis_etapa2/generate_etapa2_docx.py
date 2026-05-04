@@ -150,6 +150,7 @@ def add_caption(doc, text):
     p.paragraph_format.space_before = Pt(8)
     p.paragraph_format.space_after = Pt(4)
     p.paragraph_format.line_spacing = 1.0
+    p.paragraph_format.keep_with_next = True
     set_paragraph_font(p, 10, bold=True)
     return p
 

@@ -401,9 +401,10 @@ const DescobrirTab = () => {
                                         const idNormal = String(jog.id).toLowerCase().trim();
                                         const ehMatchMútuo = matchesConfirmados?.has(idNormal);
                                         const euPasseiABola = matches?.has(idNormal);
-                                        const euEstouPrivado = dadosUsuario?.compartilhar_whatsapp_match !== true;
-                                        const alvoEstaPrivado = jog.compartilhar_whatsapp_match !== true;
-                                        const mostrarPrivado = euEstouPrivado || alvoEstaPrivado;
+                                        
+                                        // O botão 'Privado' só deve aparecer se o ALVO bloqueou explicitamente.
+                                        // Se o EU estou privado, o botão 'Passar Bola' deve continuar aparecendo para eu poder interagir.
+                                        const alvoEstaPrivado = jog.compartilhar_whatsapp_match === false;
 
                                         return (
                                             <Botao
@@ -417,12 +418,12 @@ const DescobrirTab = () => {
                                                     fontSize: '0.75rem',
                                                     gap: '4px',
                                                     padding: '8px 4px',
-                                                    background: mostrarPrivado ? 'rgba(244, 63, 94, 0.05)' : ehMatchMútuo ? 'rgba(37, 211, 102, 0.1)' : undefined,
-                                                    color: mostrarPrivado ? '#f43f5e' : ehMatchMútuo ? '#25D366' : undefined,
-                                                    borderColor: mostrarPrivado ? 'rgba(244, 63, 94, 0.2)' : ehMatchMútuo ? 'rgba(37, 211, 102, 0.3)' : undefined
+                                                    background: alvoEstaPrivado ? 'rgba(244, 63, 94, 0.05)' : ehMatchMútuo ? 'rgba(37, 211, 102, 0.1)' : undefined,
+                                                    color: alvoEstaPrivado ? '#f43f5e' : ehMatchMútuo ? '#25D366' : undefined,
+                                                    borderColor: alvoEstaPrivado ? 'rgba(244, 63, 94, 0.2)' : ehMatchMútuo ? 'rgba(37, 211, 102, 0.3)' : undefined
                                                 }}
                                             >
-                                                {mostrarPrivado ? <><Lock size={12} /> Privado</> : 
+                                                {alvoEstaPrivado ? <><Lock size={12} /> Privado</> : 
                                                  ehMatchMútuo ? <><MessageCircle size={12} /> Conversar</> : 
                                                  euPasseiABola ? '✓ Enviado' : <><Activity size={12} /> Passar Bola</>}
                                             </Botao>
