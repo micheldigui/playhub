@@ -4,6 +4,7 @@ import { usarAutenticacao } from '../../contextos/AutenticacaoContexto';
 import { usarEquipe } from '../../contextos/EquipeContexto';
 import { supabase } from '../../servicos/supabase';
 import { rastrear } from '../../servicos/rastreamento';
+import { buscarPrivacidadeAtletaAtual } from '../../servicos/perfisPublicos';
 import { Bell, User, MessageSquare, ArrowLeft, RefreshCw, Trash2, Phone, Shield } from 'lucide-react';
 import Botao from '../../componentes/Botao/Botao';
 import ModalPerfilAtleta from '../../componentes/Modais/ModalPerfilAtleta';
@@ -116,7 +117,34 @@ const PaginaNotificacoes = ({ aoVoltar, abrirEquipeTab }) => {
         }
     };
 
-    const handleRetribuir = async (destinatarioId) => {
+    const handleRetribuir = async (destinatario) => {
+        const atletaAlvo = typeof destinatario === 'object' ? destinatario : null;
+        const destinatarioId = atletaAlvo?.id || destinatario;
+
+        if (!usuario?.id || !destinatarioId) {
+            alert('Nao foi possivel passar a bola agora. Recarregue a pagina e tente novamente.');
+            return;
+        }
+
+        if (!dadosUsuario?.perfil_publico || !dadosUsuario?.compartilhar_whatsapp_match) {
+            alert('Para passar a bola, seu perfil e seu WhatsApp precisam estar liberados nas configuracoes de privacidade.');
+            return;
+        }
+
+        let privacidadeAtual = null;
+        try {
+            privacidadeAtual = await buscarPrivacidadeAtletaAtual(destinatarioId);
+        } catch (error) {
+            console.error('Erro ao validar privacidade atual do atleta:', error);
+            alert('Nao foi possivel confirmar a privacidade deste atleta agora. Tente novamente em instantes.');
+            return;
+        }
+
+        if (!privacidadeAtual?.perfil_publico || privacidadeAtual?.compartilhar_whatsapp_match !== true) {
+            alert('Este atleta deixou o WhatsApp privado. Por isso, nao e possivel passar a bola para ele agora. 🛡️');
+            return;
+        }
+
         try {
             const { error } = await supabase
                 .from('interacoes')
@@ -336,9 +364,11 @@ const PaginaNotificacoes = ({ aoVoltar, abrirEquipeTab }) => {
                                             <Botao 
                                                 variant="secundario" 
                                                 style={{ padding: '8px 12px', fontSize: '0.8rem', gap: '6px' }}
-                                                onClick={() => handleRetribuir(notificacao.remetente_id)}
+                                                disabled={notificacao.remetente?.compartilhar_whatsapp_match === false}
+                                                title={notificacao.remetente?.compartilhar_whatsapp_match === false ? 'O WhatsApp deste atleta esta privado' : 'Passar a bola'}
+                                                onClick={() => handleRetribuir(notificacao.remetente || notificacao.remetente_id)}
                                             >
-                                                <MessageSquare size={14} /> Passar a bola
+                                                <MessageSquare size={14} /> {notificacao.remetente?.compartilhar_whatsapp_match === false ? 'WhatsApp privado' : 'Passar a bola'}
                                             </Botao>
                                         </div>
                                     )}

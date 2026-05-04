@@ -1,0 +1,23 @@
+PlayHub App BR
+
+// Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+import { getAnalytics } from "firebase/analytics";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
+
+// Your web app's Firebase configuration
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyALnGTY8sDG8qq1fZCOtuNIIihUiNgWKPI",
+  authDomain: "playhubappbr.firebaseapp.com",
+  projectId: "playhubappbr",
+  storageBucket: "playhubappbr.firebasestorage.app",
+  messagingSenderId: "495179726971",
+  appId: "1:495179726971:web:6b20b497990faaa778a2de",
+  measurementId: "G-1WTBP45PG8"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);

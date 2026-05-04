@@ -766,3 +766,109 @@
 }
 .btn-confirmar:hover { opacity: 0.9; transform: translateY(-1px); box-shadow: 0 4px 16px rgba(14,165,233,0.35); }
 
+
+/* === CENTRAL DE AÇÕES === */
+.central-acoes {
+    background: rgba(15, 23, 42, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 20px;
+    padding: 1.25rem;
+    margin-bottom: 1.5rem;
+    backdrop-filter: blur(10px);
+    animation: slideUp 0.4s ease-out;
+}
+
+@keyframes slideUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.central-acoes-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 1rem;
+}
+
+.central-acoes-header h3 {
+    font-size: 0.7rem;
+    font-weight: 800;
+    color: #475569;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    margin: 0;
+}
+
+.central-acoes-grade {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 12px;
+}
+
+.acao-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    background: rgba(30, 41, 59, 0.5);
+    padding: 0.875rem 1.25rem;
+    border-radius: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.03);
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.acao-item:hover {
+    background: rgba(30, 41, 59, 0.8);
+    border-color: rgba(255, 255, 255, 0.1);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+}
+
+.acao-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.acao-mvp .acao-icon { background: rgba(251, 191, 36, 0.15); color: #fbbf24; }
+.acao-membros .acao-icon { background: rgba(56, 189, 248, 0.15); color: #38bdf8; }
+
+.acao-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    overflow: hidden;
+}
+
+.acao-info strong {
+    font-size: 0.9rem;
+    color: #f1f5f9;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.acao-info span {
+    font-size: 0.75rem;
+    color: #64748b;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.acao-item svg:last-child {
+    color: #475569;
+    opacity: 0.4;
+    transition: all 0.2s;
+}
+
+.acao-item:hover svg:last-child {
+    color: var(--primaria);
+    opacity: 1;
+    transform: translateX(2px);
+}

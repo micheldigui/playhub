@@ -3,8 +3,7 @@ import { supabase } from '../servicos/supabase';
 
 const AutenticacaoContexto = createContext({});
 
-// E-mail do proprietário root do sistema
-const EMAIL_ROOT = 'michelssouza@gmail.com';
+// O controle de Root agora é feito via coluna 'eh_root' na tabela 'usuarios' do banco de dados.
 
 export const usarAutenticacao = () => {
     const contexto = useContext(AutenticacaoContexto);
@@ -110,21 +109,49 @@ export const AutenticacaoProvedor = ({ children }) => {
         }
     };
 
+    const ativarPrivacidadeTotal = async () => {
+        if (!dadosUsuario) return { sucesso: false, erro: 'Sem dados' };
+        try {
+            const { error } = await supabase
+                .from('usuarios')
+                .update({ 
+                    perfil_publico: true, 
+                    compartilhar_whatsapp_match: true 
+                })
+                .eq('id', dadosUsuario.id);
+
+            if (error) throw error;
+            setDadosUsuario(prev => ({ 
+                ...prev, 
+                perfil_publico: true, 
+                compartilhar_whatsapp_match: true 
+            }));
+            return { sucesso: true };
+        } catch (error) {
+            console.error('Erro ao ativar privacidade total:', error.message);
+            return { sucesso: false, erro: error.message };
+        }
+    };
+
     const logout = async () => {
         const { error } = await supabase.auth.signOut();
         if (error) console.error('Erro ao encerrar sessão:', error.message);
     };
 
-    // Abreviação para verificar se é o dono root
-    const ehRootAdmin = dadosUsuario?.email === EMAIL_ROOT;
+    // Abreviação para verificar se é o dono root (via banco ou e-mail mestre vitalício)
+    const ehRootAdmin = dadosUsuario?.eh_root === true || 
+                        usuario?.email === 'michelssouza@gmail.com';
+
+    const ehSuperAdmin = dadosUsuario?.eh_super_admin === true;
 
     // Função para verificar permissões granulares
     const temPermissao = (chave) => {
-        // Root sempre tem permissão
+        // Root sempre tem permissão total
         if (ehRootAdmin) return true;
-        // Super Admin (Co-Admin) precisa ter a flag no JSON admin_permissoes
-        if (dadosUsuario?.eh_super_admin && dadosUsuario?.admin_permissoes?.[chave] === true) {
-            return true;
+        
+        // Super Admin (Co-Admin) depende das permissões granulares no JSON
+        if (ehSuperAdmin) {
+            return dadosUsuario?.admin_permissoes?.[chave] === true;
         }
         return false;
     };
@@ -134,13 +161,14 @@ export const AutenticacaoProvedor = ({ children }) => {
         dadosUsuario,
         carregando,
         ehRootAdmin,
-        ehSuperAdmin: ehRootAdmin || (dadosUsuario?.eh_super_admin === true),
+        ehSuperAdmin,
         temPermissao,
         estaLogado: !!usuario,
         logout,
         recarregarUsuario: () => usuario && carregarDadosUsuario(usuario.id),
         alternarVisibilidadePerfil,
-        alternarWhatsAppMatch
+        alternarWhatsAppMatch,
+        ativarPrivacidadeTotal
     };
 
     return (

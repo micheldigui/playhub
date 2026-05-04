@@ -1,0 +1,185 @@
+# PlayHub Supabase live schema
+
+Generated at 2026-05-04T14:29:45.585Z. Schema-only; no row data exported.
+
+## Counts
+
+- extensions: 5
+- tables: 48
+- columns: 482
+- constraints: 180
+- indexes: 133
+- policies: 61
+- functions: 51
+- triggers: 5
+- views: 0
+- grants: 0
+
+## Tables
+
+- auth.audit_log_entries (table, RLS)
+- auth.custom_oauth_providers (table)
+- auth.flow_state (table, RLS)
+- auth.identities (table, RLS)
+- auth.instances (table, RLS)
+- auth.mfa_amr_claims (table, RLS)
+- auth.mfa_challenges (table, RLS)
+- auth.mfa_factors (table, RLS)
+- auth.oauth_authorizations (table)
+- auth.oauth_client_states (table)
+- auth.oauth_clients (table)
+- auth.oauth_consents (table)
+- auth.one_time_tokens (table, RLS)
+- auth.refresh_tokens (table, RLS)
+- auth.saml_providers (table, RLS)
+- auth.saml_relay_states (table, RLS)
+- auth.schema_migrations (table, RLS)
+- auth.sessions (table, RLS)
+- auth.sso_domains (table, RLS)
+- auth.sso_providers (table, RLS)
+- auth.users (table, RLS)
+- auth.webauthn_challenges (table)
+- auth.webauthn_credentials (table)
+- public.ciclos_financeiros (table, RLS)
+- public.convites_equipe (table, RLS)
+- public.equipes (table, RLS)
+- public.financeiro_config (table, RLS)
+- public.interacoes (table, RLS)
+- public.jogador_modalidades (table, RLS)
+- public.logs_sistema (table, RLS)
+- public.membros_equipe (table, RLS)
+- public.mensalidades (table, RLS)
+- public.pagamentos_avulsos (table, RLS)
+- public.partida_presencas (table, RLS)
+- public.partidas (table, RLS)
+- public.partidas_presencas (table, RLS)
+- public.punicoes_equipe (table, RLS)
+- public.usuarios (table, RLS)
+- public.votos_mvp (table, RLS)
+- public.votos_time (table, RLS)
+- storage.buckets (table, RLS)
+- storage.buckets_analytics (table, RLS)
+- storage.buckets_vectors (table, RLS)
+- storage.migrations (table, RLS)
+- storage.objects (table, RLS)
+- storage.s3_multipart_uploads (table, RLS)
+- storage.s3_multipart_uploads_parts (table, RLS)
+- storage.vector_indexes (table, RLS)
+
+## Policies
+
+- public.ciclos_financeiros: Admins gerenciam ciclos [ALL]
+- public.ciclos_financeiros: Jogadores veem ciclos [SELECT]
+- public.convites_equipe: Admin cria convites [INSERT]
+- public.convites_equipe: Admin vê convites da equipe [SELECT]
+- public.convites_equipe: Envolvidos podem deletar convites [DELETE]
+- public.convites_equipe: Jogador responde convite [UPDATE]
+- public.convites_equipe: Jogador vê seus convites [SELECT]
+- public.equipes: Convidados veem equipe [SELECT]
+- public.equipes: Leitura global de equipes [SELECT]
+- public.equipes: Super Admins can view all teams [SELECT]
+- public.equipes: equipes_gerenciamento_total [ALL]
+- public.equipes: equipes_select_base [SELECT]
+- public.financeiro_config: Admins gerenciam config financeira [ALL]
+- public.interacoes: Interações podem ser criadas por quem envia [INSERT]
+- public.interacoes: Usuários podem deletar interações recebidas [DELETE]
+- public.interacoes: Usuários podem ver interações que enviaram ou receberam [SELECT]
+- public.jogador_modalidades: Qualquer um pode ver as modalidades de perfis públicos [SELECT]
+- public.jogador_modalidades: Usuário gerencia suas próprias modalidades [ALL]
+- public.logs_sistema: Permitir gravação de logs para todos [INSERT]
+- public.logs_sistema: Permitir leitura para autenticados [SELECT]
+- public.membros_equipe: Atualização de Membros [UPDATE]
+- public.membros_equipe: Exclusão de Membros [DELETE]
+- public.membros_equipe: Inserção de Solicitação [INSERT]
+- public.membros_equipe: Leitura de Membros [SELECT]
+- public.membros_equipe: Super Admins can view all members [SELECT]
+- public.membros_equipe: membros_admin_management [ALL]
+- public.membros_equipe: membros_self_access [SELECT]
+- public.membros_equipe: membros_self_insert [INSERT]
+- public.membros_equipe: membros_view_colleagues [SELECT]
+- public.mensalidades: Admins gerenciam mensalidades [ALL]
+- public.mensalidades: Jogadores veem proprias mensalidades [SELECT]
+- public.pagamentos_avulsos: Admins gerenciam pagamentos avulsos [ALL]
+- public.pagamentos_avulsos: Gestao_Pagamentos_Admins [ALL]
+- public.pagamentos_avulsos: Jogadores veem proprios pagamentos avulsos [SELECT]
+- public.pagamentos_avulsos: Permitir upsert do próprio usuário avulso [ALL]
+- public.partida_presencas: Permitir acesso total às presenças [ALL]
+- public.partidas: Gestao de partidas por admins [ALL]
+- public.partidas: Permitir acesso total às partidas [ALL]
+- public.partidas: Super Admins can view all matches [SELECT]
+- public.partidas_presencas: Admins c/u presencas [ALL]
+- public.partidas_presencas: Permitir leitura de presencas [SELECT]
+- public.partidas_presencas: Permitir usuario alterar inscricao [UPDATE]
+- public.partidas_presencas: Permitir usuario excluir inscricao [DELETE]
+- public.partidas_presencas: Permitir usuario inscrever-se [INSERT]
+- public.punicoes_equipe: Admins gerenciam punicoes [ALL]
+- public.punicoes_equipe: Gestao de punicoes por admins [ALL]
+- public.punicoes_equipe: Jogadores veem proprias punicoes [SELECT]
+- public.usuarios: usuarios_select_own [SELECT]
+- public.usuarios: usuarios_select_public [SELECT]
+- public.usuarios: usuarios_update_own [UPDATE]
+- public.usuarios: visualizar_perfil_gestao_v2 [SELECT]
+- public.votos_mvp: Membros podem ver votos da equipe [SELECT]
+- public.votos_mvp: Participantes presentes podem votar [INSERT]
+- public.votos_time: Participantes podem ver os votos do time [SELECT]
+- public.votos_time: Usuários podem inserir o próprio voto de time [INSERT]
+- storage.objects: avatares_delete_self [DELETE]
+- storage.objects: avatares_insert_self [INSERT]
+- storage.objects: avatares_select_public [SELECT]
+- storage.objects: avatares_update_self [UPDATE]
+- storage.objects: escudos_all_authenticated [ALL]
+- storage.objects: escudos_select_public [SELECT]
+
+## Functions
+
+- auth.email()
+- auth.jwt()
+- auth.role()
+- auth.uid()
+- public.aceitar_transferencia_posse(p_equipe_id uuid, p_usuario_id uuid)
+- public.admin_atualizar_usuario(p_usuario_id uuid, p_nome_completo text, p_apelido text, p_telefone text, p_data_nascimento date, p_genero text, p_cep text, p_rua text, p_numero text, p_complemento text, p_bairro text, p_cidade text, p_estado text, p_perfil_publico boolean, p_compartilhar_whatsapp_match boolean, p_eh_super_admin boolean, p_admin_permissoes jsonb)
+- public.admin_bypass_update_equipe(p_equipe_id uuid, p_campo text, p_valor jsonb)
+- public.admin_bypass_update_equipe(p_equipe_id uuid, p_dados jsonb)
+- public.admin_excluir_usuario_v2(p_usuario_id uuid)
+- public.admin_limpar_logs_sistema()
+- public.admin_listar_logs_sistema(p_tipo text, p_busca text, p_limite integer, p_offset integer)
+- public.admin_listar_usuarios(p_busca text, p_letra text, p_de integer, p_ate integer)
+- public.admin_obter_estatisticas_sistema()
+- public.buscar_lideranca_equipe_publica(p_equipe_id uuid)
+- public.buscar_membros_equipe_seguro(p_equipe_id uuid)
+- public.buscar_presencas_partida_seguro(p_partida_id uuid)
+- public.buscar_ranking_mvp_equipe(p_equipe_id uuid)
+- public.buscar_vencedores_partida(p_partida_id uuid)
+- public.cancelar_solicitacao_ingresso(p_equipe_id uuid, p_usuario_id uuid)
+- public.cancelar_transferencia_posse(p_equipe_id uuid, p_usuario_id uuid)
+- public.criar_perfil_ao_registrar()
+- public.eh_gestor_deste_atleta(atleta_id uuid, gestor_id uuid)
+- public.enviar_convite_seguro(p_equipe_id uuid, p_jogador_id uuid, p_admin_id uuid, p_mensagem text)
+- public.excluir_convite_seguro(p_convite_id uuid, p_usuario_id uuid)
+- public.get_equipe_convite(p_slug text)
+- public.is_member_of_equipe(p_equipe_id uuid)
+- public.normalizar_nome_cidade(p_cidade text)
+- public.pode_gerir_equipe(p_equipe_id uuid)
+- public.registrar_acesso()
+- public.responder_convite_seguro(p_convite_id uuid, p_aceito boolean, p_usuario_id uuid, p_mensagem text)
+- public.rls_auto_enable()
+- public.sair_da_equipe_seguro(p_equipe_id uuid, p_usuario_id uuid)
+- public.solicitar_transferencia_posse(p_equipe_id uuid, p_novo_admin_id uuid, p_usuario_id uuid)
+- public.usuario_arquivar_interacoes(p_ids uuid[])
+- storage.allow_any_operation(expected_operations text[])
+- storage.allow_only_operation(expected_operation text)
+- storage.can_insert_object(bucketid text, name text, owner uuid, metadata jsonb)
+- storage.enforce_bucket_name_length()
+- storage.extension(name text)
+- storage.filename(name text)
+- storage.foldername(name text)
+- storage.get_common_prefix(p_key text, p_prefix text, p_delimiter text)
+- storage.get_size_by_bucket()
+- storage.list_multipart_uploads_with_delimiter(bucket_id text, prefix_param text, delimiter_param text, max_keys integer, next_key_token text, next_upload_token text)
+- storage.list_objects_with_delimiter(_bucket_id text, prefix_param text, delimiter_param text, max_keys integer, start_after text, next_token text, sort_order text)
+- storage.operation()
+- storage.protect_delete()
+- storage.search(prefix text, bucketname text, limits integer, levels integer, offsets integer, search text, sortcolumn text, sortorder text)
+- storage.search_by_timestamp(p_prefix text, p_bucket_id text, p_limit integer, p_level integer, p_start_after text, p_sort_order text, p_sort_column text, p_sort_column_after text)
+- storage.search_v2(prefix text, bucket_name text, limits integer, levels integer, start_after text, sort_order text, sort_column text, sort_column_after text)
+- storage.update_updated_at_column()

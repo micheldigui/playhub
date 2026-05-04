@@ -53,3 +53,46 @@ export const buscarPerfilPublicoAtletaSeguro = async (atletaId) => {
   if (error) throw error;
   return Array.isArray(data) ? data[0] : data;
 };
+
+export const buscarPrivacidadeAtletaAtual = async (atletaId) => {
+  if (!atletaId) return null;
+
+  try {
+    const perfilSeguro = await buscarPerfilPublicoAtletaSeguro(atletaId);
+    if (perfilSeguro) {
+      return {
+        id: perfilSeguro.id,
+        perfil_publico: perfilSeguro.perfil_publico,
+        compartilhar_whatsapp_match: perfilSeguro.compartilhar_whatsapp_match,
+        data_nascimento: perfilSeguro.data_nascimento,
+        idade: perfilSeguro.idade
+      };
+    }
+  } catch (error) {
+    if (!error?.silencioso) {
+      console.warn('Falha ao buscar privacidade via RPC segura, usando fallback legado:', error.message);
+    }
+  }
+
+  const { data, error } = await supabase
+    .from('usuarios')
+    .select('id, perfil_publico, compartilhar_whatsapp_match')
+    .eq('id', atletaId)
+    .maybeSingle();
+
+  if (error) throw error;
+  return data;
+};
+
+export const buscarPrivacidadeAtletasAtuais = async (atletaIds = []) => {
+  const ids = [...new Set((atletaIds || []).filter(Boolean))];
+  if (ids.length === 0) return new Map();
+
+  const { data, error } = await supabase
+    .from('usuarios')
+    .select('id, perfil_publico, compartilhar_whatsapp_match')
+    .in('id', ids);
+
+  if (error) throw error;
+  return new Map((data || []).map(item => [item.id, item]));
+};

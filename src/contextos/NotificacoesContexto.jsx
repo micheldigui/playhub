@@ -162,6 +162,24 @@ export const NotificacoesProvedor = ({ children }) => {
         }
     }, [usuario, carregarNotificacoes]);
 
+    useEffect(() => {
+        if (!usuario?.id) return;
+
+        const recarregarAoVoltar = () => {
+            if (document.visibilityState === 'visible') {
+                carregarNotificacoes();
+            }
+        };
+
+        window.addEventListener('focus', carregarNotificacoes);
+        document.addEventListener('visibilitychange', recarregarAoVoltar);
+
+        return () => {
+            window.removeEventListener('focus', carregarNotificacoes);
+            document.removeEventListener('visibilitychange', recarregarAoVoltar);
+        };
+    }, [usuario?.id, carregarNotificacoes]);
+
     const limparNotificacoes = useCallback(async () => {
         if (!usuario || notificacoes.length === 0) return;
         

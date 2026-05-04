@@ -691,7 +691,7 @@ export const EquipeProvedor = ({ children }) => {
                 .from('usuarios')
                 .select(`
                     id, nome_completo, apelido, cidade, estado, foto_url,
-                    esportes_interesse, data_nascimento
+                    esportes_interesse
                 `)
                 .eq('perfil_publico', true)
                 .lte('data_nascimento', dataCorte); // Apenas maiores de 18
@@ -838,7 +838,9 @@ export const EquipeProvedor = ({ children }) => {
                         foto_url,
                         cidade,
                         estado,
-                        data_nascimento
+                        data_nascimento,
+                        perfil_publico,
+                        compartilhar_whatsapp_match
                     )
                 `)
                 .eq('equipe_id', equipeId)
@@ -1014,13 +1016,25 @@ export const EquipeProvedor = ({ children }) => {
 
     const cancelarConvite = async (conviteId) => {
         try {
-            const { data: sucesso, error } = await supabase.rpc('excluir_convite_seguro', {
+            // 1. Tenta via RPC existente (Seguro)
+            const { data: sucessoRpc, error: errorRpc } = await supabase.rpc('excluir_convite_seguro', {
                 p_convite_id: conviteId,
                 p_usuario_id: usuario.id
             });
             
-            if (error) throw error;
-            if (!sucesso) throw new Error('Permissão negada ou convite já excluído.');
+            if (!errorRpc && sucessoRpc) return { sucesso: true };
+
+            // 2. Se a RPC falhar ou retornar false, tentamos exclusão direta
+            // Útil se as regras de RLS permitirem deleção por quem é Admin da equipe
+            const { error: errorDireto } = await supabase
+                .from('convites_equipe')
+                .delete()
+                .eq('id', conviteId);
+            
+            if (errorDireto) {
+                console.error('Erro na deleção direta:', errorDireto);
+                throw new Error('Permissão negada no banco de dados para excluir este convite.');
+            }
             
             return { sucesso: true };
         } catch (error) {

@@ -263,6 +263,9 @@ const ModalDetalhesPartida = ({ isOpen, onClose, partida, aoNavegar, setDadosNav
         mensagem += `📅 *DATA:* ${dataFormatada}\n`;
         mensagem += `⏰ *HORA:* ${horaFormatada}\n`;
         mensagem += `📍 *LOCAL:* ${local}\n`;
+        if (partida.tem_churrasco) {
+            mensagem += `🍖 *RESENHA:* Vai rolar um churrasco no Terceiro Tempo! 🍗🎉\n`;
+        }
         mensagem += `---------------------------\n\n`;
 
         mensagem += `*✅ CONFIRMADOS (${listaConfirmados.length}/${limite === 999 ? '∞' : limite})*\n`;
@@ -289,9 +292,13 @@ const ModalDetalhesPartida = ({ isOpen, onClose, partida, aoNavegar, setDadosNav
             });
         }
 
+        // Link direto e curto para a partida
+        const linkDireto = `playhubapp.com.br/partida/${partida.id}`;
+
         mensagem += `\n---------------------------\n`;
-        mensagem += `⭐ _${getLabelVinculo('mensalista')}_  ✩ _${getLabelVinculo('avulso')}_  👑 _Capitão_  🥈 _Vice_\n`;
-        mensagem += `👉 _Garanta sua vaga em playhubapp.com.br_ 🚀`;
+        mensagem += `👑 _Capitão_  🥈 _Vice_\n`;
+        mensagem += `⭐ _${getLabelVinculo('mensalista')}_  ✩ _${getLabelVinculo('avulso')}_  \n`;
+        mensagem += `👉 _Garanta sua vaga em: ${linkDireto}_ 🚀`;
 
         const encodedMessage = encodeURIComponent(mensagem);
         const whatsappUrl = `https://api.whatsapp.com/send?text=${encodedMessage}`;
@@ -378,33 +385,113 @@ const ModalDetalhesPartida = ({ isOpen, onClose, partida, aoNavegar, setDadosNav
             <div className="anima-entrada" style={{ display: 'flex', flexDirection: 'column', gap: window.innerWidth < 768 ? '16px' : '24px' }}>
                     {/* INFO PARTIDA */}
                     <div style={{ background: 'rgba(255,255,255,0.03)', padding: '16px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
-                        <h3 style={{ fontSize: '1.2rem', marginBottom: '12px', color: '#f8fafc' }}>
-                            {formatarData(partida.data)} às {partida.hora.substring(0, 5)}
-                        </h3>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', color: '#94a3b8', fontSize: '0.9rem' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><MapPin size={16} /> {partida.local_nome || 'A definir'}</div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><DollarSign size={16} /> {getLabelVinculo('avulso')}: {partida.valor_avulso ? `R$ ${partida.valor_avulso.toFixed(2).replace('.', ',')}` : 'Grátis'}</div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px', flexWrap: 'wrap', gap: '8px' }}>
+                            <div>
+                                <h3 style={{ fontSize: '1.2rem', marginBottom: '4px', color: '#f8fafc' }}>
+                                    {formatarData(partida.data)}
+                                </h3>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#f8fafc', fontWeight: 'bold' }}>
+                                    <Clock size={16} /> {partida.hora.substring(0, 5)} {partida.hora_termino ? `às ${partida.hora_termino.substring(0, 5)}` : ''}
+                                </div>
+                            </div>
+                            <span style={{ 
+                                background: 'rgba(56, 189, 248, 0.1)', 
+                                color: '#38bdf8',
+                                fontSize: '0.75rem',
+                                padding: '4px 12px',
+                                borderRadius: '8px',
+                                fontWeight: '800',
+                                textTransform: 'uppercase',
+                                border: '1px solid rgba(56, 189, 248, 0.2)'
+                            }}>
+                                {partida.tipo_evento === 'treino' ? '💪 Treino' : 
+                                 partida.tipo_evento === 'churrasco' ? '🍖 Churrasco' :
+                                 partida.tipo_evento === 'jogo_contra' ? '⚔️ Jogo Contra' :
+                                 partida.tipo_evento === 'outro' ? '✨ Evento' : '⚽ Partida'}
+                            </span>
+                        </div>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', color: '#94a3b8', fontSize: '0.9rem', marginBottom: '16px' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#f8fafc', fontWeight: '500' }}>
+                                    <MapPin size={16} /> {partida.local_nome || 'A definir'}
+                                </div>
+                                {partida.local_endereco && (
+                                    <div style={{ fontSize: '0.8rem', color: '#94a3b8', marginLeft: '22px' }}>
+                                        {partida.local_endereco.startsWith('http') || partida.local_endereco.includes('discord.gg') ? (
+                                            <a href={partida.local_endereco} target="_blank" rel="noopener noreferrer" style={{ color: '#38bdf8', textDecoration: 'underline' }}>
+                                                Acessar Link / Sala
+                                            </a>
+                                        ) : (
+                                            partida.local_endereco
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                            {equipeAtiva?.gestao_financeira && (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><DollarSign size={16} /> {getLabelVinculo('avulso')}: {partida.valor_avulso ? `R$ ${partida.valor_avulso.toFixed(2).replace('.', ',')}` : 'Grátis'}</div>
+                            )}
                             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><Users size={16} /> Vagas: {limite === 999 ? 'Ilimitadas' : limite}</div>
                         </div>
 
-                        {/* Botão de Compartilhamento (WhatsApp) */}
-                        <div style={{ marginTop: '16px', display: 'flex', justifyContent: 'flex-end' }}>
+                        {partida.tem_churrasco && (
+                            <div style={{ background: 'rgba(249, 115, 22, 0.1)', padding: '12px', borderRadius: '8px', border: '1px solid rgba(249, 115, 22, 0.2)', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                <span style={{ fontSize: '1.2rem' }}>🍖</span>
+                                <div style={{ fontSize: '0.85rem', color: '#f97316', fontWeight: 'bold' }}>
+                                    Vai ter Terceiro Tempo! Prepare o coração e o apetite. 🎉
+                                </div>
+                            </div>
+                        )}
+
+                        {partida.observacoes && (
+                            <div style={{ background: 'rgba(56, 189, 248, 0.05)', padding: '12px', borderRadius: '8px', borderLeft: '3px solid #38bdf8', marginBottom: '16px', fontSize: '0.85rem', color: '#f1f5f9' }}>
+                                <strong style={{ color: '#38bdf8', display: 'block', marginBottom: '4px' }}>Recado da Liderança:</strong>
+                                {partida.observacoes}
+                            </div>
+                        )}
+
+                        {/* Botões de Ação de Compartilhamento */}
+                        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                            <Botao 
+                                onClick={() => {
+                                    const link = `${window.location.origin}/partida/${partida.id}`;
+                                    navigator.clipboard.writeText(link);
+                                    alert('Link de chamada copiado para sua área de transferência!');
+                                }}
+                                variant="secundario"
+                                style={{ 
+                                    flex: 1,
+                                    background: 'rgba(255,255,255,0.05)', 
+                                    color: '#fff', 
+                                    padding: '8px 12px',
+                                    fontSize: '0.8rem',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    gap: '6px',
+                                    fontWeight: '600'
+                                }}
+                            >
+                                <Zap size={16} /> Copiar Link de Chamada
+                            </Botao>
                             <Botao 
                                 onClick={handleShareWhatsApp}
                                 variant="secundario"
                                 style={{ 
+                                    flex: 1.5,
                                     background: '#25D366', 
                                     color: '#fff', 
                                     border: 'none',
-                                    padding: '8px 16px',
-                                    fontSize: '0.85rem',
+                                    padding: '8px 12px',
+                                    fontSize: '0.8rem',
                                     display: 'flex',
                                     alignItems: 'center',
-                                    gap: '8px',
+                                    justifyContent: 'center',
+                                    gap: '6px',
                                     fontWeight: '700'
                                 }}
                             >
-                                <MessageCircle size={18} /> Enviar Lista para WhatsApp
+                                <MessageCircle size={18} /> Enviar Lista (WhatsApp)
                             </Botao>
                         </div>
                     </div>

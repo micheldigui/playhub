@@ -4,6 +4,7 @@ import { supabase } from '../../../servicos/supabase';
 import { usarEquipe } from '../../../contextos/EquipeContexto';
 import { usarAutenticacao } from '../../../contextos/AutenticacaoContexto';
 import { rastrear } from '../../../servicos/rastreamento';
+import { buscarPrivacidadeAtletaAtual } from '../../../servicos/perfisPublicos';
 import ModalPerfilAtleta from '../../../componentes/Modais/ModalPerfilAtleta';
 
 const calcularIdade = (dataNasc) => {
@@ -101,8 +102,27 @@ const SolicitacoesTab = () => {
             return;
         }
 
+        if (!dadosUsuario.perfil_publico || dadosUsuario.compartilhar_whatsapp_match !== true) {
+            alert('Para passar a bola, seu perfil e seu WhatsApp precisam estar publicos. Isso ajuda a liberar o contato quando o interesse for reciproco. ⚽');
+            return;
+        }
+
+        let privacidadeAtual = null;
+        try {
+            privacidadeAtual = await buscarPrivacidadeAtletaAtual(atletaAlvo.id);
+        } catch (error) {
+            console.error('Erro ao validar privacidade atual do atleta:', error);
+            alert('Nao foi possivel confirmar a privacidade deste atleta agora. Tente novamente em instantes.');
+            return;
+        }
+
+        if (!privacidadeAtual?.perfil_publico || privacidadeAtual?.compartilhar_whatsapp_match !== true) {
+            alert('Este atleta deixou o WhatsApp privado. Por isso, nao e possivel passar a bola para ele agora. 🛡️');
+            return;
+        }
+
         const idadeEu = calcularIdade(dadosUsuario.data_nascimento);
-        const idadeAlvo = calcularIdade(atletaAlvo.data_nascimento);
+        const idadeAlvo = privacidadeAtual.idade ?? calcularIdade(privacidadeAtual.data_nascimento || atletaAlvo.data_nascimento);
 
         if (idadeEu === null || idadeAlvo === null) {
             alert('Para interagir, ambos os atletas precisam ter a data de nascimento preenchida. 🛡️');
@@ -115,12 +135,16 @@ const SolicitacoesTab = () => {
         }
 
         try {
-            const { error } = await supabase.from('interacoes').insert({
+            const { data, error } = await supabase.from('interacoes').insert({
                 remetente_id: usuario.id,
                 destinatario_id: atletaAlvo.id,
                 tipo: 'bola'
-            });
+            }).select('id').single();
             if (error) throw error;
+
+            if (!data?.id) {
+                throw new Error('A interacao nao retornou confirmacao do banco.');
+            }
             
             rastrear.clique('equipe_passou_bola_convidado', 'Passou bola pro perfil por dentro da area admnistrativa');
             alert('Você passou a bola para ' + (atletaAlvo.apelido || atletaAlvo.nome_completo) + '! ⚽');

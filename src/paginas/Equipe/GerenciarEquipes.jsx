@@ -123,7 +123,7 @@ const GerenciarEquipes = ({ aoVoltar, aoNavegar, setAbaEquipe }) => {
                       )}
                       {isAtiva && (
                         <div className="estrela-ativa">
-                          <Star size={16} fill="var(--amarelo)" color="var(--amarelo)" />
+                          <Star size={16} fill="#fbbf24" color="#fbbf24" style={{ filter: 'drop-shadow(0 0 4px rgba(251, 191, 36, 0.6))' }} />
                         </div>
                       )}
                     </div>

@@ -12,7 +12,7 @@ import ModalEdicaoPartida from '../Admin/tabs/modais/ModalEdicaoPartida';
 const AgendaTab = ({ aoNavegar, setDadosNavegacao, dadosNavegacao }) => {
     const { partidasCarregadas, carregarPartidas, excluirPartida } = usarPartidas();
     const { equipeAtiva, temPermissaoEquipe } = usarEquipe();
-    const [carregando, setCarregando] = useState(true);
+    const [carregando, setCarregando] = useState(partidasCarregadas.length === 0);
     const [partidaSelecionada, setPartidaSelecionada] = useState(null);
     const [modalCriacaoAberto, setModalCriacaoAberto] = useState(false);
     const [partidaEditando, setPartidaEditando] = useState(null);
@@ -22,9 +22,11 @@ const AgendaTab = ({ aoNavegar, setDadosNavegacao, dadosNavegacao }) => {
 
     useEffect(() => {
         if (equipeAtiva?.id) {
-            carregarPartidas(equipeAtiva.id).finally(() => setCarregando(false));
+            carregarPartidas(equipeAtiva.id).finally(() => {
+                setCarregando(false);
+            });
         }
-    }, [equipeAtiva]);
+    }, [equipeAtiva?.id]); // Depender apenas do ID é crucial para performance
 
     // Efeito para reabrir modal ao voltar do sorteio
     useEffect(() => {
@@ -68,18 +70,44 @@ const AgendaTab = ({ aoNavegar, setDadosNavegacao, dadosNavegacao }) => {
         return () => window.removeEventListener('abrir-modal-marcar-jogo', abrirModal);
     }, [dadosNavegacao, setDadosNavegacao]);
 
-    // Filtra partidas futuras
-    const partidasFuturas = partidasCarregadas.filter(p => {
-        const dataPartida = new Date(p.data + 'T' + p.hora);
-        return dataPartida >= new Date();
-    }).sort((a, b) => new Date(a.data + 'T' + a.hora) - new Date(b.data + 'T' + b.hora));
+    // Filtra partidas futuras (Memorizado para performance)
+    const partidasFuturas = React.useMemo(() => {
+        return partidasCarregadas.filter(p => {
+            // Se tiver hora de término, usamos ela para o corte, senão usamos a hora de início
+            const horaCorte = p.hora_termino || p.hora;
+            const dataCorte = new Date(p.data + 'T' + horaCorte);
+            return dataCorte >= new Date();
+        }).sort((a, b) => new Date(a.data + 'T' + a.hora) - new Date(b.data + 'T' + b.hora));
+    }, [partidasCarregadas]);
 
-    const partidasPassadas = partidasCarregadas.filter(p => {
-        const dataPartida = new Date(p.data + 'T' + p.hora);
-        return dataPartida < new Date();
-    }).sort((a, b) => new Date(b.data + 'T' + b.hora) - new Date(a.data + 'T' + a.hora));
+    // Filtra partidas passadas (Memorizado para performance)
+    const partidasPassadas = React.useMemo(() => {
+        return partidasCarregadas.filter(p => {
+            const horaCorte = p.hora_termino || p.hora;
+            const dataCorte = new Date(p.data + 'T' + horaCorte);
+            return dataCorte < new Date();
+        }).sort((a, b) => new Date(b.data + 'T' + b.hora) - new Date(a.data + 'T' + a.hora));
+    }, [partidasCarregadas]);
 
     const partidasExibir = exibirHistorico ? partidasPassadas : partidasFuturas;
+
+    const getTipoInfo = (tipo) => {
+        if (!tipo || tipo === 'partida') return { label: 'Jogo', cor: '#38bdf8', icone: '⚽' };
+        
+        switch(tipo.toLowerCase()) {
+            case 'treino': return { label: 'Treino', cor: '#a855f7', icone: '💪' };
+            case 'scrim': return { label: 'Treino entre Times', cor: '#8b5cf6', icone: '🎮' };
+            case 'inhouse': return { label: 'Jogo Interno', cor: '#ec4899', icone: '🏠' };
+            case 'vod_review': return { label: 'Revisão / Tática', cor: '#facc15', icone: '📺' };
+            case 'tryout': return { label: 'Teste de Jogador', cor: '#fb7185', icone: '🕵️‍♂️' };
+            case 'confraternizacao': return { label: 'Confraternização', cor: '#f97316', icone: '🎉' };
+            case 'churrasco': return { label: 'Churrasco', cor: '#f97316', icone: '🍖' };
+            case 'jogo_contra': return { label: 'Jogo Contra', cor: '#ef4444', icone: '⚔️' };
+            case 'amistoso': return { label: 'Amistoso', cor: '#10b981', icone: '🤝' };
+            default: 
+                return { label: tipo, cor: '#64748b', icone: '✨' };
+        }
+    };
 
     const formatarData = (dataOriginal) => {
         const dataObj = new Date(dataOriginal + 'T00:00:00');
@@ -163,26 +191,62 @@ const AgendaTab = ({ aoNavegar, setDadosNavegacao, dadosNavegacao }) => {
                             }}
                         >
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1 }}>
-                                <div style={{ 
-                                    fontSize: '1.1rem', 
-                                    fontWeight: '600', 
-                                    color: new Date(partida.data + 'T' + partida.hora) < new Date() ? '#f43f5e' : '#f8fafc' 
-                                }}>
-                                    {formatarData(partida.data)} às {partida.hora.substring(0, 5)}
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                                    <div style={{ 
+                                        fontSize: '1.1rem', 
+                                        fontWeight: '600', 
+                                        color: new Date(partida.data + 'T' + partida.hora) < new Date() ? '#f43f5e' : '#f8fafc' 
+                                    }}>
+                                        {formatarData(partida.data)}
+                                    </div>
+                                    <span style={{ 
+                                        background: `${getTipoInfo(partida.tipo_evento).cor}20`, 
+                                        color: getTipoInfo(partida.tipo_evento).cor,
+                                        fontSize: '0.7rem',
+                                        padding: '2px 8px',
+                                        borderRadius: '6px',
+                                        fontWeight: 'bold',
+                                        textTransform: 'uppercase',
+                                        border: `1px solid ${getTipoInfo(partida.tipo_evento).cor}40`
+                                    }}>
+                                        {getTipoInfo(partida.tipo_evento).icone} {getTipoInfo(partida.tipo_evento).label}
+                                    </span>
+                                    {partida.tem_churrasco && (
+                                        <span style={{ 
+                                            background: 'rgba(249, 115, 22, 0.15)', 
+                                            color: '#f97316',
+                                            fontSize: '0.7rem',
+                                            padding: '2px 8px',
+                                            borderRadius: '6px',
+                                            fontWeight: 'bold',
+                                            border: '1px solid rgba(249, 115, 22, 0.3)'
+                                        }}>
+                                            🍖 Churrasco
+                                        </span>
+                                    )}
                                 </div>
                                 <div style={{ 
                                     display: 'flex', 
                                     gap: window.innerWidth < 768 ? '8px 12px' : '16px', 
                                     color: '#94a3b8', 
                                     fontSize: '0.85rem',
-                                    flexWrap: 'wrap'
+                                    flexWrap: 'wrap',
+                                    alignItems: 'center'
                                 }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#f8fafc' }}>
+                                        <Clock size={14} /> {partida.hora.substring(0, 5)} {partida.hora_termino ? `às ${partida.hora_termino.substring(0, 5)}` : ''}
+                                    </div>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                                         <MapPin size={14} /> {partida.local_nome || 'Local a definir'}
                                     </div>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                                         <Users size={14} /> Vagas: {partida.vagas || 'Ilimitadas'}
                                     </div>
+                                    {partida.observacoes && (
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#38bdf8' }}>
+                                            <Edit size={14} /> Ver Recado
+                                        </div>
+                                    )}
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#10b981', fontWeight: 'bold' }}>
                                         <Wallet size={14} /> {Number(partida.valor_avulso) > 0 ? `R$ ${Number(partida.valor_avulso).toFixed(2).replace('.', ',')}` : 'Grátis'}
                                     </div>

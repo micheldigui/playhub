@@ -14,12 +14,11 @@ const LOG_ATIVO = true; // Chave mestre para desligar logs se necessário
  */
 const obterMetadadosGlobais = () => {
     try {
+        // Coleta mínima necessária para análise de performance/UX sem invadir privacidade profunda
         return {
-            origem: document.referrer || 'Direto / Desconhecido',
-            idioma: navigator.language,
-            plataforma: navigator.platform,
+            origem: document.referrer || 'Direto',
+            idioma: (navigator.language || 'pt-BR').split('-')[0], // Apenas o idioma, ex: 'pt'
             resolucao: `${window.screen.width}x${window.screen.height}`,
-            userAgent: navigator.userAgent,
             timestamp: new Date().toISOString()
         };
     } catch (e) {

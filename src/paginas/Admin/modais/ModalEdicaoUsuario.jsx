@@ -41,7 +41,7 @@ const ModalEdicaoUsuario = ({ usuario, aoFechar }) => {
     perfil_publico: usuario.perfil_publico ?? true,
     compartilhar_whatsapp_match: usuario.compartilhar_whatsapp_match ?? false,
     eh_super_admin: usuario.eh_super_admin ?? false,
-    admin_permissoes: usuario.admin_permissoes || { usuarios: false, equipes: false }
+    admin_permissoes: usuario.admin_permissoes || { usuarios: false, equipes: false, estatisticas: false }
   });
 
   const [carregando, setCarregando] = useState(false);
@@ -165,7 +165,7 @@ const ModalEdicaoUsuario = ({ usuario, aoFechar }) => {
         p_perfil_publico: perfilPublicoFinal,
         p_compartilhar_whatsapp_match: whatsappFinal,
         p_eh_super_admin: ehMenorDeIdade ? false : form.eh_super_admin,
-        p_admin_permissoes: ehMenorDeIdade ? { usuarios: false, equipes: false } : form.admin_permissoes
+        p_admin_permissoes: ehMenorDeIdade ? { usuarios: false, equipes: false, estatisticas: false } : form.admin_permissoes
       });
 
       if (error) throw error;
@@ -526,6 +526,15 @@ const ModalEdicaoUsuario = ({ usuario, aoFechar }) => {
                                 onChange={() => togglePermissao('equipes')}
                             />
                             <div className="checkbox-texto" style={{ fontSize: '0.85rem', fontWeight: '600' }}>Gestão de Equipes</div>
+                        </label>
+
+                        <label className="checkbox-label" style={{ padding: '8px 12px', background: 'rgba(255,255,255,0.03)', borderRadius: '10px' }}>
+                            <input 
+                                type="checkbox" 
+                                checked={form.admin_permissoes?.estatisticas}
+                                onChange={() => togglePermissao('estatisticas')}
+                            />
+                            <div className="checkbox-texto" style={{ fontSize: '0.85rem', fontWeight: '600' }}>Gestão de Estatísticas</div>
                         </label>
                     </div>
                   )}

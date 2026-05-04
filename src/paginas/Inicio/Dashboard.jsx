@@ -26,7 +26,10 @@ import './Dashboard.css';
 
 const Dashboard = ({ aoNavegar, setAbaEquipe, setDadosNavegacao }) => {
     const { dadosUsuario, alternarVisibilidadePerfil, alternarWhatsAppMatch, logout } = usarAutenticacao();
-    const { equipes, getLabelVinculo, selecionarEquipe, equipeAtiva, carregando: carregandoEquipes } = usarEquipe();
+    const { 
+        equipes, getLabelVinculo, selecionarEquipe, equipeAtiva, 
+        carregando: carregandoEquipes, solicitacoesPendentesGlobais 
+    } = usarEquipe();
     const { isInstalled } = usePwaInstall();
     const { buscarVotacoesPendentes } = usarPartidas();
 
@@ -127,7 +130,19 @@ const Dashboard = ({ aoNavegar, setAbaEquipe, setDadosNavegacao }) => {
         if (equipeAtiva?.id && equipeAtiva.id !== equipeFinSelecionada) {
             setEquipeFinSelecionada(equipeAtiva.id);
         }
-    }, [equipeAtiva?.id]);
+
+        // Carrega votações pendentes (Central de Ações)
+        const carregarAcoes = async () => {
+            if (!dadosUsuario) return;
+            try {
+                const res = await buscarVotacoesPendentes();
+                if (res.sucesso) {
+                    setVotacoesPendentes(res.partidas || []);
+                }
+            } catch (err) { console.error('Erro ações:', err); }
+        };
+        carregarAcoes();
+    }, [equipeAtiva?.id, dadosUsuario]);
 
     const carregarPartidas = async () => {
         setCarregando(true);
@@ -246,23 +261,50 @@ const Dashboard = ({ aoNavegar, setAbaEquipe, setDadosNavegacao }) => {
             <div style={{ padding: '0 20px' }}>
                 <BannerInstalacaoApp local="dashboard" />
                 
-                {votacoesPendentes.length > 0 && (
-                    <div 
-                        className="banner-mvp-pendente"
-                        onClick={() => {
-                            const p = votacoesPendentes[0];
-                            setDadosNavegacao({ partidaId: p.id });
-                            aoNavegar('votacao_mvp');
-                        }}
-                    >
-                        <div className="banner-mvp-icon">
-                            <Trophy size={20} />
+                {/* CENTRAL DE PRÓXIMAS AÇÕES */}
+                {(votacoesPendentes.length > 0 || (solicitacoesPendentesGlobais > 0 && (papelNaEquipe === 'admin' || papelNaEquipe === 'sub_admin'))) && (
+                    <div className="central-acoes">
+                        <div className="central-acoes-header">
+                            <ActivityIcon size={16} color="var(--primaria)" />
+                            <h3>Próximas Ações</h3>
                         </div>
-                        <div className="banner-mvp-text">
-                            <strong>Quem foi o craque do jogo?</strong>
-                            <span>Você tem {votacoesPendentes.length} {votacoesPendentes.length === 1 ? 'partida' : 'partidas'} aguardando seu voto.</span>
+                        
+                        <div className="central-acoes-grade">
+                            {votacoesPendentes.length > 0 && (
+                                <div 
+                                    className="acao-item acao-mvp"
+                                    onClick={() => {
+                                        const p = votacoesPendentes[0];
+                                        setDadosNavegacao({ partidaId: p.id });
+                                        aoNavegar('votacao_mvp');
+                                    }}
+                                >
+                                    <div className="acao-icon"><Trophy size={18} /></div>
+                                    <div className="acao-info">
+                                        <strong>Votar no MVP</strong>
+                                        <span>{votacoesPendentes.length} {votacoesPendentes.length === 1 ? 'partida aguarda' : 'partidas aguardam'} seu voto.</span>
+                                    </div>
+                                    <ChevronRight size={16} />
+                                </div>
+                            )}
+
+                            {solicitacoesPendentesGlobais > 0 && (papelNaEquipe === 'admin' || papelNaEquipe === 'sub_admin') && (
+                                <div 
+                                    className="acao-item acao-membros"
+                                    onClick={() => {
+                                        setAbaEquipe('solicitacoes');
+                                        aoNavegar('equipe');
+                                    }}
+                                >
+                                    <div className="acao-icon"><UsersIcon size={18} /></div>
+                                    <div className="acao-info">
+                                        <strong>Novos Pedidos</strong>
+                                        <span>Há {solicitacoesPendentesGlobais} {solicitacoesPendentesGlobais === 1 ? 'atleta querendo' : 'atletas querendo'} entrar no time.</span>
+                                    </div>
+                                    <ChevronRight size={16} />
+                                </div>
+                            )}
                         </div>
-                        <button className="banner-mvp-btn">Votar Agora</button>
                     </div>
                 )}
             </div>

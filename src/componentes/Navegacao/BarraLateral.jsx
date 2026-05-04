@@ -63,19 +63,28 @@ const BarraLateral = ({ ativo, setAtivo, abaEquipe, setAbaEquipe, setDadosNavega
       icone: Users,            
       label: 'Equipe',
       subItens: equipeAtiva ? [
-        { id: 'minha-equipe', label: 'Minha Equipe', icone: Trophy },
-        { id: 'agenda',       label: 'Partidas',      icone: Calendar },
-        ...(equipeAtiva.gestao_financeira && temPermissaoEquipe('gerenciar_financeiro') ? [{ id: 'financeiro-mensal', label: 'Mensalistas', icone: DollarSign }] : []),
-        ...(equipeAtiva.gestao_financeira && temPermissaoEquipe('gerenciar_financeiro') ? [{ id: 'financeiro-avulsos', label: 'Avulsos', icone: Wallet }] : []),
-        ...((temPermissaoEquipe('ver_relatorios') || temPermissaoEquipe('gerenciar_financeiro')) ? [{ id: 'financeiro-relatorios', label: 'Relatórios', icone: BarChart2 }] : []),
-        { id: 'membros',      label: 'Membros & Cargos', icone: Users },
+        { id: 'header-jogar', label: 'JOGAR', tipo: 'header' },
+        { id: 'minha-equipe', label: 'Painel Geral', icone: LayoutDashboard },
+        { id: 'agenda',       label: 'Partidas (Agenda)',      icone: Calendar },
         { id: 'ranking_partidas',  label: 'Hall da Fama',    icone: Trophy },
+        { id: 'disciplina',   label: 'Fair Play / Punições',       icone: Shield },
+        ...(temPermissaoEquipe('gerenciar_partidas') ? [{ id: 'sorteio_global', label: 'Sorteio Rápido', icone: Zap }] : []),
+        
+        { id: 'header-elenco', label: 'ELENCO', tipo: 'header' },
+        { id: 'membros',      label: 'Membros & Cargos', icone: Users },
         ...(temPermissaoEquipe('gerenciar_membros') ? [{ id: 'solicitacoes', label: 'Solicitações G.', icone: Bell }] : []),
-        { id: 'disciplina',   label: 'Fair Play',       icone: Shield },
-        ...(temPermissaoEquipe('gerenciar_partidas') ? [{ id: 'sorteio_global', label: 'Sorteio Global', icone: Zap }] : []),
-        ...(temPermissaoEquipe('gerenciar_equipe') ? [{ id: 'regras-config', label: 'Regras & Config', icone: Settings }] : []),
         ...(temPermissaoEquipe('gerenciar_membros') ? [{ id: 'descobrir', label: 'Buscar Atletas', icone: Globe }] : []),
-        ...(equipeAtiva.papel === 'admin' || (ehSuperAdmin && equipeAtiva.gestao_global) ? [{ id: 'permissoes', label: 'Permissões (Gestores)', icone: Crown }] : []),
+        
+        ...(equipeAtiva.gestao_financeira && (temPermissaoEquipe('gerenciar_financeiro') || temPermissaoEquipe('ver_relatorios')) ? [
+          { id: 'header-caixa', label: 'CAIXA', tipo: 'header' },
+          ...(temPermissaoEquipe('gerenciar_financeiro') ? [{ id: 'financeiro-mensal', label: 'Mensalistas', icone: DollarSign }] : []),
+          ...(temPermissaoEquipe('gerenciar_financeiro') ? [{ id: 'financeiro-avulsos', label: 'Avulsos', icone: Wallet }] : []),
+          { id: 'financeiro-relatorios', label: 'Relatórios Financeiros', icone: BarChart2 }
+        ] : []),
+        
+        { id: 'header-gestao', label: 'GESTÃO', tipo: 'header' },
+        ...(temPermissaoEquipe('gerenciar_equipe') ? [{ id: 'regras-config', label: 'Regras & Config', icone: Settings }] : []),
+        ...(equipeAtiva.papel === 'admin' || (ehSuperAdmin && equipeAtiva.gestao_global) ? [{ id: 'permissoes', label: 'Permissões e Níveis', icone: Crown }] : []),
       ] : []
     },
     { id: 'perfil',           icone: UserCircle,       label: 'Meu Perfil' },
@@ -87,7 +96,9 @@ const BarraLateral = ({ ativo, setAtivo, abaEquipe, setAbaEquipe, setDadosNavega
       { id: 'sistema', icone: Building2, label: 'Equipes do Sistema' }
     ] : []),
     ...(ehRootAdmin || temPermissao('usuarios') ? [
-      { id: 'usuarios_sistema', icone: Shield, label: 'Usuários do Sistema' },
+      { id: 'usuarios_sistema', icone: Shield, label: 'Usuários do Sistema' }
+    ] : []),
+    ...(ehRootAdmin || temPermissao('estatisticas') ? [
       { id: 'estatisticas', icone: BarChart2, label: 'Gestão & Estatísticas' }
     ] : []),
     
@@ -192,6 +203,13 @@ const BarraLateral = ({ ativo, setAtivo, abaEquipe, setAbaEquipe, setDadosNavega
                 {isEquipe && menuEquipeExpandido && hasSubmenu && (
                   <div className="submenu">
                     {subItens.map((sub) => {
+                      if (sub.tipo === 'header') {
+                        return (
+                          <div key={sub.id} className="submenu-header">
+                            {sub.label}
+                          </div>
+                        );
+                      }
                       const SubIcone = sub.icone;
                       const isSubAtivo = abaEquipe === sub.id && isActive;
                       return (

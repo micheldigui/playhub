@@ -448,10 +448,13 @@ const ModalPerfilAtleta = ({ isOpen, onClose, idAtleta, equipeId = null, aoPassa
                                                     width: '100%', 
                                                     marginTop: '8px', 
                                                     background: ehMatch ? 'rgba(37, 211, 102, 0.1)' : 
+                                                                !atleta?.compartilhar_whatsapp_match ? 'rgba(244, 63, 94, 0.05)' :
                                                                 jaEnviou ? 'rgba(255, 255, 255, 0.05)' : undefined,
                                                     color: ehMatch ? '#25D366' : 
+                                                           !atleta?.compartilhar_whatsapp_match ? '#f43f5e' :
                                                            jaEnviou ? '#94a3b8' : undefined,
                                                     borderColor: ehMatch ? 'rgba(37, 211, 102, 0.4)' : 
+                                                                 !atleta?.compartilhar_whatsapp_match ? 'rgba(244, 63, 94, 0.2)' :
                                                                  jaEnviou ? 'rgba(255, 255, 255, 0.1)' : undefined
                                                 }}
                                             >

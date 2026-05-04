@@ -39,7 +39,7 @@ import { usarAutenticacao } from '../../contextos/AutenticacaoContexto';
 import { usarNotificacoes } from '../../contextos/NotificacoesContexto';
 import { supabase } from '../../servicos/supabase';
 import { rastrear } from '../../servicos/rastreamento';
-import { buscarAtletasPublicosSeguro, obterWhatsAppMatchSeguro } from '../../servicos/perfisPublicos';
+import { buscarAtletasPublicosSeguro, buscarPrivacidadeAtletaAtual, buscarPrivacidadeAtletasAtuais, obterWhatsAppMatchSeguro } from '../../servicos/perfisPublicos';
 import { Globe, MapPin, Trophy, Users, Search, ArrowLeft, Crown, User, Phone, MessageCircle, Ban, Lock } from 'lucide-react';
 import Botao from '../../componentes/Botao/Botao';
 import ModalPerfilAtleta from '../../componentes/Modais/ModalPerfilAtleta';
@@ -81,9 +81,16 @@ const PaginaExplorar = ({ aoVoltar }) => {
   const [resultados, setResultados] = useState([]);
   const [buscando, setBuscando] = useState(false);
   const { solicitarIngresso, cancelarSolicitacaoIngresso, equipes: minhasEquipes, minhasSolicitacoes } = usarEquipe();
-  const { usuario, dadosUsuario } = usarAutenticacao();
+  const { usuario, dadosUsuario, recarregarUsuario } = usarAutenticacao();
   const { matchesConfirmados, matches, carregarNotificacoes } = usarNotificacoes();
   
+  // Garante que os dados de privacidade do próprio usuário estejam frescos ao entrar na busca
+  useEffect(() => {
+    if (recarregarUsuario) {
+      recarregarUsuario();
+    }
+  }, []);
+
   const [abaAtiva, setAbaAtiva] = useState('equipes'); // 'equipes' ou 'atletas'
   const [pagina, setPagina] = useState(0);
   const [temMais, setTemMais] = useState(true);
@@ -190,7 +197,24 @@ const PaginaExplorar = ({ aoVoltar }) => {
         count = resposta.count;
       }
 
-      const lista = data || [];
+      let lista = data || [];
+
+      if (abaAtiva === 'atletas' && lista.length > 0) {
+        try {
+          const privacidadePorId = await buscarPrivacidadeAtletasAtuais(lista.map(atleta => atleta.id));
+          lista = lista.map(atleta => {
+            const privacidade = privacidadePorId.get(atleta.id);
+            if (!privacidade) return atleta;
+            return {
+              ...atleta,
+              perfil_publico: privacidade.perfil_publico,
+              compartilhar_whatsapp_match: privacidade.compartilhar_whatsapp_match === true
+            };
+          });
+        } catch (privacidadeError) {
+          console.warn('Nao foi possivel atualizar privacidade dos atletas exibidos:', privacidadeError.message);
+        }
+      }
 
       // Para aba de atletas: detecta quais já são colegas de alguma equipe do usuário
       if (abaAtiva === 'atletas' && lista.length > 0 && minhasEquipes?.length > 0) {
@@ -274,15 +298,64 @@ const PaginaExplorar = ({ aoVoltar }) => {
       return;
     }
 
-    // NOVA TRAVA: Só pode passar a bola se o SEU perfil for público e whatsapp liberado
-    if (!dadosUsuario.perfil_publico || !dadosUsuario.compartilhar_whatsapp_match) {
-        setAtletaPendente(atletaAlvo);
-        setMostrarAvisoPrivacidade(true);
+    if (!atletaAlvo?.id) {
+      alert('Nao foi possivel passar a bola agora. Recarregue a pagina e tente novamente.');
+      return;
+    }
+
+    // NOVA TRAVA REFORÇADA: Verifica no banco em tempo real se o remetente pode interagir
+    try {
+        const { data: privEu, error: errEu } = await supabase
+            .from('usuarios')
+            .select('perfil_publico, compartilhar_whatsapp_match')
+            .eq('id', usuario.id)
+            .single();
+
+        if (errEu) throw errEu;
+
+        if (!privEu.perfil_publico || !privEu.compartilhar_whatsapp_match) {
+            const jaTemMatch = matchesConfirmados?.has(atletaAlvo.id);
+            
+            if (jaTemMatch) {
+              alert('Vocês deram Match! ⚽ Mas para visualizar o WhatsApp dele e conversar, você precisa ativar a exibição do seu WhatsApp no seu perfil. 🛡️');
+            }
+            
+            setAtletaPendente(atletaAlvo);
+            setMostrarAvisoPrivacidade(true);
+            // Sincroniza o estado local para o banner e botões atualizarem também
+            if (recarregarUsuario) recarregarUsuario();
+            return;
+        }
+    } catch (errPriv) {
+        console.error('Erro ao validar sua privacidade:', errPriv);
+    }
+
+    let privacidadeAtual = null;
+    try {
+      privacidadeAtual = await buscarPrivacidadeAtletaAtual(atletaAlvo.id);
+    } catch (error) {
+      console.error('Erro ao validar privacidade atual do atleta:', error);
+      alert('Nao foi possivel confirmar a privacidade deste atleta agora. Tente novamente em instantes.');
+      return;
+    }
+
+    // Se o ALVO (o outro atleta) ficou privado
+    if (!privacidadeAtual?.perfil_publico || privacidadeAtual?.compartilhar_whatsapp_match !== true) {
+        const jaTemMatch = matchesConfirmados?.has(atletaAlvo.id);
+        
+        if (jaTemMatch) {
+            alert('Vocês deram Match! ⚽ Mas este atleta acabou de ocultar o WhatsApp dele nas configurações de perfil. Por enquanto o contato está suspenso. 🛡️');
+        } else {
+            alert('Este atleta deixou o WhatsApp privado. Por isso, nao e possivel passar a bola para ele agora. 🛡️');
+        }
+        
+        // Sincroniza a tela para o botão mudar de cor e mostrar o cadeado
+        if (recarregarUsuario) recarregarUsuario();
         return;
     }
 
     const idadeEu = calcularIdade(dadosUsuario.data_nascimento);
-    const idadeAlvo = atletaAlvo.idade ?? calcularIdade(atletaAlvo.data_nascimento);
+    const idadeAlvo = privacidadeAtual.idade ?? atletaAlvo.idade ?? calcularIdade(privacidadeAtual.data_nascimento || atletaAlvo.data_nascimento);
 
     // Se não tiver data de nascimento, vamos assumir que pode ser menor por segurança (ou avisar)
     if (idadeEu === null || idadeAlvo === null) {
@@ -295,52 +368,76 @@ const PaginaExplorar = ({ aoVoltar }) => {
       return;
     }
 
-    // Se já é um match histórico
-    // Se ocorrer um Match Mútuo (ambos passaram a bola), o contato é liberado automaticamente
+    // Se já é um match histórico ou recém-confirmado
     if (matchesConfirmados?.has(atletaAlvo.id)) {
+        let telefoneFinal = atletaAlvo.telefone;
+
         try {
           const contato = await obterWhatsAppMatchSeguro(atletaAlvo.id);
           if (contato?.liberado && contato?.telefone) {
-            const numeroLimpo = contato.telefone.replace(/\D/g, '');
-            const msg = `Fala craque! Vi que demos match no PlayHub. Bora jogar?`;
-            window.open(`https://api.whatsapp.com/send?phone=55${numeroLimpo}&text=${encodeURIComponent(msg)}`, '_blank');
-            return;
+            telefoneFinal = contato.telefone;
+          } else {
+            // Fallback: busca direta se o match já está confirmado no estado do app
+            const { data: userDir } = await supabase
+              .from('usuarios')
+              .select('telefone')
+              .eq('id', atletaAlvo.id)
+              .single();
+            if (userDir?.telefone) telefoneFinal = userDir.telefone;
           }
         } catch (rpcError) {
-          // Mantem fallback legado enquanto a RPC ainda nao foi aplicada no banco.
+          console.warn('Erro ao buscar contato, tentando fallback direto:', rpcError.message);
+          const { data: userDir } = await supabase
+            .from('usuarios')
+            .select('telefone')
+            .eq('id', atletaAlvo.id)
+            .single();
+          if (userDir?.telefone) telefoneFinal = userDir.telefone;
         }
-        if (atletaAlvo.telefone) {
-            const numeroLimpo = atletaAlvo.telefone.replace(/\D/g, '');
+
+        if (telefoneFinal) {
+            const numeroLimpo = String(telefoneFinal).replace(/\D/g, '');
+            // Se o número for curto demais (ex: só o DDD), avisamos
+            if (numeroLimpo.length < 10) {
+              alert('O número de WhatsApp deste atleta parece estar incompleto no cadastro dele. 😕');
+              return;
+            }
             const msg = `Fala craque! Vi que demos match no PlayHub ⚽. Bora jogar?`;
             window.open(`https://api.whatsapp.com/send?phone=55${numeroLimpo}&text=${encodeURIComponent(msg)}`, '_blank');
         } else {
-            alert('Vocês deram Match! ⚽ Mas este atleta ainda não cadastrou um número de WhatsApp.');
+            alert('Vocês deram Match! ⚽ Mas parece que este atleta ainda não cadastrou o número de WhatsApp no perfil.');
         }
         return;
     }
 
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('interacoes')
         .insert({
           remetente_id: usuario.id,
           destinatario_id: atletaAlvo.id,
           tipo: 'bola'
-        });
+        })
+        .select('id')
+        .single();
       
       if (error) {
         console.error('Erro Supabase:', error);
         throw error;
       }
+
+      if (!data?.id) {
+        throw new Error('A interacao nao retornou confirmacao do banco.');
+      }
       
       rastrear.clique('explorar_passou_bola', 'Passou a bola para um atleta como demonstração de interesse');
+      await carregarNotificacoes(); // Atualiza instantaneamente os botões para match ou espera
       alert('Você passou a bola para este atleta! ⚽');
-      carregarNotificacoes(); // Atualiza instantaneamente os botões para match ou espera
     } catch (err) {
       console.error('Erro ao interagir:', err);
       // Se for duplicidade, apenas ignoramos o alerta de erro e atualizamos
       if (err.code === '23505' || err.message?.includes('duplicate key')) {
-        carregarNotificacoes();
+        await carregarNotificacoes();
         return;
       }
       alert(`Erro ao passar a bola: ${err.message || 'Verifique sua conexão.'}`);
@@ -619,6 +716,10 @@ const PaginaExplorar = ({ aoVoltar }) => {
                           const idNormal = String(atleta.id).toLowerCase().trim();
                           const ehMatchMútuo = matchesConfirmados?.has(idNormal);
                           const euPasseiABola = matches?.has(idNormal);
+                          // Lógica "Privado por Padrão": se não for explicitamente TRUE, tratamos como PRIVADO
+                          const euEstouPrivado = dadosUsuario?.compartilhar_whatsapp_match !== true;
+                          const alvoEstaPrivado = atleta.compartilhar_whatsapp_match !== true && atleta.id !== usuario.id;
+                          const mostrarPrivado = euEstouPrivado || alvoEstaPrivado;
 
                           return (
                             <Botao
@@ -626,8 +727,6 @@ const PaginaExplorar = ({ aoVoltar }) => {
                               onClick={() => {
                                 if (atleta.id === usuario.id) {
                                   setAtletaSelecionado(atleta);
-                                } else if (ehMatchMútuo) {
-                                  handleCutucar(atleta);
                                 } else {
                                   handleCutucar(atleta);
                                 }
@@ -637,24 +736,28 @@ const PaginaExplorar = ({ aoVoltar }) => {
                                 fontSize: '0.8rem', 
                                 gap: '4px',
                                 background: atleta.id === usuario.id ? 'rgba(255, 255, 255, 0.05)' :
+                                            mostrarPrivado ? 'rgba(244, 63, 94, 0.05)' :
                                             ehMatchMútuo ? 'rgba(37, 211, 102, 0.15)' : 
                                             euPasseiABola ? 'rgba(255, 255, 255, 0.05)' : undefined,
                                 color: atleta.id === usuario.id ? '#94a3b8' :
+                                       mostrarPrivado ? '#f43f5e' :
                                        ehMatchMútuo ? '#25D366' : 
                                        euPasseiABola ? '#94a3b8' : undefined,
-                                borderColor: atleta.id === usuario.id ? 'rgba(255, 255, 255, 0.1)' :
+                               borderColor: atleta.id === usuario.id ? 'rgba(255, 255, 255, 0.1)' :
+                                             mostrarPrivado ? 'rgba(244, 63, 94, 0.2)' :
                                              ehMatchMútuo ? 'rgba(37, 211, 102, 0.4)' : 
                                              euPasseiABola ? 'rgba(255, 255, 255, 0.1)' : undefined
                               }}
-                              disabled={(euPasseiABola && !ehMatchMútuo) || (!atleta.compartilhar_whatsapp_match && atleta.id !== usuario.id)}
+                              disabled={(euPasseiABola && !ehMatchMútuo) && !mostrarPrivado}
                               title={atleta.id === usuario.id ? 'Ver meu perfil' :
+                                     euEstouPrivado ? 'Match! Mas você precisa liberar seu WhatsApp para ver o contato 🛡️' :
+                                     alvoEstaPrivado ? 'Match! Mas este atleta ocultou o WhatsApp 🛡️' :
                                      ehMatchMútuo ? 'Match! Clique para conversar' : 
-                                     !atleta.compartilhar_whatsapp_match ? 'O WhatsApp deste atleta está privado 🛡️' :
                                      euPasseiABola ? 'Você já passou a bola. Aguarde a retribuição!' : 'Passar a bola'}
                             >
                               {atleta.id === usuario.id ? <><User size={14}/> Meu Perfil</> :
+                               mostrarPrivado ? <><Lock size={14}/> WhatsApp privado</> :
                                ehMatchMútuo ? <><MessageCircle size={14}/> Conversar</> : 
-                               !atleta.compartilhar_whatsapp_match ? <><Lock size={14}/> Bola Bloqueada</> :
                                euPasseiABola ? '✓ Bola Passada' : '⚽ Passar a bola'}
                             </Botao>
                           );

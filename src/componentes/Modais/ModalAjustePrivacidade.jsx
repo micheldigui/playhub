@@ -5,21 +5,14 @@ import Botao from '../Botao/Botao';
 import { usarAutenticacao } from '../../contextos/AutenticacaoContexto';
 
 const ModalAjustePrivacidade = ({ isOpen, onClose, aoConcluir }) => {
-    const { alternarVisibilidadePerfil, alternarWhatsAppMatch, dadosUsuario } = usarAutenticacao();
+    const { ativarPrivacidadeTotal } = usarAutenticacao();
     const [processando, setProcessando] = useState(false);
     const [sucesso, setSucesso] = useState(false);
 
     const handleAtivarTudo = async () => {
         setProcessando(true);
         try {
-            // Ativa perfil público se estiver desativado
-            if (!dadosUsuario.perfil_publico) {
-                await alternarVisibilidadePerfil();
-            }
-            // Ativa WhatsApp match se estiver desativado
-            if (!dadosUsuario.compartilhar_whatsapp_match) {
-                await alternarWhatsAppMatch();
-            }
+            await ativarPrivacidadeTotal();
             
             setSucesso(true);
             setTimeout(() => {

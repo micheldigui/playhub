@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Globe, Search, MapPin, Trophy, Users, Mail, Loader2 } from 'lucide-react';
+import { Globe, Search, MapPin, Trophy, Users, Mail, Loader2, Lock, MessageCircle, Activity } from 'lucide-react';
 import { usarEquipe } from '../../../contextos/EquipeContexto';
 import { usarNotificacoes } from '../../../contextos/NotificacoesContexto';
 import { usarAutenticacao } from '../../../contextos/AutenticacaoContexto';
@@ -7,6 +7,8 @@ import Botao from '../../../componentes/Botao/Botao';
 import Modal from '../../../componentes/Modal/Modal';
 import ModalPerfilAtleta from '../../../componentes/Modais/ModalPerfilAtleta';
 import { supabase } from '../../../servicos/supabase';
+import { buscarPrivacidadeAtletaAtual } from '../../../servicos/perfisPublicos';
+import ModalAjustePrivacidade from '../../../componentes/Modais/ModalAjustePrivacidade';
 
 // Formata "Primeiro Último" com iniciais maiúsculas
 const formatarNome = (nomeCompleto) => {
@@ -35,7 +37,8 @@ const normalizarTexto = (valor) =>
 
 const DescobrirTab = () => {
     const { equipeAtiva, buscarAtletas, enviarConvite, carregarConvitesEnviados, cancelarConvite, temPermissaoEquipe } = usarEquipe();
-    const { usuario } = usarAutenticacao();
+    const { carregarNotificacoes, matchesConfirmados, matches } = usarNotificacoes();
+    const { usuario, dadosUsuario, recarregarUsuario } = usarAutenticacao();
     
     const [termo, setTermo] = useState('');
     const [modalidade, setModalidade] = useState('');
@@ -46,6 +49,8 @@ const DescobrirTab = () => {
     const [mapaConvites, setMapaConvites] = useState({});
     const [atletaSelecionado, setAtletaSelecionado] = useState(null);
     const [modalConvite, setModalConvite] = useState(null);
+    const [mostrarAvisoPrivacidade, setMostrarAvisoPrivacidade] = useState(false);
+    const [atletaPendente, setAtletaPendente] = useState(null);
     const [msgConvite, setMsgConvite] = useState('');
     const [idsMembrosEquipe, setIdsMembrosEquipe] = useState(new Set());
     const [pagina, setPagina] = useState(0);
@@ -94,6 +99,82 @@ const DescobrirTab = () => {
             if (c.jogador?.id) mapa[c.jogador.id] = c;
         });
         setMapaConvites(mapa);
+    };
+
+    // Função idêntica ao Explorar para manter consistência
+    const handleCutucar = async (atletaAlvo) => {
+        if (!usuario || !dadosUsuario) {
+            alert('Carregando seus dados... Tente novamente.');
+            return;
+        }
+
+        try {
+            // Verifica privacidade própria
+            const { data: privEu } = await supabase
+                .from('usuarios')
+                .select('perfil_publico, compartilhar_whatsapp_match')
+                .eq('id', usuario.id)
+                .single();
+
+            if (!privEu?.perfil_publico || !privEu?.compartilhar_whatsapp_match) {
+                const jaTemMatch = matchesConfirmados?.has(atletaAlvo.id);
+                if (jaTemMatch) {
+                    alert('Vocês deram Match! ⚽ Mas para ver o WhatsApp dele, você precisa liberar o seu no perfil.');
+                }
+                setAtletaPendente(atletaAlvo);
+                setMostrarAvisoPrivacidade(true);
+                if (recarregarUsuario) recarregarUsuario();
+                return;
+            }
+
+            // Verifica privacidade do alvo
+            const { data: privAlvo } = await supabase
+                .from('usuarios')
+                .select('perfil_publico, compartilhar_whatsapp_match')
+                .eq('id', atletaAlvo.id)
+                .single();
+
+            if (!privAlvo?.perfil_publico || !privAlvo?.compartilhar_whatsapp_match) {
+                const jaTemMatch = matchesConfirmados?.has(atletaAlvo.id);
+                if (jaTemMatch) {
+                    alert('Vocês deram Match! ⚽ Mas este atleta ocultou o WhatsApp dele por enquanto.');
+                } else {
+                    alert('Este atleta deixou o WhatsApp privado. 🛡️');
+                }
+                if (recarregarUsuario) recarregarUsuario();
+                return;
+            }
+
+            // Se chegou aqui, as regras permitem. Agora verifica se já é match para abrir zap
+            const idNormal = String(atletaAlvo.id).toLowerCase().trim();
+            if (matchesConfirmados?.has(idNormal)) {
+                // Aqui poderíamos chamar a obterWhatsAppMatchSeguro, 
+                // mas para simplificar no Descobrir, vamos tentar o telefone direto ou avisar
+                const { data: userZap } = await supabase.from('usuarios').select('telefone').eq('id', atletaAlvo.id).single();
+                if (userZap?.telefone) {
+                    const numeroLimpo = userZap.telefone.replace(/\D/g, '');
+                    window.open(`https://wa.me/55${numeroLimpo}?text=Vi seu perfil no PlayHub!`, '_blank');
+                } else {
+                    alert('Match confirmado! ⚽ Mas este atleta não cadastrou telefone.');
+                }
+                return;
+            }
+
+            // Se não for match, registra a "bola passada"
+            const { error } = await supabase
+                .from('cutucadas')
+                .insert({ remetente_id: usuario.id, destinatario_id: atletaAlvo.id });
+
+            if (error) {
+                if (error.code === '23505') alert('Você já passou a bola para este atleta!');
+                else throw error;
+            } else {
+                alert('Bola passada com sucesso! ⚽ Se ele retribuir, o contato será liberado.');
+                if (carregarNotificacoes) carregarNotificacoes();
+            }
+        } catch (err) {
+            console.error('Erro na interação:', err);
+        }
     };
 
     const handleBuscar = async (novaBusca = true) => {
@@ -171,33 +252,24 @@ const DescobrirTab = () => {
         }
         
         if (window.confirm('Deseja cancelar o convite enviado para este atleta?')) {
-            const res = await cancelarConvite(conviteId);
-            if (res.sucesso) {
-                setMapaConvites(prev => {
-                    const novoMapa = { ...prev };
-                    delete novoMapa[atletaId];
-                    return novoMapa;
-                });
-            } else {
-                alert('Falha ao cancelar o convite: ' + res.erro);
+            try {
+                const res = await cancelarConvite(conviteId);
+                if (res.sucesso) {
+                    setMapaConvites(prev => {
+                        const novoMapa = { ...prev };
+                        delete novoMapa[atletaId];
+                        return novoMapa;
+                    });
+                    // Feedback visual opcional
+                    // alert('Convite cancelado com sucesso!');
+                } else {
+                    // Se houver erro, tentamos atualizar o mapa para garantir que a UI reflita o estado real do banco
+                    await carregarMapaConvites();
+                    alert('Não foi possível cancelar o convite. 🛡️\nMotivo: ' + (res.erro || 'Permissão negada ou convite já processado.'));
+                }
+            } catch (err) {
+                alert('Erro técnico ao cancelar convite. Tente recarregar a página.');
             }
-        }
-    };
-
-    const handlePassarBola = async (alvoId) => {
-        try {
-            const { error } = await supabase
-                .from('interacoes')
-                .insert({
-                    remetente_id: usuario.id,
-                    destinatario_id: alvoId,
-                    tipo: 'bola'
-                });
-            if (error) throw error;
-            alert('Bola passada com sucesso! ⚽');
-        } catch (err) {
-            console.error('Erro ao retribuir:', err);
-            alert('Erro ao passar a bola.');
         }
     };
 
@@ -248,68 +320,150 @@ const DescobrirTab = () => {
             {/* RESULTADOS */}
             <div className="grade-atletas" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px' }}>
                 {resultados.length > 0 ? (
-                    resultados.map(jog => (
+                    resultados
+                      .filter(jog => !idsMembrosEquipe.has(jog.id))
+                      .map(jog => {
+                        return (
                         <div 
                             key={jog.id} 
-                            className="card-atleta animacao-entrada" 
-                            style={{ background: 'rgba(15, 23, 42, 0.6)', border: '1px solid rgba(255, 255, 255, 0.05)', borderRadius: '16px', padding: '16px', cursor: 'pointer', transition: 'border-color 0.2s' }}
-                            onClick={() => setAtletaSelecionado(jog)}
-                            onMouseEnter={e => e.currentTarget.style.borderColor = '#38bdf8'}
-                            onMouseLeave={e => e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.05)'}
+                            className="card-atleta-explorar animacao-entrada" 
+                            style={{ 
+                                background: 'rgba(15, 23, 42, 0.4)', 
+                                border: '1px solid rgba(255, 255, 255, 0.05)', 
+                                borderRadius: '20px', 
+                                padding: '24px', 
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: '16px',
+                                transition: 'all 0.3s ease'
+                            }}
                         >
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
-                                <div style={{ width: '48px', height: '48px', borderRadius: '12px', overflow: 'hidden', background: '#1e293b' }}>
-                                    {jog.foto_url ? <img src={jog.foto_url} alt={jog.apelido} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <Users size={24} color="#64748b" style={{ margin: '12px' }} />}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                                <div style={{ 
+                                    width: '56px', 
+                                    height: '56px', 
+                                    borderRadius: '50%', 
+                                    overflow: 'hidden', 
+                                    background: 'rgba(255, 255, 255, 0.05)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    border: '2px solid rgba(56, 189, 248, 0.2)'
+                                }}>
+                                    {jog.foto_url ? (
+                                        <img src={jog.foto_url} alt={jog.apelido} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                    ) : (
+                                        <span style={{ color: '#38bdf8', fontWeight: 'bold', fontSize: '1.2rem' }}>
+                                            {jog.nome_completo?.charAt(0).toUpperCase()}
+                                        </span>
+                                    )}
                                 </div>
-                                <div>
-                                    <h4 style={{ color: '#f1f5f9', fontSize: '1rem', margin: 0 }}>{formatarNome(jog.nome_completo)}</h4>
-                                    <span style={{ color: '#64748b', fontSize: '0.8rem' }}>{jog.apelido ? `@${formatarApelido(jog.apelido)}` : '@atleta'}</span>
+                                <div style={{ flex: 1 }}>
+                                    <h4 style={{ color: '#f1f5f9', fontSize: '1.1rem', margin: 0, fontWeight: '600' }}>
+                                        {formatarNome(jog.nome_completo)}
+                                    </h4>
+                                    <span style={{ color: '#64748b', fontSize: '0.85rem' }}>
+                                        {jog.apelido ? `@${formatarApelido(jog.apelido)}` : '@atleta'}
+                                    </span>
                                 </div>
                             </div>
                             
-                            <div style={{ color: '#94a3b8', fontSize: '0.85rem', marginBottom: '16px' }}>
-                                <MapPin size={12} /> {jog.cidade}, {jog.estado}
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                <div style={{ color: '#94a3b8', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                    <MapPin size={14} color="#38bdf8" /> {jog.cidade}, {jog.estado}
+                                </div>
                             </div>
 
-                            {mapaConvites[jog.id]?.status === 'pendente' ? (
-                                <Botao
-                                    variant="secundario"
-                                    onClick={(e) => handleDesfazerConvite(mapaConvites[jog.id].id, jog.id, e)}
-                                    style={{ width: '100%', fontSize: '0.85rem', borderColor: 'rgba(244, 63, 94, 0.4)', color: '#f43f5e' }}
-                                    title="Desfazer Convite Pendente"
-                                >
-                                    Desfazer Convite
-                                </Botao>
-                            ) : idsMembrosEquipe.has(jog.id) ? (
-                                <div style={{
-                                    textAlign: 'center', color: '#10b981',
-                                    background: 'rgba(16,185,129,0.1)',
-                                    border: '1px solid rgba(16,185,129,0.25)',
-                                    borderRadius: '10px', padding: '10px',
-                                    fontSize: '0.82rem', fontWeight: '700'
-                                }}>
-                                    ✓ Já faz parte da equipe
+                            <div style={{ 
+                                marginTop: 'auto', 
+                                display: 'flex', 
+                                flexDirection: 'column',
+                                gap: '10px',
+                                paddingTop: '8px' 
+                            }}>
+                                {/* LINHA 1: VER PERFIL E PASSAR A BOLA */}
+                                <div style={{ display: 'flex', gap: '8px' }}>
+                                    <Botao
+                                        variant="secundario"
+                                        onClick={() => setAtletaSelecionado(jog)}
+                                        style={{ 
+                                            flex: 1, 
+                                            fontSize: '0.75rem', 
+                                            gap: '4px',
+                                            background: 'rgba(255, 255, 255, 0.03)',
+                                            padding: '8px 4px'
+                                        }}
+                                    >
+                                        <Users size={12} /> Perfil
+                                    </Botao>
+
+                                    {(() => {
+                                        const idNormal = String(jog.id).toLowerCase().trim();
+                                        const ehMatchMútuo = matchesConfirmados?.has(idNormal);
+                                        const euPasseiABola = matches?.has(idNormal);
+                                        const euEstouPrivado = dadosUsuario?.compartilhar_whatsapp_match !== true;
+                                        const alvoEstaPrivado = jog.compartilhar_whatsapp_match !== true;
+                                        const mostrarPrivado = euEstouPrivado || alvoEstaPrivado;
+
+                                        return (
+                                            <Botao
+                                                variant="secundario"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleCutucar(jog);
+                                                }}
+                                                style={{ 
+                                                    flex: 1.4, 
+                                                    fontSize: '0.75rem',
+                                                    gap: '4px',
+                                                    padding: '8px 4px',
+                                                    background: mostrarPrivado ? 'rgba(244, 63, 94, 0.05)' : ehMatchMútuo ? 'rgba(37, 211, 102, 0.1)' : undefined,
+                                                    color: mostrarPrivado ? '#f43f5e' : ehMatchMútuo ? '#25D366' : undefined,
+                                                    borderColor: mostrarPrivado ? 'rgba(244, 63, 94, 0.2)' : ehMatchMútuo ? 'rgba(37, 211, 102, 0.3)' : undefined
+                                                }}
+                                            >
+                                                {mostrarPrivado ? <><Lock size={12} /> Privado</> : 
+                                                 ehMatchMútuo ? <><MessageCircle size={12} /> Conversar</> : 
+                                                 euPasseiABola ? '✓ Enviado' : <><Activity size={12} /> Passar Bola</>}
+                                            </Botao>
+                                        );
+                                    })()}
                                 </div>
-                            ) : mapaConvites[jog.id]?.status === 'aceito' ? (
-                                <div className="tag-membro">Já é membro do time</div>
-                            ) : (
-                                <Botao
-                                    variant="secundario"
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        if (temPermissaoEquipe('gerenciar_membros')) {
-                                            setModalConvite(jog);
-                                        } else {
-                                            alert('Você não tem privilégios para convidar atletas nesta equipe. 🛡️\nSolicite ao capitão a permissão de "Gerenciar Membros".');
-                                        }
-                                    }}
-                                    style={{ width: '100%', fontSize: '0.85rem' }}
-                                >
-                                    Convidar p/ Equipe
-                                </Botao>
-                            )}
+
+                                {/* LINHA 2: CONVIDAR PARA EQUIPE */}
+                                {mapaConvites[jog.id]?.status === 'pendente' ? (
+                                    <Botao
+                                        variant="secundario"
+                                        onClick={(e) => handleDesfazerConvite(mapaConvites[jog.id].id, jog.id, e)}
+                                        style={{ 
+                                            width: '100%', 
+                                            fontSize: '0.8rem', 
+                                            borderColor: 'rgba(244, 63, 94, 0.2)', 
+                                            color: '#f43f5e',
+                                            background: 'rgba(244, 63, 94, 0.03)' 
+                                        }}
+                                    >
+                                        Desfazer Convite
+                                    </Botao>
+                                ) : (
+                                    <Botao
+                                        variant="primario"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            if (temPermissaoEquipe('gerenciar_membros')) {
+                                                setModalConvite(jog);
+                                            } else {
+                                                alert('Sem permissão para convidar. 🛡️');
+                                            }
+                                        }}
+                                        style={{ width: '100%', fontSize: '0.85rem', gap: '8px' }}
+                                    >
+                                        <Mail size={16} /> Convidar para Equipe
+                                    </Botao>
+                                )}
+                            </div>
                         </div>
-                    ))
+                      )})
                 ) : (
                     !buscando && termo && <p style={{ color: '#64748b', textAlign: 'center', gridColumn: '1/-1', padding: '2rem' }}>Nenhum atleta encontrado com esses filtros.</p>
                 )}
@@ -354,7 +508,17 @@ const DescobrirTab = () => {
                 isOpen={!!atletaSelecionado}
                 onClose={() => setAtletaSelecionado(null)}
                 idAtleta={atletaSelecionado?.id}
-                aoPassarBola={(alvo) => handlePassarBola(alvo.id)}
+                equipeId={equipeAtiva?.id}
+                aoPassarBola={handleCutucar}
+            />
+
+            <ModalAjustePrivacidade 
+                isOpen={mostrarAvisoPrivacidade}
+                onClose={() => setMostrarAvisoPrivacidade(false)}
+                aoConcluir={() => {
+                    setMostrarAvisoPrivacidade(false);
+                    if (atletaPendente) handleCutucar(atletaPendente);
+                }}
             />
 
             <style>{`

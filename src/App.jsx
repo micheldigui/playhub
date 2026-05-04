@@ -4,6 +4,7 @@ import PaginaAutenticacao from './paginas/Autenticacao/PaginaAutenticacao'
 import PaginaRedefinirSenha from './paginas/Autenticacao/PaginaRedefinirSenha'
 import { usarAutenticacao } from './contextos/AutenticacaoContexto'
 import { PwaProvedor } from './contextos/PwaContexto'
+import { supabase } from './servicos/supabase'
 
 // Code splitting via lazy loading para melhorar performance inicial
 const PaginaPerfil = lazy(() => import('./paginas/Perfil/PaginaPerfil'))
@@ -48,7 +49,7 @@ function App() {
     document.title = "PlayHub - Gestão de Equipes";
   }, []);
 
-  const { estaLogado, ehSuperAdmin } = usarAutenticacao()
+  const { estaLogado, ehSuperAdmin, carregando: authCarregando } = usarAutenticacao()
   
   // Analisa URL na inicialização para capturar links de convite
   const pathInicial = () => {
@@ -60,6 +61,9 @@ function App() {
       if (path.startsWith('/redefinir-senha')) {
         return 'redefinir_senha';
       }
+      if (path.startsWith('/partida/')) {
+        return 'partida_link';
+      }
     }
     return null;
   };
@@ -69,10 +73,28 @@ function App() {
     const inicial = pathInicial();
     if (inicial === 'convite') return 'convite';
     if (inicial === 'redefinir_senha') return 'redefinir_senha';
-
-    // 2. Default absoluto: Sempre Dashboard (Ignora persistência)
     return 'inicio';
   })
+
+  // Efeito para processar links de partida apenas após o Auth carregar
+  useEffect(() => {
+    if (authCarregando) return;
+
+    const inicial = pathInicial();
+    if (inicial === 'partida_link') {
+      const partidaId = window.location.pathname.split('/partida/')[1];
+      if (partidaId) {
+        localStorage.setItem('playhub_partida_pendente', partidaId);
+        if (!estaLogado) {
+          setQuerFazerLogin(true);
+          setTelaAuth('login');
+        } else {
+          // Se já está logado, o outro useEffect já vai processar
+          setTelaAtiva('inicio');
+        }
+      }
+    }
+  }, [authCarregando, estaLogado]);
 
   // Novo estado centralizado para saber qual seção da equipe o usuário está vendo
   const [abaEquipe, setAbaEquipe] = useState(() => {
@@ -108,7 +130,7 @@ function App() {
       }
     } else if (telaAtiva === 'convite' && equipeConviteId) {
       window.history.replaceState(null, '', `/convite/${equipeConviteId}`);
-    } else if (telaAtiva === 'inicio' && window.location.pathname !== '/') {
+    } else if (telaAtiva === 'inicio' && window.location.pathname !== '/' && !window.location.pathname.startsWith('/partida/')) {
       window.history.replaceState(null, '', '/');
     }
 
@@ -121,6 +143,38 @@ function App() {
       localStorage.removeItem('playhub_dados_navegacao');
     }
   }, [telaAtiva, equipeConviteId, abaEquipe, dadosNavegacao]);
+
+  // Processa partida pendente ao logar
+  useEffect(() => {
+    if (estaLogado) {
+      const partidaPendenteId = localStorage.getItem('playhub_partida_pendente');
+      if (partidaPendenteId) {
+        localStorage.removeItem('playhub_partida_pendente');
+        
+        // Busca a equipe da partida para poder navegar
+        const carregarERedirecionar = async () => {
+          const { data, error } = await supabase
+            .from('partidas')
+            .select('equipe_id')
+            .eq('id', partidaPendenteId)
+            .single();
+          
+          if (!error && data) {
+            // Limpa a URL para o padrão logado
+            window.history.replaceState(null, '', '/');
+            
+            // Configura navegação
+            setDadosNavegacao({ reabrirPartidaId: partidaPendenteId });
+            localStorage.setItem('playhub_equipe_ativa', data.equipe_id);
+            setAbaEquipe('agenda');
+            setTelaAtiva('equipe');
+          }
+        };
+        
+        carregarERedirecionar();
+      }
+    }
+  }, [estaLogado]);
 
   const irParaLogin = () => {
     window.history.replaceState(null, '', '/');
