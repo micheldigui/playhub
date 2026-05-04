@@ -402,9 +402,8 @@ const DescobrirTab = () => {
                                         const ehMatchMútuo = matchesConfirmados?.has(idNormal);
                                         const euPasseiABola = matches?.has(idNormal);
                                         
-                                        // O botão 'Privado' só deve aparecer se o ALVO bloqueou explicitamente.
-                                        // Se o EU estou privado, o botão 'Passar Bola' deve continuar aparecendo para eu poder interagir.
-                                        const alvoEstaPrivado = jog.compartilhar_whatsapp_match === false;
+                                        // O botão 'Privado' deve aparecer se o ALVO não autorizou explicitamente (qualquer coisa diferente de true)
+                                        const alvoEstaPrivado = jog.compartilhar_whatsapp_match !== true;
 
                                         return (
                                             <Botao

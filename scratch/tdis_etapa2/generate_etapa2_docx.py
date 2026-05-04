@@ -444,6 +444,7 @@ def build_docx():
         "A bibliometria desta etapa foi organizada como um levantamento inicial do acervo bibliográfico disponível para o projeto. O objetivo não é substituir uma revisão sistemática completa, mas demonstrar rastreabilidade na seleção dos artigos que fundamentam o modelo conceitual e a metodologia. O corpus local contém 94 arquivos científicos em PDF, sendo 26 classificados como referencial direto e 68 como apoio complementar. Para a Etapa 2, foram priorizados artigos recentes, publicados entre 2023 e 2026, com aderência direta ao problema de pesquisa.",
     )
 
+    doc.add_page_break()
     add_caption(doc, "Quadro 1 - Síntese bibliométrica do acervo analisado")
     add_table(
         doc,
@@ -460,6 +461,7 @@ def build_docx():
     )
     add_source(doc)
 
+    doc.add_page_break()
     add_caption(doc, "Quadro 2 - Artigos centrais selecionados e contribuição para o PlayHub")
     add_table(
         doc,
