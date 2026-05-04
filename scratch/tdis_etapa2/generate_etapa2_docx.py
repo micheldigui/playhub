@@ -557,6 +557,7 @@ def build_docx():
         "A hipótese geral da Etapa 1 permanece válida: a adoção da plataforma PlayHub melhora a eficiência operacional, a transparência das informações e a experiência dos usuários em comparação aos métodos tradicionais. Para a Etapa 2, essa hipótese foi desdobrada em hipóteses operacionais, permitindo melhor mensuração na etapa de coleta e análise de dados.",
     )
 
+    doc.add_page_break()
     add_caption(doc, "Figura 1 - Modelo conceitual da pesquisa")
     p = doc.add_paragraph()
     p.alignment = WD_ALIGN_PARAGRAPH.CENTER
@@ -576,6 +577,7 @@ def build_docx():
         ],
     )
 
+    doc.add_page_break()
     add_caption(doc, "Quadro 3 - Relação entre constructos, variáveis e métricas")
     add_table(
         doc,

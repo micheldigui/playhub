@@ -689,10 +689,7 @@ export const EquipeProvedor = ({ children }) => {
 
             let query = supabase
                 .from('usuarios')
-                .select(`
-                    id, nome_completo, apelido, cidade, estado, foto_url,
-                    esportes_interesse
-                `)
+                .select('id, nome_completo, apelido, foto_url, cidade, estado, esportes_interesse, compartilhar_whatsapp_match')
                 .eq('perfil_publico', true)
                 .lte('data_nascimento', dataCorte); // Apenas maiores de 18
 
