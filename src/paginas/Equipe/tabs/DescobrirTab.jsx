@@ -24,6 +24,15 @@ const formatarApelido = (apelido) => {
     ).join('');
 };
 
+const ITENS_POR_PAGINA = 24;
+
+const normalizarTexto = (valor) =>
+    String(valor || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .trim();
+
 const DescobrirTab = () => {
     const { equipeAtiva, buscarAtletas, enviarConvite, carregarConvitesEnviados, cancelarConvite, temPermissaoEquipe } = usarEquipe();
     const { usuario } = usarAutenticacao();
@@ -39,6 +48,8 @@ const DescobrirTab = () => {
     const [modalConvite, setModalConvite] = useState(null);
     const [msgConvite, setMsgConvite] = useState('');
     const [idsMembrosEquipe, setIdsMembrosEquipe] = useState(new Set());
+    const [pagina, setPagina] = useState(0);
+    const [temMais, setTemMais] = useState(false);
 
     // Carrega IDs dos membros atuais da equipe para detectar duplicatas nos resultados
     useEffect(() => {
@@ -54,22 +65,74 @@ const DescobrirTab = () => {
         carregar();
     }, [equipeAtiva?.id]);
 
-    const handleBuscar = async () => {
+    const getCidadeReferencia = () => equipeAtiva?.local_cidade || equipeAtiva?.cidade || '';
+    const getEstadoReferencia = () => equipeAtiva?.local_estado || equipeAtiva?.estado || '';
+
+    const ordenarAtletas = (lista) => {
+        const cidadeReferencia = normalizarTexto(getCidadeReferencia());
+        const estadoReferencia = normalizarTexto(getEstadoReferencia());
+
+        return [...lista].sort((a, b) => {
+            const scoreA =
+                normalizarTexto(a.cidade) === cidadeReferencia ? 0 :
+                normalizarTexto(a.estado) === estadoReferencia ? 1 :
+                2;
+            const scoreB =
+                normalizarTexto(b.cidade) === cidadeReferencia ? 0 :
+                normalizarTexto(b.estado) === estadoReferencia ? 1 :
+                2;
+
+            if (scoreA !== scoreB) return scoreA - scoreB;
+            return String(a.nome_completo || '').localeCompare(String(b.nome_completo || ''), 'pt-BR');
+        });
+    };
+
+    const carregarMapaConvites = async () => {
+        const enviados = await carregarConvitesEnviados(equipeAtiva.id);
+        const mapa = {};
+        enviados.forEach(c => {
+            if (c.jogador?.id) mapa[c.jogador.id] = c;
+        });
+        setMapaConvites(mapa);
+    };
+
+    const handleBuscar = async (novaBusca = true) => {
         setBuscando(true);
         try {
-            const res = await buscarAtletas({ termo, modalidade, cidade });
+            const proximaPagina = novaBusca ? 0 : pagina + 1;
+            const offset = proximaPagina * ITENS_POR_PAGINA;
+            const res = await buscarAtletas({
+                termo,
+                modalidade,
+                cidade,
+                limite: ITENS_POR_PAGINA + 1,
+                offset,
+                cidadeReferencia: getCidadeReferencia(),
+                estadoReferencia: getEstadoReferencia()
+            });
             
             // Filtro dinâmico: remove quem já faz parte da equipe
-            const atualizados = (res || []).filter(atleta => !idsMembrosEquipe.has(atleta.id));
-            setResultados(atualizados);
+            const loteBruto = res || [];
+            const atualizados = ordenarAtletas(
+                loteBruto
+                    .slice(0, ITENS_POR_PAGINA)
+                    .filter(atleta => !idsMembrosEquipe.has(atleta.id))
+            );
+
+            if (novaBusca) {
+                setResultados(atualizados);
+            } else {
+                setResultados(prev => {
+                    const idsAtuais = new Set(prev.map(atleta => atleta.id));
+                    const novos = atualizados.filter(atleta => !idsAtuais.has(atleta.id));
+                    return ordenarAtletas([...prev, ...novos]);
+                });
+            }
+            setPagina(proximaPagina);
+            setTemMais(loteBruto.length > ITENS_POR_PAGINA);
             
             // Carrega convites enviados para marcar no card
-            const enviados = await carregarConvitesEnviados(equipeAtiva.id);
-            const mapa = {};
-            enviados.forEach(c => { 
-                if (c.jogador?.id) mapa[c.jogador.id] = c; 
-            });
-            setMapaConvites(mapa);
+            await carregarMapaConvites();
         } catch (error) {
             console.error('Erro ao buscar atletas:', error);
         } finally {
@@ -177,7 +240,7 @@ const DescobrirTab = () => {
                         <input type="text" value={cidade} onChange={e => setCidade(e.target.value)} placeholder="Ex: Jundiaí..." />
                     </div>
                 </div>
-                <Botao onClick={handleBuscar} disabled={buscando} style={{ width: '100%' }}>
+                <Botao onClick={() => handleBuscar(true)} disabled={buscando} style={{ width: '100%' }}>
                     {buscando ? <Loader2 className="animate-spin" size={18} /> : 'Pesquisar Jogadores'}
                 </Botao>
             </div>
@@ -251,6 +314,19 @@ const DescobrirTab = () => {
                     !buscando && termo && <p style={{ color: '#64748b', textAlign: 'center', gridColumn: '1/-1', padding: '2rem' }}>Nenhum atleta encontrado com esses filtros.</p>
                 )}
             </div>
+
+            {temMais && resultados.length > 0 && (
+                <div style={{ display: 'flex', justifyContent: 'center', marginTop: '24px' }}>
+                    <Botao
+                        variant="secundario"
+                        onClick={() => handleBuscar(false)}
+                        disabled={buscando}
+                        style={{ minWidth: '220px' }}
+                    >
+                        {buscando ? <Loader2 className="animate-spin" size={18} /> : 'Carregar mais jogadores'}
+                    </Botao>
+                </div>
+            )}
 
             {/* MODAL DE CONVITE */}
             {modalConvite && (

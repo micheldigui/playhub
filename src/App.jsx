@@ -1,6 +1,7 @@
 import { useState, useEffect, lazy, Suspense } from 'react'
 import Layout from './componentes/Layout/Layout'
 import PaginaAutenticacao from './paginas/Autenticacao/PaginaAutenticacao'
+import PaginaRedefinirSenha from './paginas/Autenticacao/PaginaRedefinirSenha'
 import { usarAutenticacao } from './contextos/AutenticacaoContexto'
 import { PwaProvedor } from './contextos/PwaContexto'
 
@@ -56,6 +57,9 @@ function App() {
       if (path.startsWith('/convite/')) {
         return 'convite';
       }
+      if (path.startsWith('/redefinir-senha')) {
+        return 'redefinir_senha';
+      }
     }
     return null;
   };
@@ -64,6 +68,7 @@ function App() {
     // 1. Mantém suporte a convites (URL direta)
     const inicial = pathInicial();
     if (inicial === 'convite') return 'convite';
+    if (inicial === 'redefinir_senha') return 'redefinir_senha';
 
     // 2. Default absoluto: Sempre Dashboard (Ignora persistência)
     return 'inicio';
@@ -97,7 +102,11 @@ function App() {
 
   // Sincroniza a URL e persiste estados no localStorage
   useEffect(() => {
-    if (telaAtiva === 'convite' && equipeConviteId) {
+    if (telaAtiva === 'redefinir_senha') {
+      if (window.location.pathname !== '/redefinir-senha') {
+        window.history.replaceState(null, '', '/redefinir-senha');
+      }
+    } else if (telaAtiva === 'convite' && equipeConviteId) {
       window.history.replaceState(null, '', `/convite/${equipeConviteId}`);
     } else if (telaAtiva === 'inicio' && window.location.pathname !== '/') {
       window.history.replaceState(null, '', '/');
@@ -112,6 +121,17 @@ function App() {
       localStorage.removeItem('playhub_dados_navegacao');
     }
   }, [telaAtiva, equipeConviteId, abaEquipe, dadosNavegacao]);
+
+  const irParaLogin = () => {
+    window.history.replaceState(null, '', '/');
+    setTelaAtiva('inicio');
+    setTelaAuth('login');
+    setQuerFazerLogin(true);
+  };
+
+  if (telaAtiva === 'redefinir_senha') {
+    return <PaginaRedefinirSenha aoIrParaLogin={irParaLogin} />;
+  }
 
   if (!estaLogado) {
     // PRIMEIRO: verifica se o usuário clicou em login/cadastro (tem prioridade sobre convite)

@@ -9,6 +9,7 @@ import { usarAutenticacao } from '../../contextos/AutenticacaoContexto';
 import { usarFinanceiro } from '../../contextos/FinanceiroContexto';
 import { usarNotificacoes } from '../../contextos/NotificacoesContexto';
 import { supabase } from '../../servicos/supabase';
+import { buscarPerfilPublicoAtletaSeguro } from '../../servicos/perfisPublicos';
 import Modal from '../Modal/Modal';
 import Botao from '../Botao/Botao';
 import ModalAjustePrivacidade from './ModalAjustePrivacidade';
@@ -72,13 +73,23 @@ const ModalPerfilAtleta = ({ isOpen, onClose, idAtleta, equipeId = null, aoPassa
         setCarregando(true);
         try {
             // 1. Dados Básicos e Perfil
-            const { data: user, error: errUser } = await supabase
-                .from('usuarios')
-                .select('*')
-                .eq('id', idAtleta)
-                .maybeSingle();
+            let user = null;
+            try {
+                user = await buscarPerfilPublicoAtletaSeguro(idAtleta);
+            } catch (rpcError) {
+                // Mantem fallback legado enquanto a migration segura ainda nao foi aplicada.
+            }
 
-            if (errUser) throw errUser;
+            if (!user) {
+                const { data: userLegado, error: errUser } = await supabase
+                    .from('usuarios')
+                    .select('*')
+                    .eq('id', idAtleta)
+                    .maybeSingle();
+
+                if (errUser) throw errUser;
+                user = userLegado;
+            }
             
             if (!user) {
                 setAtleta(null); // Atleta não existe ou RLS bloqueou
@@ -292,7 +303,7 @@ const ModalPerfilAtleta = ({ isOpen, onClose, idAtleta, equipeId = null, aoPassa
                                                 )}
                                                 <div className="dado-item">
                                                     <span className="label">Idade</span>
-                                                    <span className="valor">{calcularIdade(atleta.data_nascimento) ? `${calcularIdade(atleta.data_nascimento)} anos` : 'Não inf.'}</span>
+                                                    <span className="valor">{(atleta.idade ?? calcularIdade(atleta.data_nascimento)) ? `${atleta.idade ?? calcularIdade(atleta.data_nascimento)} anos` : 'Não inf.'}</span>
                                                 </div>
                                                 <div className="dado-item">
                                                     <span className="label">Cidade</span>

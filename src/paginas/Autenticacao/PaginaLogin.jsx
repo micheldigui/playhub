@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import './PaginaAutenticacao.css';
 import { supabase } from '../../servicos/supabase';
 import { rastrear } from '../../servicos/rastreamento';
-import { Mail, Lock, Eye, EyeOff, AlertCircle, X } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, AlertCircle, X, CheckCircle2 } from 'lucide-react';
 import Botao from '../../componentes/Botao/Botao';
 
 const PaginaLogin = ({ aoIrParaCadastro, aoVoltar }) => {
@@ -11,6 +11,7 @@ const PaginaLogin = ({ aoIrParaCadastro, aoVoltar }) => {
   const [mostrarSenha, setMostrarSenha] = useState(false);
   const [carregando, setCarregando] = useState(false);
   const [erro, setErro] = useState('');
+  const [sucesso, setSucesso] = useState('');
 
   // --- TELEMETRIA: Entrada na página ---
   useEffect(() => {
@@ -20,6 +21,7 @@ const PaginaLogin = ({ aoIrParaCadastro, aoVoltar }) => {
   const handleLogin = async (e) => {
     e.preventDefault();
     setErro('');
+    setSucesso('');
     setCarregando(true);
     
     // Rastrear tentativa
@@ -37,6 +39,33 @@ const PaginaLogin = ({ aoIrParaCadastro, aoVoltar }) => {
       
       // Rastrear erro técnico para auditoria
       rastrear.erro(`Falha no login (${email}): ${err.message}`, 'Login.handleLogin', err);
+    } finally {
+      setCarregando(false);
+    }
+  };
+
+  const handleRecuperarSenha = async () => {
+    const emailLimpo = email.trim();
+    setErro('');
+    setSucesso('');
+
+    if (!emailLimpo) {
+      setErro('Informe seu e-mail para receber o link de recuperação.');
+      return;
+    }
+
+    setCarregando(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(emailLimpo, {
+        redirectTo: `${window.location.origin}/redefinir-senha`,
+      });
+      if (error) throw error;
+
+      setSucesso('Pronto! Se esse e-mail estiver cadastrado, enviamos um link para redefinir sua senha. Confira sua caixa de entrada e procure por um e-mail de redefinição de senha. Se não encontrar em alguns minutos, veja também o spam ou lixo eletrônico.');
+      rastrear.clique('recuperacao_senha_solicitada', `Recuperacao de senha solicitada para: ${emailLimpo}`);
+    } catch (err) {
+      setErro('Não foi possível enviar o link agora. Verifique o e-mail e tente novamente.');
+      rastrear.erro(`Falha ao solicitar recuperacao de senha (${emailLimpo}): ${err.message}`, 'Login.handleRecuperarSenha', err);
     } finally {
       setCarregando(false);
     }
@@ -73,6 +102,13 @@ const PaginaLogin = ({ aoIrParaCadastro, aoVoltar }) => {
           </div>
         )}
 
+        {sucesso && (
+          <div className="auth-sucesso">
+            <CheckCircle2 size={16} />
+            <span>{sucesso}</span>
+          </div>
+        )}
+
         <form id="form-login" onSubmit={handleLogin} className="auth-form">
           <div className="auth-grupo">
             <label>E-mail</label>
@@ -91,7 +127,12 @@ const PaginaLogin = ({ aoIrParaCadastro, aoVoltar }) => {
           </div>
 
           <div className="auth-grupo">
-            <label>Senha</label>
+            <div className="auth-label-linha">
+              <label>Senha</label>
+              <button type="button" onClick={handleRecuperarSenha} disabled={carregando}>
+                Esqueci minha senha
+              </button>
+            </div>
             <div className="auth-campo">
               <span className="auth-campo-icone"><Lock size={16} /></span>
               <input 

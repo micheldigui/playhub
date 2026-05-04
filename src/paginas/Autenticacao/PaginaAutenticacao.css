@@ -237,6 +237,32 @@ input:-webkit-autofill:focus {
   padding-left: 2px;
 }
 
+.auth-label-linha {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.auth-label-linha button {
+  background: none;
+  border: none;
+  color: #38bdf8;
+  cursor: pointer;
+  font-size: 0.76rem;
+  font-weight: 700;
+  padding: 0;
+}
+
+.auth-label-linha button:hover:not(:disabled) {
+  color: #7dd3fc;
+}
+
+.auth-label-linha button:disabled {
+  cursor: wait;
+  opacity: 0.55;
+}
+
 /* Campo com ícone */
 .auth-campo {
   position: relative;
@@ -387,6 +413,19 @@ input:-webkit-autofill:focus {
   border: 1px solid rgba(244, 63, 94, 0.25);
   border-radius: 10px;
   color: #f43f5e;
+  font-size: 0.84rem;
+  margin-bottom: 1rem;
+}
+
+.auth-sucesso {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.75rem 1rem;
+  background: rgba(16, 185, 129, 0.08);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  border-radius: 10px;
+  color: #34d399;
   font-size: 0.84rem;
   margin-bottom: 1rem;
 }

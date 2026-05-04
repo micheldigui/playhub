@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '../servicos/supabase';
 import { usarAutenticacao } from './AutenticacaoContexto';
+import { buscarAtletasPublicosSeguro } from '../servicos/perfisPublicos';
 
 const EquipeContexto = createContext({});
 
@@ -662,6 +663,25 @@ export const EquipeProvedor = ({ children }) => {
     const buscarJogadores = async (filtros = {}) => {
         setCarregando(true);
         try {
+            const limite = filtros.limite || 24;
+            const offset = filtros.offset || 0;
+
+            try {
+                return await buscarAtletasPublicosSeguro({
+                    termo: filtros.termo,
+                    cidade: filtros.cidade,
+                    modalidade: filtros.modalidade,
+                    cidadeReferencia: filtros.cidadeReferencia,
+                    estadoReferencia: filtros.estadoReferencia,
+                    limite,
+                    offset
+                });
+            } catch (rpcError) {
+                if (!rpcError?.silencioso) {
+                    console.warn('RPC segura de atletas indisponivel, usando fallback legado:', rpcError.message);
+                }
+            }
+
             // Calcular data de corte para 18 anos
             const hoje = new Date();
             const dataCorte = new Date(hoje.getFullYear() - 18, hoje.getMonth(), hoje.getDate())
@@ -690,7 +710,9 @@ export const EquipeProvedor = ({ children }) => {
                 query = query.contains('esportes_interesse', JSON.stringify([filtros.modalidade]));
             }
 
-            const { data, error } = await query.limit(24);
+            const { data, error } = await query
+                .order('nome_completo', { ascending: true })
+                .range(offset, offset + limite - 1);
             if (error) throw error;
             return data;
         } catch (error) {

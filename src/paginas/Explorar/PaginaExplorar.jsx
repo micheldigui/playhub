@@ -39,6 +39,7 @@ import { usarAutenticacao } from '../../contextos/AutenticacaoContexto';
 import { usarNotificacoes } from '../../contextos/NotificacoesContexto';
 import { supabase } from '../../servicos/supabase';
 import { rastrear } from '../../servicos/rastreamento';
+import { buscarAtletasPublicosSeguro, obterWhatsAppMatchSeguro } from '../../servicos/perfisPublicos';
 import { Globe, MapPin, Trophy, Users, Search, ArrowLeft, Crown, User, Phone, MessageCircle, Ban, Lock } from 'lucide-react';
 import Botao from '../../componentes/Botao/Botao';
 import ModalPerfilAtleta from '../../componentes/Modais/ModalPerfilAtleta';
@@ -111,6 +112,8 @@ const PaginaExplorar = ({ aoVoltar }) => {
 
     try {
       let query;
+      let dadosRpc = null;
+      let countRpc = null;
 
       if (abaAtiva === 'equipes') {
         query = supabase
@@ -133,6 +136,23 @@ const PaginaExplorar = ({ aoVoltar }) => {
         if (cidadeBusca)     query = query.ilike('local_cidade', `%${cidadeBusca}%`);
         if (termoBusca)      query = query.or(`nome.ilike.%${termoBusca}%,slug_convite.ilike.%${termoBusca}%`);
       } else {
+        try {
+          const atletasSeguros = await buscarAtletasPublicosSeguro({
+            termo: termoBusca,
+            cidade: cidadeBusca,
+            modalidade: modalidadeBusca,
+            limite: ITENS_POR_PAGINA + 1,
+            offset: de
+          });
+          dadosRpc = atletasSeguros.slice(0, ITENS_POR_PAGINA);
+          countRpc = de + atletasSeguros.length;
+        } catch (rpcError) {
+          if (!rpcError?.silencioso) {
+            console.warn('RPC segura de atletas indisponivel, usando fallback legado:', rpcError.message);
+          }
+        }
+
+        if (!dadosRpc) {
         // Busca de Atletas - Apenas Maiores de 18 anos por segurança
         const hoje = new Date();
         const dataCorte = new Date(hoje.getFullYear() - 18, hoje.getMonth(), hoje.getDate())
@@ -155,10 +175,20 @@ const PaginaExplorar = ({ aoVoltar }) => {
           // Ajuste para colunas JSONB: o valor precisa ser uma string JSON válida (array)
           query = query.contains('esportes_interesse', JSON.stringify([modalidadeBusca]));
         }
+        }
       }
 
-      const { data, error, count } = await query.range(de, ate);
-      if (error) throw error;
+      let data;
+      let count;
+      if (dadosRpc) {
+        data = dadosRpc;
+        count = countRpc;
+      } else {
+        const resposta = await query.range(de, ate);
+        if (resposta.error) throw resposta.error;
+        data = resposta.data;
+        count = resposta.count;
+      }
 
       const lista = data || [];
 
@@ -252,7 +282,7 @@ const PaginaExplorar = ({ aoVoltar }) => {
     }
 
     const idadeEu = calcularIdade(dadosUsuario.data_nascimento);
-    const idadeAlvo = calcularIdade(atletaAlvo.data_nascimento);
+    const idadeAlvo = atletaAlvo.idade ?? calcularIdade(atletaAlvo.data_nascimento);
 
     // Se não tiver data de nascimento, vamos assumir que pode ser menor por segurança (ou avisar)
     if (idadeEu === null || idadeAlvo === null) {
@@ -268,6 +298,17 @@ const PaginaExplorar = ({ aoVoltar }) => {
     // Se já é um match histórico
     // Se ocorrer um Match Mútuo (ambos passaram a bola), o contato é liberado automaticamente
     if (matchesConfirmados?.has(atletaAlvo.id)) {
+        try {
+          const contato = await obterWhatsAppMatchSeguro(atletaAlvo.id);
+          if (contato?.liberado && contato?.telefone) {
+            const numeroLimpo = contato.telefone.replace(/\D/g, '');
+            const msg = `Fala craque! Vi que demos match no PlayHub. Bora jogar?`;
+            window.open(`https://api.whatsapp.com/send?phone=55${numeroLimpo}&text=${encodeURIComponent(msg)}`, '_blank');
+            return;
+          }
+        } catch (rpcError) {
+          // Mantem fallback legado enquanto a RPC ainda nao foi aplicada no banco.
+        }
         if (atletaAlvo.telefone) {
             const numeroLimpo = atletaAlvo.telefone.replace(/\D/g, '');
             const msg = `Fala craque! Vi que demos match no PlayHub ⚽. Bora jogar?`;
@@ -586,8 +627,7 @@ const PaginaExplorar = ({ aoVoltar }) => {
                                 if (atleta.id === usuario.id) {
                                   setAtletaSelecionado(atleta);
                                 } else if (ehMatchMútuo) {
-                                  const tel = atleta.telefone?.replace(/\D/g, '');
-                                  if (tel) window.open(`https://wa.me/55${tel}`, '_blank');
+                                  handleCutucar(atleta);
                                 } else {
                                   handleCutucar(atleta);
                                 }
