@@ -267,6 +267,27 @@ const Dashboard = ({ aoNavegar, setAbaEquipe, setDadosNavegacao }) => {
 
             <div style={{ padding: '0 20px' }}>
                 <BannerInstalacaoApp local="dashboard" />
+
+                {/* ALERTA DE VOTAÇÃO PENDENTE (URGENTE) */}
+                {votacoesPendentes.length > 0 && (
+                    <div 
+                        className="banner-votacao-urgente"
+                        onClick={() => {
+                            const p = votacoesPendentes[0];
+                            setDadosNavegacao({ partidaId: p.id });
+                            aoNavegar('votacao_mvp');
+                        }}
+                    >
+                        <div className="banner-votacao-icon">
+                            <Trophy size={24} color="#fbbf24" />
+                        </div>
+                        <div className="banner-votacao-texto">
+                            <strong>Sua opinião importa! 🏅</strong>
+                            <span>Você participou de {votacoesPendentes.length} {votacoesPendentes.length === 1 ? 'partida' : 'partidas'} recente. Vote agora nos melhores!</span>
+                        </div>
+                        <ChevronRight size={20} color="#fbbf24" />
+                    </div>
+                )}
                 
                 {/* CENTRAL DE PRÓXIMAS AÇÕES */}
                 {(votacoesPendentes.length > 0 || (solicitacoesPendentesGlobais > 0 && (papelNaEquipe === 'admin' || papelNaEquipe === 'sub_admin'))) && (

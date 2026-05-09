@@ -872,3 +872,89 @@
     opacity: 1;
     transform: translateX(2px);
 }
+/* === BANNER VOTAÇÃO URGENTE === */
+.banner-votacao-urgente {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    background: linear-gradient(135deg, rgba(251, 191, 36, 0.15) 0%, rgba(205, 127, 50, 0.1) 100%);
+    border: 1.5px solid rgba(251, 191, 36, 0.4);
+    padding: 1.25rem;
+    border-radius: 20px;
+    margin-bottom: 1.5rem;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+    animation: slideInDown 0.4s ease-out both;
+    box-shadow: 0 10px 25px -5px rgba(251, 191, 36, 0.1);
+}
+
+.banner-votacao-urgente:hover {
+    transform: translateY(-2px);
+    background: linear-gradient(135deg, rgba(251, 191, 36, 0.2) 0%, rgba(205, 127, 50, 0.15) 100%);
+    border-color: rgba(251, 191, 36, 0.6);
+    box-shadow: 0 15px 30px -5px rgba(251, 191, 36, 0.15);
+}
+
+.banner-votacao-urgente::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: radial-gradient(circle at top right, rgba(251, 191, 36, 0.1), transparent 70%);
+    pointer-events: none;
+}
+
+.banner-votacao-icon {
+    width: 48px;
+    height: 48px;
+    background: rgba(251, 191, 36, 0.1);
+    border: 1px solid rgba(251, 191, 36, 0.2);
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.banner-votacao-texto {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.banner-votacao-texto strong {
+    font-size: 1rem;
+    font-weight: 800;
+    color: #fbbf24;
+}
+
+.banner-votacao-texto span {
+    font-size: 0.85rem;
+    color: #94a3b8;
+    line-height: 1.4;
+}
+
+@keyframes slideInDown {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 480px) {
+    .banner-votacao-urgente {
+        padding: 1rem;
+        gap: 0.8rem;
+    }
+    .banner-votacao-icon {
+        width: 40px;
+        height: 40px;
+    }
+    .banner-votacao-texto strong {
+        font-size: 0.9rem;
+    }
+    .banner-votacao-texto span {
+        font-size: 0.75rem;
+    }
+}

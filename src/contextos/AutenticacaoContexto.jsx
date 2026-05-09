@@ -15,65 +15,46 @@ export const usarAutenticacao = () => {
 
 export const AutenticacaoProvedor = ({ children }) => {
     const [usuario, setUsuario] = useState(null);
-    const [dadosUsuario, setDadosUsuario] = useState(null);
+    const [dadosUsuario, setDadosUsuario] = useState(() => {
+        const salvo = localStorage.getItem('playhub_perfil_cache');
+        return salvo ? JSON.parse(salvo) : null;
+    });
     const [carregando, setCarregando] = useState(true);
 
     useEffect(() => {
-        // Verificar sessão atual
-        supabase.auth.getSession()
-            .then(({ data: { session }, error }) => {
-                if (error) {
-                    console.error('Erro ao recuperar sessão:', error.message);
-                    
-                    // Se o erro for de token inválido ou não encontrado, limpamos a sessão local
-                    // para evitar que o cliente fique tentando usar um token podre.
-                    if (error.message?.includes('refresh_token_not_found') || 
-                        error.message?.includes('Refresh Token Not Found') ||
-                        error.status === 400) {
-                        console.warn('Sessão inválida detectada. Limpando dados locais...');
-                        supabase.auth.signOut();
-                    }
-                    
-                    setCarregando(false);
-                    return;
-                }
-                setUsuario(session?.user ?? null);
-                if (session?.user) carregarDadosUsuario(session.user.id);
-                else setCarregando(false);
-            })
-            .catch(err => {
-                console.error('Erro crítico na inicialização da auth:', err);
+        // 1. Verificar sessão atual imediatamente
+        supabase.auth.getSession().then(({ data: { session } }) => {
+            if (session?.user) {
+                setUsuario(session.user);
+                carregarDadosUsuario(session.user.id);
+            } else {
                 setCarregando(false);
-            });
+            }
+        });
 
-        // Escutar mudanças na autenticação
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-            setUsuario(session?.user ?? null);
-            if (session?.user) carregarDadosUsuario(session.user.id);
-            else {
+        // 2. Escutar mudanças na autenticação
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+            if (event === 'SIGNED_OUT') {
+                setUsuario(null);
                 setDadosUsuario(null);
+                localStorage.removeItem('playhub_perfil_cache');
                 setCarregando(false);
+            } else if (session?.user) {
+                setUsuario(session.user);
+                // Atualiza em background se já tivermos dados, ou bloqueia se não
+                carregarDadosUsuario(session.user.id);
             }
         });
 
         return () => subscription.unsubscribe();
     }, []);
 
-    // Flag para evitar múltiplos registros de acesso na mesma sessão de navegador
-    const [acessoRegistrado, setAcessoRegistrado] = useState(false);
-
     const carregarDadosUsuario = async (userId) => {
         try {
-            // Trava de redundância: Registra acesso apenas uma vez por carregamento do site
-            // sessionStorage persiste entre F5s mas limpa ao fechar a aba
             const chaveAcesso = `playhub_acesso_${userId}`;
-            const jaRegistradoNestaAba = sessionStorage.getItem(chaveAcesso);
-
-            if (!jaRegistradoNestaAba) {
+            if (!sessionStorage.getItem(chaveAcesso)) {
                 supabase.rpc('registrar_acesso').then(({ error }) => {
-                    if (!error) {
-                        sessionStorage.setItem(chaveAcesso, 'true');
-                    }
+                    if (!error) sessionStorage.setItem(chaveAcesso, 'true');
                 });
             }
 
@@ -83,10 +64,12 @@ export const AutenticacaoProvedor = ({ children }) => {
                 .eq('id', userId)
                 .single();
 
-            if (error && error.code !== 'PGRST116') throw error;
-            setDadosUsuario(data);
+            if (!error && data) {
+                setDadosUsuario(data);
+                localStorage.setItem('playhub_perfil_cache', JSON.stringify(data));
+            }
         } catch (error) {
-            console.error('Erro ao carregar dados do usuário:', error.message);
+            console.error('Erro ao carregar dados:', error);
         } finally {
             setCarregando(false);
         }

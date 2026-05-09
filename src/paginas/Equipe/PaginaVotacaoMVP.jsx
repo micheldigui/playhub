@@ -98,26 +98,6 @@ const PaginaVotacaoMVP = ({ partidaIdProp, aoVoltar, aoNavegar, setDadosNavegaca
                         .filter(u => u);
                 }
 
-                // BUSCA DE FOTOS (DNA): Agora busca de forma segura usando o ID da partida ou da equipe ativa
-                const equipeIdParaFotos = partidaData?.equipe_id || equipeAtiva?.id;
-                
-                if (equipeIdParaFotos) {
-                    const { data: membrosExtra } = await supabase
-                        .from('membros_equipe')
-                        .select('usuario_id, usuarios!membros_equipe_usuario_id_fkey(id, nome_completo, apelido, foto_url)')
-                        .eq('equipe_id', equipeIdParaFotos)
-                        .eq('status', 'ativo')
-                        .limit(200);
-
-                    if (membrosExtra) {
-                        const usuariosExtra = membrosExtra.map(m => m.usuarios).filter(u => u);
-                        const idsExistentes = new Set(todosAtletas.map(a => a.id));
-                        usuariosExtra.forEach(u => {
-                            if (!idsExistentes.has(u.id)) todosAtletas.push(u);
-                        });
-                    }
-                }
-
                 setAtletas(todosAtletas);
 
                 // Checa se já votou no MVP
@@ -279,17 +259,19 @@ const PaginaVotacaoMVP = ({ partidaIdProp, aoVoltar, aoNavegar, setDadosNavegaca
         }
     };
 
-    const formatarNomeLegivel = (nomeOriginal) => {
-        if (!nomeOriginal) return 'Jogador';
+    const formatarNomeLegivel = (texto) => {
+        if (!texto) return 'Atleta';
         // Remove arrobas e limpa o texto
-        const limpo = nomeOriginal.replace('@', '').replace(/\./g, ' ').trim();
-        const partes = limpo.split(/\s+/).filter(p => p.length > 1); // remove iniciais sozinhas
+        const limpo = texto.replace('@', '').replace(/\./g, ' ').trim();
+        const partes = limpo.split(/\s+/).filter(p => p.length > 0);
         
-        if (partes.length === 0) return limpo;
-        if (partes.length === 1) return partes[0].charAt(0).toUpperCase() + partes[0].slice(1).toLowerCase();
+        const formatarPalavra = (p) => p.charAt(0).toUpperCase() + p.slice(1).toLowerCase();
+
+        if (partes.length === 0) return texto;
+        if (partes.length === 1) return formatarPalavra(partes[0]);
         
-        const primeiro = partes[0].charAt(0).toUpperCase() + partes[0].slice(1).toLowerCase();
-        const ultimo = partes[partes.length - 1].charAt(0).toUpperCase() + partes[partes.length - 1].slice(1).toLowerCase();
+        const primeiro = formatarPalavra(partes[0]);
+        const ultimo = formatarPalavra(partes[partes.length - 1]);
         return `${primeiro} ${ultimo}`;
     };
 
@@ -719,7 +701,7 @@ const PaginaVotacaoMVP = ({ partidaIdProp, aoVoltar, aoNavegar, setDadosNavegaca
                                                     </div>
                                                 )}
                                             </div>
-                                            <span className="voto-atleta-nome">{atleta.apelido || atleta.nome_completo?.split(' ')[0]}</span>
+                                            <span className="voto-atleta-nome">{formatarNomeLegivel(atleta.apelido || atleta.nome_completo)}</span>
                                         </div>
                                     );
                                 })}

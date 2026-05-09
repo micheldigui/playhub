@@ -302,12 +302,14 @@ function App() {
           equipeIdProp={dadosNavegacao?.equipeId} 
           aoVoltar={() => setTelaAtiva('inicio')} 
           aoNavegar={setTelaAtiva}
+          setDadosNavegacao={setDadosNavegacao}
         />
       case 'ranking_partidas':
         return <PaginaRankingPartidas
           equipeIdProp={dadosNavegacao?.equipeId}
           aoVoltar={() => setTelaAtiva('inicio')}
           aoNavegar={setTelaAtiva}
+          setDadosNavegacao={setDadosNavegacao}
         />
       case 'inicio':
       default:

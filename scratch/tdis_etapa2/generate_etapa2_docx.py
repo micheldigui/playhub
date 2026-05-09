@@ -227,7 +227,7 @@ def build_conceptual_model():
     box(1365, 120, 1710, 265, "VD1", ["Eficiência", "operacional"], "#FEEFAD")
     box(1365, 345, 1710, 490, "VD2", ["Transparência", "das informações"], "#FEEFAD")
     box(1365, 570, 1710, 715, "VD3", ["Experiência", "do usuário"], "#FEEFAD")
-    box(660, 670, 1160, 790, "Variáveis de controle", ["perfil no grupo, tempo de participação, familiaridade digital"], "#F3F4F6")
+    box(660, 655, 1160, 820, "Variáveis de controle", ["perfil no grupo, tempo de participação,", "familiaridade digital"], "#F3F4F6")
 
     arrow(455, 385, 700, 240)
     arrow(455, 385, 700, 465)
@@ -235,7 +235,7 @@ def build_conceptual_model():
     arrow(1115, 240, 1365, 415)
     arrow(1115, 465, 1365, 415)
     arrow(1115, 465, 1365, 640)
-    draw.line([910, 670, 910, 560], fill="#6B7280", width=5)
+    draw.line([910, 655, 910, 560], fill="#6B7280", width=5)
     draw.polygon([(910, 560), (895, 590), (925, 590)], fill="#6B7280")
 
     FIG_PATH.parent.mkdir(parents=True, exist_ok=True)
@@ -293,9 +293,7 @@ def add_bullets(doc, items):
 def add_references(doc):
     refs = [
         "BUDLER, Marko; BOŽIČ, Katerina. Adopting transitional business models in small fitness businesses in response to business disruptions. Journal of Small Business Strategy, v. 33, n. 3, 2023. DOI: 10.53703/001c.92989.",
-        "CHAI, Hongqin et al. Digital transformation in physical education: a bibliometric analysis of global trends, hotspots, and future directions through CiteSpace. SAGE Open, v. 15, 2025. DOI: 10.1177/21582440251395582.",
         "DE LEON, Frediezel et al. Digital transformation COVID-19 era: startup strategies for technology, management, and people. International Journal of Advances in Applied Sciences, v. 14, n. 1, p. 11-18, 2025. DOI: 10.11591/ijaas.v14.i1.pp11-18.",
-        "ELSHAWESH, Yousef; WADA, Isah. Service quality and customer satisfaction: the mediating role of customer delight. International Review of Management and Marketing, v. 16, n. 2, p. 273-287, 2026. DOI: 10.32479/irmm.21607.",
         "HA, Taemin et al. A systematic review of technology-infused physical activity interventions in K-12 school settings: effectiveness, roles and implementation strategies. International Journal of Behavioral Nutrition and Physical Activity, v. 22, n. 113, 2025. DOI: 10.1186/s12966-025-01811-x.",
         "HASSAN, Ahmed K. et al. Enhancing operational performance: the impact of smart algorithms in Saudi Arabian sports facilities. Journal of Infrastructure, Policy and Development, v. 8, n. 8, 3628, 2024. DOI: 10.24294/jipd.v8i8.3628.",
         "MADSEN, Dag Øivind; GLEBOVA, Ekaterina. Sports Industry 5.0: reimagining sport through technology, humanity and sustainability. Frontiers in Sports and Active Living, v. 7, 1640362, 2025. DOI: 10.3389/fspor.2025.1640362.",
@@ -327,8 +325,7 @@ def build_docx():
     section.bottom_margin = Cm(2)
     section.right_margin = Cm(2)
     section.header_distance = Cm(1.25)
-    section.different_first_page_header_footer = True
-    add_page_number(section.header.paragraphs[0])
+    section.header.is_linked_to_previous = False
 
     styles = doc.styles
     styles["Normal"].font.name = "Times New Roman"
@@ -349,7 +346,7 @@ def build_docx():
         ("UNIDADE DE PÓS-GRADUAÇÃO, EXTENSÃO E PESQUISA", True, 12),
         (CURSO.upper(), True, 12),
         ("", False, 12),
-        ("RELATÓRIO DE ACOMPANHAMENTO DO ARTIGO - ETAPA 2", True, 12),
+        ("TRABALHO ACADÊMICO", True, 12),
         (DISCIPLINA.upper(), True, 12),
     ]
     for text, bold, size in cover_items:
@@ -399,12 +396,19 @@ def build_docx():
     p.paragraph_format.first_line_indent = Cm(0)
     p.add_run("São Paulo\n2026")
     set_paragraph_font(p, 12)
-    doc.add_page_break()
+    section = doc.add_section(WD_SECTION.NEW_PAGE)
+    section.top_margin = Cm(3)
+    section.left_margin = Cm(3)
+    section.bottom_margin = Cm(2)
+    section.right_margin = Cm(2)
+    section.header_distance = Cm(1.25)
+    section.header.is_linked_to_previous = False
+    add_page_number(section.header.paragraphs[0])
 
-    add_heading(doc, "1 CONTINUIDADE DA ETAPA 1 E DELIMITAÇÃO DO ESTUDO")
+    add_heading(doc, "1 INTRODUÇÃO E DELIMITAÇÃO DO ESTUDO")
     add_body(
         doc,
-        "A Etapa 1 definiu como problema de pesquisa a análise do impacto da adoção de uma plataforma digital baseada em governança e automação, o PlayHub, sobre a eficiência operacional, a transparência das informações e a experiência dos usuários em grupos esportivos amadores. Esta Etapa 2 dá continuidade a essa formulação, mantendo a questão central e refinando a hipótese geral em constructos mensuráveis, referencial teórico e metodologia de pesquisa.",
+        "Este trabalho analisa a adoção de uma plataforma digital baseada em governança e automação, o PlayHub, em grupos esportivos amadores. O foco está em compreender de que modo a plataforma pode afetar a eficiência operacional, a transparência das informações e a experiência dos usuários em rotinas de organização esportiva realizadas, em geral, por administradores voluntários.",
     )
     add_body(
         doc,
@@ -412,11 +416,11 @@ def build_docx():
     )
     add_body(
         doc,
-        "O ajuste conceitual proposto nesta etapa é tratar o PlayHub não apenas como aplicativo operacional, mas como uma intervenção de transformação digital em micro-sistemas de serviço. A literatura recente compreende a transformação digital como a integração entre tecnologia, gestão/processos e pessoas para redefinir proposições de valor e melhorar operações (DE LEON et al., 2025). Essa leitura é aderente ao caso, pois a plataforma altera simultaneamente a ferramenta utilizada, a forma de governança do grupo e o papel dos participantes na organização do serviço.",
+        "Para fins analíticos, o PlayHub é tratado não apenas como aplicativo operacional, mas como uma intervenção de transformação digital em micro-sistemas de serviço. A literatura recente compreende a transformação digital como a integração entre tecnologia, gestão/processos e pessoas para redefinir proposições de valor e melhorar operações (DE LEON et al., 2025). Essa leitura é aderente ao caso, pois a plataforma altera simultaneamente a ferramenta utilizada, a forma de governança do grupo e o papel dos participantes na organização do serviço.",
     )
     add_body(
         doc,
-        "Também se propõe substituir expressões excessivamente promocionais, como “sistema revolucionário” ou “punição algorítmica”, por termos academicamente mais precisos: governança digital assistida, automação de regras, coordenação digital e ecossistema de plataforma. Essa mudança preserva a ideia original da Etapa 1, mas melhora a aderência ao padrão científico esperado em um trabalho de mestrado.",
+        "Na redação acadêmica, opta-se por termos moderados e tecnicamente mais precisos, como governança digital assistida, automação de regras, coordenação digital e ecossistema de plataforma. Essa escolha evita uma apresentação promocional da solução e permite discutir o PlayHub com maior cautela, como objeto de análise em um trabalho de disciplina de mestrado.",
     )
 
     add_heading(doc, "2 OBJETIVOS")
@@ -430,36 +434,50 @@ def build_docx():
         doc,
         [
             "Caracterizar o processo de organização de grupos esportivos amadores antes da adoção do PlayHub, identificando atividades manuais, pontos de atrito e limitações de transparência.",
-            "Mapear as funcionalidades do PlayHub relacionadas à governança digital, à gestão financeira, à agenda de partidas, à confirmação de presença, ao perfil esportivo e ao matchmaking entre atletas e equipes.",
-            "Mensurar a variação percebida na eficiência operacional dos administradores após a adoção da plataforma, considerando tempo de gestão, esforço de coordenação e carga cognitiva.",
-            "Avaliar a percepção dos usuários quanto à transparência das informações, especialmente regras, status financeiro, critérios de presença e comunicação das decisões do grupo.",
-            "Analisar a experiência dos usuários com a plataforma, considerando facilidade de uso, clareza da interface, satisfação e intenção de recomendação.",
-            "Relacionar os resultados empíricos aos constructos identificados na literatura sobre transformação digital, ecossistemas de plataforma, coordenação de equipes mediada digitalmente e experiência do usuário.",
+            "Descrever as funcionalidades do PlayHub relacionadas à governança digital, à gestão financeira, à confirmação de presença e à comunicação das regras do grupo.",
+            "Avaliar, por meio de survey com administradores e participantes, a percepção sobre eficiência operacional, transparência das informações e experiência do usuário antes e após o uso da plataforma.",
+            "Relacionar os achados da pesquisa aos principais conceitos da literatura sobre transformação digital, plataformas digitais, coordenação em esportes amadores e experiência do usuário.",
         ],
     )
 
     add_heading(doc, "3 BIBLIOMETRIA E SELEÇÃO DO REFERENCIAL TEÓRICO")
     add_body(
         doc,
-        "A bibliometria desta etapa foi organizada como um levantamento inicial do acervo bibliográfico disponível para o projeto. O objetivo não é substituir uma revisão sistemática completa, mas demonstrar rastreabilidade na seleção dos artigos que fundamentam o modelo conceitual e a metodologia. O corpus local contém 94 arquivos científicos em PDF, sendo 26 classificados como referencial direto e 68 como apoio complementar. Para a Etapa 2, foram priorizados artigos recentes, publicados entre 2023 e 2026, com aderência direta ao problema de pesquisa.",
+        "A bibliometria foi organizada como um levantamento inicial para orientar a seleção do referencial teórico. O objetivo não é realizar uma revisão sistemática completa, mas registrar um procedimento rastreável de busca, triagem e seleção de artigos.",
+    )
+    add_body(
+        doc,
+        "Foram consideradas as bases Scopus e Web of Science, com análise de títulos, resumos e palavras-chave para identificação dos estudos mais aderentes ao tema. Nesta versão, registra-se o corpus local mapeado, composto por 94 arquivos científicos em PDF, sendo 26 classificados como referencial direto e 68 como apoio complementar. Quando necessário, os textos completos foram consultados para confirmar a aderência ao problema de pesquisa.",
+    )
+    add_body(
+        doc,
+        "A triagem dos estudos foi realizada a partir da análise de títulos, resumos e palavras-chave, buscando identificar a aderência de cada publicação ao tema da pesquisa e aos constructos centrais do trabalho: transformação digital, plataformas digitais, governança, coordenação de grupos esportivos e experiência do usuário. Quando necessário, os textos completos foram consultados para confirmar a relação com o problema investigado, esclarecer a contribuição teórica do estudo e apoiar a seleção dos artigos mais relevantes para a construção do referencial teórico.",
     )
 
     doc.add_page_break()
     add_caption(doc, "Quadro 1 - Síntese bibliométrica do acervo analisado")
     add_table(
         doc,
-        ["Critério", "Resultado adotado na Etapa 2"],
+        ["Critério", "Procedimento adotado ou recomendado"],
         [
+            ["Bases de busca", "Scopus e Web of Science, com exportação dos resultados para registro dos quantitativos, remoção de duplicidades e triagem."],
+            ["String booleana sugerida", "(\"digital transformation\" OR digitalization OR \"digital platform*\" OR \"platform ecosystem*\") AND (sport* OR \"amateur sport*\" OR fitness OR \"sports organization*\") AND (\"user experience\" OR \"customer experience\" OR governance OR coordination OR \"value co-creation\")."],
+            ["Campos de busca", "Título, resumo e palavras-chave, ajustando a abrangência se o retorno for muito restrito."],
+            ["Triagem", "Uso do Rayyan para análise de títulos, resumos e palavras-chave, classificação de relevância e aplicação dos critérios de inclusão e exclusão."],
             ["Corpus local identificado", "94 publicações em PDF, separadas em referencial direto e referencial complementar."],
             ["Recorte principal", "26 publicações classificadas como Referencial Direto (Core)."],
             ["Período dominante", "2023 a 2026, com ênfase em literatura recente sobre transformação digital, esporte e serviços digitais."],
-            ["Descritores temáticos", "digital transformation; sport; sports organizations; platform ecosystem; value co-creation; human-computer interaction; customer experience; smart algorithms; amateur sports organizing; mobile fitness applications."],
-            ["Critérios de inclusão", "Aderência ao PlayHub, publicação em periódico científico, relação com variáveis do modelo e contribuição para discutir eficiência, transparência ou experiência do usuário."],
-            ["Critérios de exclusão", "Materiais com baixa relação com o problema, duplicações temáticas e documentos sem contribuição direta para o constructo da Etapa 2."],
+            ["Critérios de inclusão", "Aderência ao tema do PlayHub, publicação científica, relação com as variáveis do modelo e contribuição para discutir eficiência, transparência ou experiência do usuário."],
+            ["Critérios de exclusão", "Materiais com baixa relação com o problema, duplicações temáticas e documentos sem contribuição direta para os constructos da pesquisa."],
         ],
         [4.5, 10.5],
     )
     add_source(doc)
+
+    add_body(
+        doc,
+        "Com base nesses critérios, os artigos foram organizados em dois grupos: um referencial direto, composto por publicações com maior aderência ao problema de pesquisa, e um referencial complementar, utilizado para apoiar conceitos auxiliares. O Quadro 2 apresenta os estudos centrais selecionados, indicando o eixo teórico de contribuição de cada artigo para a análise do PlayHub.",
+    )
 
     doc.add_page_break()
     add_caption(doc, "Quadro 2 - Artigos centrais selecionados e contribuição para o PlayHub")
@@ -554,7 +572,7 @@ def build_docx():
     add_heading(doc, "5 MODELO CONCEITUAL E HIPÓTESES")
     add_body(
         doc,
-        "A hipótese geral da Etapa 1 permanece válida: a adoção da plataforma PlayHub melhora a eficiência operacional, a transparência das informações e a experiência dos usuários em comparação aos métodos tradicionais. Para a Etapa 2, essa hipótese foi desdobrada em hipóteses operacionais, permitindo melhor mensuração na etapa de coleta e análise de dados.",
+        "Como hipótese de trabalho, considera-se que a adoção do PlayHub pode melhorar a eficiência operacional, a transparência das informações e a experiência dos usuários em comparação aos métodos tradicionais de organização por mensagens, planilhas e controles manuais. As hipóteses abaixo têm função orientadora para a coleta e análise dos dados, sem pretensão de generalização ampla.",
     )
 
     doc.add_page_break()
@@ -573,7 +591,7 @@ def build_docx():
             "H1: a adoção do PlayHub reduz o tempo e o esforço percebido de gestão operacional dos administradores de grupos esportivos amadores.",
             "H2: a adoção do PlayHub aumenta a percepção de transparência das informações organizacionais, especialmente quanto a regras, presenças e finanças.",
             "H3: a adoção do PlayHub melhora a experiência dos usuários, medida por facilidade de uso, clareza, satisfação e intenção de recomendação.",
-            "H4: a governança digital assistida e a coordenação digital atuam como mecanismos explicativos entre a adoção da plataforma e os resultados percebidos.",
+            "H4: a governança digital assistida e a coordenação digital podem ajudar a explicar parte dos resultados percebidos pelos usuários.",
         ],
     )
 
@@ -597,11 +615,11 @@ def build_docx():
     add_heading(doc, "6.1 Classificação da pesquisa", level=2)
     add_body(
         doc,
-        "A pesquisa é classificada como científica aplicada, pois busca produzir conhecimento sobre o impacto de tecnologias digitais em um contexto real de serviços esportivos amadores, com potencial de orientar decisões práticas de gestão e desenvolvimento de plataformas. Embora exista desenvolvimento tecnológico associado ao PlayHub, o foco do artigo não é apenas relatar a construção do software, mas testar hipóteses sobre seus efeitos percebidos.",
+        "A pesquisa é classificada como aplicada, pois busca analisar uma solução digital em um contexto real de serviços esportivos amadores, com potencial de orientar decisões práticas de gestão e desenvolvimento da própria plataforma. Embora exista desenvolvimento tecnológico associado ao PlayHub, o foco do trabalho não é apenas relatar a construção do software, mas avaliar indícios sobre seus efeitos percebidos.",
     )
     add_body(
         doc,
-        "Quanto ao objetivo, a pesquisa é explicativa, com componentes descritivos. É explicativa porque busca analisar a relação entre adoção da plataforma e variações em eficiência, transparência e experiência do usuário. É descritiva porque também caracteriza o contexto, o perfil dos participantes e as práticas de organização antes e depois da adoção.",
+        "Quanto ao objetivo, a pesquisa é descritiva e exploratória, com componente analítico. É descritiva porque caracteriza o contexto, o perfil dos participantes e as práticas de organização antes e depois da adoção. É exploratória porque observa um caso específico, ainda em fase de aplicação, buscando identificar tendências e pontos de atenção sem extrapolar os resultados para todos os grupos esportivos amadores.",
     )
     add_body(
         doc,
@@ -611,7 +629,7 @@ def build_docx():
     add_heading(doc, "6.2 Delineamento", level=2)
     add_body(
         doc,
-        "O delineamento adotado é um estudo de caso único com desenho quase-experimental pré e pós-implementação, sem grupo controle. A escolha se justifica porque o PlayHub será analisado em um ambiente real, no qual não é viável controlar todas as variáveis externas, mas é possível comparar percepções e indicadores antes e depois da intervenção.",
+        "O delineamento adotado é um estudo de caso único com comparação pré e pós-uso da plataforma, sem grupo controle. A escolha se justifica porque o PlayHub será analisado em um ambiente real, no qual não é viável controlar todas as variáveis externas, mas é possível comparar percepções e alguns indicadores antes e depois da intervenção.",
     )
     add_body(
         doc,
@@ -625,7 +643,7 @@ def build_docx():
     )
     add_body(
         doc,
-        "A amostra é não probabilística, por conveniência e intencionalidade, composta por administradores e atletas que utilizarem a plataforma durante o período de observação. A rodada piloto prevista considera participantes com papéis distintos - administradores e jogadores - para permitir comparação entre a percepção de quem gerencia e a de quem consome o serviço. Caso novos grupos sejam incorporados até a Etapa 3, a amostra poderá ser ampliada mantendo os mesmos instrumentos.",
+        "A amostra é não probabilística, por conveniência e intencionalidade, composta por administradores e atletas que utilizarem a plataforma durante o período de observação. A rodada piloto prevista considera participantes com papéis distintos - administradores e jogadores - para permitir comparação entre a percepção de quem gerencia e a de quem consome o serviço. Caso novos grupos sejam incorporados posteriormente, a amostra poderá ser ampliada mantendo os mesmos instrumentos.",
     )
 
     add_heading(doc, "6.4 Procedimentos de coleta de dados", level=2)
@@ -638,6 +656,7 @@ def build_docx():
         "Os questionários utilizarão escala Likert de cinco pontos para medir clareza, facilidade, transparência e esforço percebido. Para recomendação, será utilizada escala de 0 a 10. Administradores também informarão tempo aproximado gasto em rotinas de gestão antes e depois da adoção. Sempre que possível, esses dados serão comparados com evidências operacionais do sistema, como registros de presença, ciclo financeiro e uso de notificações.",
     )
 
+    doc.add_page_break()
     add_caption(doc, "Quadro 4 - Instrumento de coleta proposto")
     add_table(
         doc,
@@ -656,11 +675,11 @@ def build_docx():
     add_heading(doc, "6.5 Tratamento e análise dos dados", level=2)
     add_body(
         doc,
-        "Os dados serão analisados por estatística descritiva, incluindo média, mediana, frequência, variação percentual e comparação de médias pré e pós-adoção. Para amostras pequenas, a interpretação priorizará a magnitude da diferença e a coerência com o referencial teórico. Caso a amostra seja ampliada, poderão ser aplicados testes não paramétricos, como Wilcoxon para dados pareados, ou teste t pareado quando os pressupostos forem atendidos.",
+        "Os dados serão analisados por estatística descritiva, incluindo média, mediana, frequência, variação percentual e comparação de resultados pré e pós-adoção. Considerando o caráter aplicado e possivelmente limitado da amostra, a interpretação priorizará a magnitude das diferenças observadas e a coerência com o referencial teórico. Se a amostra for suficiente, poderão ser aplicados testes simples para comparação de medidas pareadas.",
     )
     add_body(
         doc,
-        "A análise qualitativa complementar será aplicada a respostas abertas e observações dos administradores, buscando explicar por que determinados indicadores melhoraram, permaneceram estáveis ou pioraram. Essa etapa será utilizada para discutir resultados à luz de coordenação digital, governança assistida e experiência do usuário, conforme os autores do referencial teórico.",
+        "A análise qualitativa complementar será aplicada a respostas abertas e observações dos administradores, buscando interpretar por que determinados indicadores melhoraram, permaneceram estáveis ou pioraram. Essa análise será utilizada para discutir os resultados à luz de coordenação digital, governança assistida e experiência do usuário, conforme os autores do referencial teórico.",
     )
 
     add_heading(doc, "6.6 Confiabilidade, validade e limitações", level=2)
@@ -673,24 +692,24 @@ def build_docx():
         "A validade externa é limitada por se tratar de estudo de caso único em um grupo piloto. Ainda assim, a pesquisa pode gerar contribuição analítica para contextos similares de serviços esportivos amadores, especialmente aqueles com baixa estrutura formal, dependência de gestores voluntários e uso de mensageria como principal ferramenta de coordenação.",
     )
 
-    add_heading(doc, "7 CONTRIBUIÇÃO ESPERADA")
+    add_heading(doc, "7 POTENCIAIS CONTRIBUIÇÕES E LIMITAÇÕES")
     add_body(
         doc,
-        "A contribuição acadêmica esperada é demonstrar como a transformação digital pode ser analisada em sistemas produtivos informais e de pequena escala, ampliando a discussão para além de indústrias, grandes organizações e serviços altamente formalizados. Ao articular transformação digital, ecossistemas de plataforma, coordenação de equipes esportivas e experiência do usuário, o estudo propõe um modelo aplicável ao esporte amador.",
+        "A contribuição acadêmica esperada é discutir, em escala limitada, como a transformação digital pode ser observada em sistemas produtivos informais e de pequena escala. Ao articular transformação digital, plataformas digitais, coordenação de equipes esportivas e experiência do usuário, o estudo oferece uma leitura inicial aplicável ao contexto do esporte amador.",
     )
     add_body(
         doc,
-        "A contribuição prática é oferecer evidências para o desenvolvimento de soluções digitais que reduzam sobrecarga operacional, aumentem transparência e melhorem a experiência de usuários em comunidades esportivas. Para gestores voluntários, a plataforma pode reduzir atividades repetitivas e conflitos associados à aplicação manual de regras. Para atletas, pode melhorar acesso à informação, previsibilidade e participação.",
+        "A contribuição prática é levantar indícios para o desenvolvimento de soluções digitais que reduzam sobrecarga operacional, aumentem transparência e melhorem a experiência de usuários em comunidades esportivas. Para gestores voluntários, a plataforma pode reduzir atividades repetitivas e conflitos associados à aplicação manual de regras. Para atletas, pode melhorar acesso à informação, previsibilidade e participação.",
     )
 
-    add_heading(doc, "8 CONSIDERAÇÕES PARCIAIS DA ETAPA 2")
+    add_heading(doc, "8 CONSIDERAÇÕES PARCIAIS")
     add_body(
         doc,
-        "A Etapa 2 consolidou a continuidade da pesquisa iniciada na Etapa 1, mantendo a questão central e a hipótese geral, mas refinando a estrutura científica do trabalho. O PlayHub passa a ser analisado como intervenção de transformação digital em um sistema produtivo informal de serviços esportivos, com variáveis dependentes claramente definidas: eficiência operacional, transparência das informações e experiência do usuário.",
+        "O trabalho organiza a pesquisa sobre o PlayHub como uma análise aplicada de transformação digital em um sistema produtivo informal de serviços esportivos. A proposta delimita três dimensões principais de observação: eficiência operacional, transparência das informações e experiência do usuário.",
     )
     add_body(
         doc,
-        "O referencial teórico selecionado fortalece a pesquisa por conectar o caso a discussões atuais sobre plataformas digitais, co-criação de valor, práticas sociais em comunidades esportivas, coordenação digital de equipes amadoras, governança por algoritmos e experiência do usuário em sistemas computacionais. A próxima etapa deverá executar os procedimentos de coleta, organizar os dados em tabelas e gráficos e iniciar a análise dos resultados à luz das hipóteses aqui formuladas.",
+        "O referencial teórico selecionado conecta o caso a discussões atuais sobre plataformas digitais, co-criação de valor, práticas sociais em comunidades esportivas, coordenação digital de equipes amadoras, governança assistida e experiência do usuário em sistemas computacionais. A continuidade do trabalho dependerá da aprovação ética, da aplicação dos questionários e da análise cautelosa dos dados coletados.",
     )
 
     doc.add_page_break()
@@ -698,7 +717,7 @@ def build_docx():
     add_references(doc)
 
     doc.core_properties.title = TITLE
-    doc.core_properties.subject = "Relatório de Acompanhamento do Artigo - Etapa 2"
+    doc.core_properties.subject = "Trabalho acadêmico sobre transformação digital e governança em grupos esportivos amadores"
     doc.core_properties.author = "Manoel Denis Lopes do Nascimento; Michel Silva de Souza"
     doc.core_properties.keywords = "PlayHub; transformação digital; governança digital; esporte amador; ABNT"
     doc.save(DOCX_PATH)

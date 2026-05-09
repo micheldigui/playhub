@@ -2,7 +2,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Trophy, ArrowLeft, Loader2, Crown, Shield, Calendar, ChevronDown, Users, Share2 } from 'lucide-react';
 import { usarPartidas } from '../../contextos/PartidasContexto';
 import { usarEquipe } from '../../contextos/EquipeContexto';
+import { usarAutenticacao } from '../../contextos/AutenticacaoContexto';
 import { rastrear } from '../../servicos/rastreamento';
+import Botao from '../../componentes/Botao/Botao';
 import './PaginaRankingMVP.css';
 
 const MEDALHAS = [
@@ -255,10 +257,11 @@ const PodioPartida = ({ atletas }) => {
 };
 
 // ── Componente Principal ──────────────────────────────────────────────────
-const PaginaRankingMVP = ({ equipeIdProp, aoVoltar, modoInicial = 'geral', apenasPartidas = false }) => {
+const PaginaRankingMVP = ({ equipeIdProp, aoVoltar, aoNavegar, setDadosNavegacao, modoInicial = 'geral', apenasPartidas = false }) => {
     const { equipeAtiva, carregarMembrosEquipe } = usarEquipe();
+    const { usuario } = usarAutenticacao();
     const equipeId = equipeIdProp || equipeAtiva?.id;
-    const { buscarRankingMVP, buscarRankingColetivo, carregarPartidas, buscarVencedoresPartida, buscarVotosTime, buscarVotosMVP } = usarPartidas();
+    const { buscarRankingMVP, buscarRankingColetivo, carregarPartidas, buscarVencedoresPartida, buscarVotosTime, buscarVotosMVP, buscarPresencas } = usarPartidas();
 
     const [modo, setModo] = useState(modoInicial);
     const [periodo, setPeriodo] = useState('sempre'); // 'sempre' | 'mes'
@@ -277,6 +280,8 @@ const PaginaRankingMVP = ({ equipeIdProp, aoVoltar, modoInicial = 'geral', apena
     const [partidaSelecionada, setPartidaSelecionada] = useState(null);
     const [vencedoresPartida, setVencedoresPartida] = useState([]);
     const [timesPartida, setTimesPartida] = useState([]);
+    const [jaVotouNestaPartida, setJaVotouNestaPartida] = useState(false);
+    const [participouDestaPartida, setParticipouDestaPartida] = useState(false);
     const [carregandoPartida, setCarregandoPartida] = useState(false);
     const [seletorAberto, setSeletorAberto] = useState(false);
     const seletorRef = useRef(null);
@@ -363,11 +368,21 @@ const PaginaRankingMVP = ({ equipeIdProp, aoVoltar, modoInicial = 'geral', apena
         if (!partidaSelecionada) return;
         const carregarDadosPartida = async () => {
             setCarregandoPartida(true);
-            const [resVenc, resVotosTime, resVotosMVP] = await Promise.all([
+            const [resVenc, resVotosTime, resVotosMVP, resPres] = await Promise.all([
                 buscarVencedoresPartida(partidaSelecionada.id),
                 buscarVotosTime(partidaSelecionada.id),
                 buscarVotosMVP(partidaSelecionada.id),
+                buscarPresencas(partidaSelecionada.id)
             ]);
+
+            // Verifica se o usuário logado já votou e se participou
+            if (usuario?.id) {
+                const votou = (resVotosMVP.votos || []).some(v => v.eleitor_id === usuario.id);
+                setJaVotouNestaPartida(votou);
+
+                const participou = (resPres.presencas || []).some(p => p.usuario_id === usuario.id && p.frequencia === 'P');
+                setParticipouDestaPartida(participou);
+            }
 
             const todosVotosMVP = resVenc.sucesso ? resVenc.vencedores || [] : [];
             // Usar votantes reais (IDs únicos que votaram) para o teto máximo
@@ -801,7 +816,38 @@ const PaginaRankingMVP = ({ equipeIdProp, aoVoltar, modoInicial = 'geral', apena
                                             })}
                                         </div>
                                     )}
-                                </div>
+                                    </div>
+
+                                    {/* Chamada para Votação se pendente */}
+                                    {participouDestaPartida && !jaVotouNestaPartida && !carregandoPartida && (
+                                        <div style={{ 
+                                            background: 'linear-gradient(135deg, rgba(251, 191, 36, 0.2), rgba(205, 127, 50, 0.1))',
+                                            border: '1px solid #fbbf24',
+                                            borderRadius: '16px',
+                                            padding: '20px',
+                                            marginBottom: '28px',
+                                            textAlign: 'center',
+                                            animation: 'pulse-gold 2s infinite ease-in-out'
+                                        }}>
+                                            <Trophy size={32} color="#fbbf24" style={{ margin: '0 auto 12px' }} />
+                                            <h3 style={{ fontSize: '1.1rem', fontWeight: '800', color: '#fbbf24', marginBottom: '8px' }}>Seu voto faz falta! 🏅</h3>
+                                            <p style={{ fontSize: '0.85rem', color: '#cbd5e1', marginBottom: '16px' }}>
+                                                Você participou desta partida, mas ainda não escolheu os melhores. Vote agora para atualizar o ranking!
+                                            </p>
+                                            <Botao 
+                                                onClick={() => {
+                                                    if (aoNavegar) {
+                                                        setDadosNavegacao({ partidaId: partidaSelecionada.id });
+                                                        aoNavegar('votacao_mvp');
+                                                    }
+                                                }}
+                                                style={{ background: '#fbbf24', color: '#0f172a', fontWeight: '800', width: '100%', maxWidth: '250px' }}
+                                            >
+                                                Votar Nesta Partida
+                                            </Botao>
+                                        </div>
+                                    )}
+
                                     <div style={{ 
                                         background: 'rgba(30,41,59,0.3)', 
                                         border: '1px solid rgba(255,255,255,0.05)', 
