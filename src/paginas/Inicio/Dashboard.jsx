@@ -8,7 +8,14 @@ import BannerInstalacaoApp from '../../componentes/Pwa/BannerInstalacaoApp';
 import ModalInstalacaoApp from '../../componentes/Pwa/ModalInstalacaoApp';
 import ModalDetalhesPartida from '../Equipe/tabs/modais/ModalDetalhesPartida';
 import { usePwaInstall } from '../../hooks/usePwaInstall';
-import { Activity as ActivityIcon, GripHorizontal as GripIcon, Users as UsersIcon, Download as DownloadIcon, Trophy } from 'lucide-react';
+import { 
+    Activity as ActivityIcon, 
+    GripHorizontal as GripIcon, 
+    Users as UsersIcon, 
+    Download as DownloadIcon, 
+    Trophy,
+    ChevronRight
+} from 'lucide-react';
 
 // Constantes e Componentes Modulares
 import { 

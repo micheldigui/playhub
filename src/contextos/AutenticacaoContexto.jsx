@@ -20,11 +20,31 @@ export const AutenticacaoProvedor = ({ children }) => {
 
     useEffect(() => {
         // Verificar sessão atual
-        supabase.auth.getSession().then(({ data: { session } }) => {
-            setUsuario(session?.user ?? null);
-            if (session?.user) carregarDadosUsuario(session.user.id);
-            else setCarregando(false);
-        });
+        supabase.auth.getSession()
+            .then(({ data: { session }, error }) => {
+                if (error) {
+                    console.error('Erro ao recuperar sessão:', error.message);
+                    
+                    // Se o erro for de token inválido ou não encontrado, limpamos a sessão local
+                    // para evitar que o cliente fique tentando usar um token podre.
+                    if (error.message?.includes('refresh_token_not_found') || 
+                        error.message?.includes('Refresh Token Not Found') ||
+                        error.status === 400) {
+                        console.warn('Sessão inválida detectada. Limpando dados locais...');
+                        supabase.auth.signOut();
+                    }
+                    
+                    setCarregando(false);
+                    return;
+                }
+                setUsuario(session?.user ?? null);
+                if (session?.user) carregarDadosUsuario(session.user.id);
+                else setCarregando(false);
+            })
+            .catch(err => {
+                console.error('Erro crítico na inicialização da auth:', err);
+                setCarregando(false);
+            });
 
         // Escutar mudanças na autenticação
         const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -173,7 +193,31 @@ export const AutenticacaoProvedor = ({ children }) => {
 
     return (
         <AutenticacaoContexto.Provider value={valor}>
-            {!carregando && children}
+            {carregando ? (
+                <div style={{ 
+                    display: 'flex', 
+                    flexDirection: 'column',
+                    alignItems: 'center', 
+                    justifyContent: 'center', 
+                    height: '100vh',
+                    width: '100vw',
+                    backgroundColor: '#020617', // --fundo-profundo
+                    color: '#0ea5e9', // --primaria
+                    gap: '15px',
+                    fontFamily: 'sans-serif'
+                }}>
+                    <div style={{ 
+                        width: '40px', 
+                        height: '40px', 
+                        border: '3px solid rgba(14, 165, 233, 0.2)',
+                        borderTopColor: '#0ea5e9', 
+                        borderRadius: '50%', 
+                        animation: 'spin 1s linear infinite'
+                    }} />
+                    <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+                    <span style={{ fontSize: '0.9rem', opacity: 0.8 }}>Iniciando PlayHub...</span>
+                </div>
+            ) : children}
         </AutenticacaoContexto.Provider>
     );
 };
